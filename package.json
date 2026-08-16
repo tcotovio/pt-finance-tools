@@ -1,0 +1,19 @@
+{
+  "name": "pt-finance-tools",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run build -w @pt-finance-tools/engine && npm run dev -w @pt-finance-tools/web",
+    "build": "npm run build -w @pt-finance-tools/engine && npm run build -w @pt-finance-tools/web",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run build -w @pt-finance-tools/engine && npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2"
+  }
+}

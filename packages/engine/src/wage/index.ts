@@ -1,4 +1,9 @@
-export { computeNetWage, withholdingForBracket } from "./withholding.js";
+export {
+  computeNetWage,
+  withholdingForBracket,
+  withholdingDetailForBracket,
+} from "./withholding.js";
+export type { WithholdingDetail } from "./withholding.js";
 export {
   EMPLOYEE_SOCIAL_SECURITY_RATE,
   socialSecurityContribution,

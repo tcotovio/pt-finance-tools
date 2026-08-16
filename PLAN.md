@@ -156,12 +156,12 @@ These are exactly the parameters that changed this month — which is why they l
 - [ ] PWA shell (Vite + `vite-plugin-pwa`), installable, offline-capable
 
 ### Phase 1 — Net wage (withholding + IRS Jovem)  ← MVP
-- [ ] 2026 IRS tables (Continente) ingested as versioned data
-- [ ] Marginal-rate withholding + Seg. Social 11%
-- [ ] Case matrix: marital / titulares / dependents
+- [x] 2026 IRS tables (Continente) ingested as versioned data — Tabelas I/II/III from Despacho 233-A/2026, transcribed from the official PDF (`verified:false` pending independent cross-check)
+- [x] Marginal-rate withholding (incl. R-dependent parcela a abater + 3+ dependents −1pp, §5.h) + Seg. Social 11%
+- [x] Case matrix: marital / titulares / dependents (unmarried, married single-earner, married dual-earner)
 - [ ] Meal allowance (cash vs card) + duodécimos toggles
 - [ ] IRS Jovem modifier (schedule, cap, at-source mechanism from despacho)
-- [ ] Golden tests vs Finanças simulator (incl. IRS Jovem cases)
+- [~] Golden tests vs official despacho formula (8 scenarios); cross-check vs Finanças simulator still TODO
 - [ ] UI: single-input default + "advanced" panel (progressive disclosure)
 - [ ] "Simulação, não é aconselhamento" + "retenção ≠ imposto final" notices
 

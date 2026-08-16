@@ -30,19 +30,40 @@ export interface WageInput {
 }
 
 /**
+ * Parcela a abater (the amount subtracted after applying the marginal rate).
+ *
+ * In the official tables this is a fixed euro amount for most brackets, but
+ * for the lowest brackets it is a formula of the monthly income R, written in
+ * the despacho as e.g. `12,50 % × 2,60 × (1 273,85 − R)` — i.e.
+ * `marginalRate × multiplier × (base − R)`.
+ */
+export type Deduction =
+  | { kind: "fixed"; amount: number }
+  | {
+      kind: "formula";
+      /** The constant factor the marginal rate is multiplied by (e.g. 2.60). */
+      multiplier: number;
+      /** The income base the formula subtracts R from (e.g. 1273.85). */
+      base: number;
+    };
+
+/**
  * One row of the withholding table: for monthly income up to `upTo`, apply
  * `marginalRate` to the income and subtract the deductions.
  *
- * retenção = income × marginalRate − deduction − dependentDeduction × dependents
+ * retenção = income × marginalRate − parcelaAbater − dependentDeduction × dependents
+ *
+ * (with a −1 percentage-point adjustment to `marginalRate` for 3+ dependents;
+ * see the withholding calculation and despacho 233-A/2026 §5.h).
  */
 export interface WithholdingBracket {
   /** Upper bound (inclusive) of monthly income in euros; `null` = top bracket. */
   upTo: number | null;
-  /** Taxa marginal máxima, as a fraction (e.g. 0.13 for 13%). */
+  /** Taxa marginal máxima, as a fraction (e.g. 0.241 for 24.10%). */
   marginalRate: number;
-  /** Parcela a abater, in euros. */
-  deduction: number;
-  /** Parcela a abater por dependente for this bracket, in euros. */
+  /** Parcela a abater: fixed euros or an R-dependent formula. */
+  deduction: Deduction;
+  /** Parcela adicional a abater por dependente for this bracket, in euros. */
   dependentDeduction: number;
 }
 
@@ -65,10 +86,12 @@ export interface WithholdingDataset {
   effectiveFrom: string;
   /** Human-readable provenance: despacho reference + source URL. */
   source: string;
-  /**
+   /**
    * True only once the numbers have been transcribed from the official
-   * source AND cross-checked against an independent source. Unverified
-   * datasets must never be used to produce a result shown as authoritative.
+   * source AND independently cross-checked (e.g. against a public simulator).
+   * The flag is propagated to {@link WageResult.datasetVerified} so the UI can
+   * caveat results computed from data that has not yet been double-checked —
+   * it does NOT cause the engine to refuse the calculation.
    */
   verified: boolean;
   tables: WithholdingTable[];
@@ -89,6 +112,10 @@ export interface WageResult {
     dependentDeduction: number;
     socialSecurityRate: number;
   };
+  /** Whether the dataset used has been independently cross-checked. */
+  datasetVerified: boolean;
+  /** Provenance of the dataset used (despacho reference + source URL). */
+  datasetSource: string;
   /**
    * Withholding is an advance on the annual IRS settlement, not the final
    * tax. Always true for this engine (withholding-only scope).

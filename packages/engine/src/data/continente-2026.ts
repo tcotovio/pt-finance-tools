@@ -63,10 +63,14 @@ export const CONTINENTE_2026: WithholdingDataset = {
   source:
     "Despacho n.º 233-A/2026 (DR 2.ª série, N.º 3, Suplemento, 06-01-2026) — " +
     "https://files.diariodarepublica.pt/2s/2026/01/003000001/0000200010.pdf",
-  // Transcribed directly from the official despacho PDF and golden-tested
-  // against its formula. Kept `false` until independently cross-checked
-  // against a public simulator (e.g. Finanças / Doutor Finanças); results
-  // computed from it are flagged via WageResult.datasetVerified.
+  // Transcription cross-checked on 2026-08-18 against an independent
+  // mechanical extraction of the same despacho PDF — all 36 brackets match
+  // (see continente-2026.source.test.ts, which re-runs that diff in CI).
+  //
+  // Still `false`: that check proves the numbers were copied correctly, not
+  // that the engine APPLIES them the way AT does. Flip to `true` only after
+  // an end-to-end comparison against the Finanças simulator. Results are
+  // flagged meanwhile via WageResult.datasetVerified.
   verified: false,
   tables: [
     { category: "unmarried", brackets: tabelaI_II(34.29) },

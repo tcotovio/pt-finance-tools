@@ -128,6 +128,14 @@ portfolio-friendly):
 This suite *is* the honest answer to "accurate for every case": accuracy that is
 demonstrated and regression-protected, not asserted.
 
+**Two axes, and they are not interchangeable:**
+
+- **Axis A — transcription fidelity.** Are the numbers copied correctly? Checked by diffing the dataset against an independent mechanical extraction of the source PDF (fixture + test, runs in CI).
+- **Axis B — model and mapping.** Does the engine *apply* the tables the way AT does — right table per category, right rounding, rules of §5 honoured? Only an end-to-end comparison against an official simulator catches this.
+
+A test whose expected values are computed from the dataset it is testing proves
+neither. Both axes must pass before a dataset is marked `verified: true`.
+
 ---
 
 ## 7. Loan engine (later phase)
@@ -156,12 +164,14 @@ These are exactly the parameters that changed this month — which is why they l
 - [ ] PWA shell (Vite + `vite-plugin-pwa`), installable, offline-capable
 
 ### Phase 1 — Net wage (withholding + IRS Jovem)  ← MVP
-- [x] 2026 IRS tables (Continente) ingested as versioned data — Tabelas I/II/III from Despacho 233-A/2026, transcribed from the official PDF (`verified:false` pending independent cross-check)
+- [x] 2026 IRS tables (Continente) ingested as versioned data — Tabelas I/II/III from Despacho 233-A/2026, transcribed from the official PDF
+- [x] Transcription cross-check (Axis A): all 36 brackets diffed against an independent mechanical extraction of the despacho PDF; the extraction is checked in as a fixture and re-diffed in CI (`continente-2026.source.test.ts`)
+- [ ] End-to-end cross-check (Axis B): ~10 scenarios vs the Finanças simulator, to verify the engine *applies* the tables the way AT does (table-to-category mapping, rounding). `verified` stays `false` until this passes
 - [x] Marginal-rate withholding (incl. R-dependent parcela a abater + 3+ dependents −1pp, §5.h) + Seg. Social 11%
 - [x] Case matrix: marital / titulares / dependents (unmarried, married single-earner, married dual-earner)
 - [ ] Meal allowance (cash vs card) + duodécimos toggles
 - [ ] IRS Jovem modifier (schedule, cap, at-source mechanism from despacho)
-- [~] Golden tests vs official despacho formula (8 scenarios); cross-check vs Finanças simulator still TODO
+- [~] Golden tests vs official despacho formula (8 scenarios) — note these are circular by construction (expectations derive from the same transcribed numbers), which is why the Axis A/B cross-checks above exist
 - [ ] UI: single-input default + "advanced" panel (progressive disclosure)
 - [ ] "Simulação, não é aconselhamento" + "retenção ≠ imposto final" notices
 

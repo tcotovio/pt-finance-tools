@@ -42,6 +42,18 @@ export interface MealAllowanceLimits {
   verified: boolean;
 }
 
+/**
+ * How much of each subsidy is paid monthly in duodécimos, as a fraction:
+ * 1 = the whole subsidy spread over the year, 0.5 = half, 0 = paid as a lump
+ * sum in its usual month (and so outside this monthly calculation).
+ */
+export interface TwelfthsOption {
+  /** Subsídio de férias. */
+  holiday: number;
+  /** Subsídio de Natal. */
+  christmas: number;
+}
+
 /** Inputs to a monthly net-wage (withholding) calculation. */
 export interface WageInput {
   /** Gross monthly remuneration in euros (remuneração mensal bruta). */
@@ -60,6 +72,16 @@ export interface WageInput {
    * exempt portion changes neither the withholding nor the contribution.
    */
   mealAllowance?: MealAllowance;
+  /**
+   * Subsídios de férias / Natal received in duodécimos. Omit when both are
+   * taken as lump sums.
+   */
+  twelfths?: TwelfthsOption;
+  /**
+   * The full value of one subsidy, if it differs from `grossMonthly`.
+   * Defaults to `grossMonthly`, which is the ordinary case.
+   */
+  subsidyAmount?: number;
 }
 
 /**
@@ -149,11 +171,29 @@ export interface WageResult {
     dailyLimit: number;
   };
   /**
-   * The amount both the withholding and the contribution are computed on:
-   * `grossMonthly` plus any taxable meal allowance.
+   * The amount the *salary* withholding is computed on: `grossMonthly` plus
+   * any taxable meal allowance. Duodécimos are deliberately excluded — CIRS
+   * art. 99.º-C n.º 5 withholds them autonomously.
    */
   taxableBase: number;
-  /** IRS retenção na fonte withheld this month. */
+  /**
+   * Duodécimos paid and withheld this month. Absent when the input carried
+   * no `twelfths`.
+   */
+  twelfths?: {
+    /** Amount paid this month across both subsidies. */
+    paid: number;
+    /** IRS withheld on it, computed autonomously. */
+    withholding: number;
+    /** Withholding due on one whole subsidy, before pro-rating. */
+    withholdingOnFullSubsidy: number;
+    /** The full-subsidy value used. */
+    subsidyAmount: number;
+  };
+  /**
+   * Total IRS retenção na fonte withheld this month — salary plus any
+   * duodécimos, which are computed separately and summed only here.
+   */
   irsWithholding: number;
   /** Employee Social Security contribution (Segurança Social). */
   socialSecurity: number;

@@ -23,6 +23,7 @@ export type {
   MealAllowance,
   MealAllowanceMethod,
   MealAllowanceLimits,
+  TwelfthsOption,
   WageInput,
   WageResult,
   Deduction,
@@ -34,6 +35,7 @@ export type {
 export {
   computeNetWage,
   splitMealAllowance,
+  twelfthsDetail,
   withholdingForBracket,
   withholdingDetailForBracket,
   socialSecurityContribution,
@@ -41,7 +43,11 @@ export {
   selectTable,
   selectBracket,
 } from "./wage/index.js";
-export type { WithholdingDetail, MealAllowanceSplit } from "./wage/index.js";
+export type {
+  WithholdingDetail,
+  MealAllowanceSplit,
+  TwelfthsDetail,
+} from "./wage/index.js";
 
 export {
   getWithholdingDataset,

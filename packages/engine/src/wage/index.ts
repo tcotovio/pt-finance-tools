@@ -10,4 +10,6 @@ export {
 } from "./segsocial.js";
 export { selectTable, selectBracket } from "./resolver.js";
 export { splitMealAllowance } from "./meal.js";
+export { twelfthsDetail } from "./twelfths.js";
+export type { TwelfthsDetail } from "./twelfths.js";
 export type { MealAllowanceSplit } from "./meal.js";

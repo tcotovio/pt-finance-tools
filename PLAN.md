@@ -138,31 +138,35 @@ neither. Both axes must pass before a dataset is marked `verified: true`.
 
 ---
 
-### 6.1 Open question — withholding on duodécimos
+### 6.1 Resolved — withholding on duodécimos
 
-Despacho §10 states the principle: when a payment includes more than one
-remuneração (the subsídio months being the named example), each is withheld
-**separately**, with its own rate from the tables. What that means numerically
-for a monthly duodécimo is not spelled out.
+Despacho §10 gave the principle but not the arithmetic, and probing a
+third-party simulator produced inconsistent readings (11,20 % implied at a
+1 500 € salary, 18,72 % at 2 500 €). The rule comes from the statute:
 
-Probing the reference simulator gave conflicting readings:
+- **CIRS art. 99.º-C n.º 5** — the subsídios de férias e de Natal are *"sempre
+  objeto de retenção autónoma, não podendo, para cálculo do imposto a reter,
+  ser adicionados às remunerações dos meses em que são pagos"*. A duodécimo
+  therefore never pushes the salary into a higher bracket, nor the reverse.
+- **CIRS art. 99.º-C n.º 6** — when paid fractionally, each payment withholds
+  *"a parte proporcional do imposto calculado nos termos do número anterior"*:
+  compute the tax on the **whole** subsidy, then pro-rate it.
 
-| Salary | Duodécimos | Implied withholding on the duodécimo | Implied rate |
-|---|---|---|---|
-| 1 500 € | 125 € (1 subsídio) | 14,00 € | 11,20 % |
-| 1 500 € | 250 € (2 subsídios) | 28,00 € | 11,20 % |
-| 2 500 € | 416,67 € (2 subsídios) | 78,01 € | 18,72 % |
+The engine implements exactly that. The subsidy gets its own bracket lookup,
+its own parcela a abater and its own per-dependent deduction; the month
+withholds `fraction/12` of the result. Duodécimos *are* remuneration for
+Segurança Social, so they enter the 11 % base (confirmed empirically).
 
-The first two are consistent with applying the base salary's *effective* rate
-(168,17 / 1 500 = 11,21 %) to the duodécimo. The third is not — that model
-predicts 78,56 € against 78,01 € observed, and no simple rounding of 18,85 %
-reproduces 18,72 %.
+**Known divergence:** at 2 500 € the reference simulator returns 2 046,49 €
+against the engine's 2 045,94 €, a 0,55 € gap — it appears to round the
+subsidy's effective rate, where n.º 6 pro-rates the tax itself. The statute
+wins; `wage/twelfths.test.ts` records the gap explicitly rather than hiding
+it. Worth re-checking against the Finanças simulator if that ever becomes
+reachable.
 
-Rather than reverse-engineer one implementation's quirk, this stays unbuilt
-until the rule is read from the primary source (CIRS art. 99.º-C) or confirmed
-against the Finanças simulator. What *is* confirmed and can be relied on: the
-duodécimo is added to gross and to the Segurança Social base (11 % of the
-total, matching to the cent in all three probes).
+Related, and not yet built: **n.º 8** sets withholding on *trabalho
+suplementar* at 50 % of the rate applying to that month's remuneração —
+the same "separate remuneração" shape, a candidate for the next pass.
 
 ---
 
@@ -198,7 +202,7 @@ These are exactly the parameters that changed this month — which is why they l
 - [x] Marginal-rate withholding (incl. R-dependent parcela a abater + 3+ dependents −1pp, §5.h) + Seg. Social 11%
 - [x] Case matrix: marital / titulares / dependents (unmarried, married single-earner, married dual-earner)
 - [x] Meal allowance (cash vs card) — per-day ceilings as versioned data (10,46 € card / 6,15 € cash for 2026); excess enters both the IRS withholding base and the Segurança Social base. 4 golden scenarios vs the simulator
-- [ ] Duodécimos toggle — gross and Segurança Social treatment confirmed (duodécimos are added to both), but the *withholding* rate applied to the duodécimo could not be pinned to the cent against the reference simulator; see §6.1
+- [x] Duodécimos toggle — subsídios de férias/Natal in twelfths, withheld autonomously per CIRS art. 99.º-C n.ºs 5–6; see §6.1
 - [ ] IRS Jovem modifier (schedule, cap, at-source mechanism from despacho)
 - [~] Golden tests vs official despacho formula (8 scenarios) — note these are circular by construction (expectations derive from the same transcribed numbers), which is why the Axis A/B cross-checks above exist
 - [ ] UI: single-input default + "advanced" panel (progressive disclosure)

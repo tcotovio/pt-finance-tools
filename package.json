@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "npm run build -w @pt-finance-tools/engine && npm run dev -w @pt-finance-tools/web",
     "build": "npm run build -w @pt-finance-tools/engine && npm run build -w @pt-finance-tools/web",
+    "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run build -w @pt-finance-tools/engine && npm run typecheck --workspaces --if-present"
   },

@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      # The golden-test suite (PLAN.md §6): the accuracy guarantee that must
+      # hold across every tax-table data change.
+      - run: npm test
+
+      # Covers typechecking too — both workspace build scripts run `tsc -b`.
+      - run: npm run build

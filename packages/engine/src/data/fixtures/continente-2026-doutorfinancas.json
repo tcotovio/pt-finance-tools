@@ -1,0 +1,26 @@
+{
+  "_comment": "End-to-end golden scenarios captured from an INDEPENDENT public simulator. Unlike wage/withholding.test.ts (whose expectations derive from our own dataset), these numbers were produced by someone else's implementation of the 2026 rules, so they test that the engine APPLIES the tables the way a real payroll calculation does — table-to-category mapping, the §5.h reduction, and rounding.",
+  "source": "Doutor Finanças — Simulador Salário Líquido 2026",
+  "sourceUrl": "https://www.doutorfinancas.pt/ferramentas/simulador-salario-liquido-2026/",
+  "capturedOn": "2026-08-18",
+  "method": "Simulator state is encoded in a base64 JSON `data=` query param; each scenario was driven by URL and the rendered result read from the page.",
+  "notes": [
+    "Meal allowance zeroed (daily_meal_card_value: 0, meal_card_days: 0) and duodécimos off, so the comparison is base salary only — matching the engine's Phase 1 scope.",
+    "The simulator's displayed 'Retenção IRS' line floors to whole euros (e.g. 168.17 renders as 168,00), so `net` is the field compared; it is computed from the unrounded withholding."
+  ],
+  "region": "continente",
+  "referenceDate": "2026-08-18",
+  "scenarios": [
+    { "category": "unmarried",             "dependents": 0, "grossMonthly": 920,  "netMonthly": 818.80,  "socialSecurity": 101.20, "note": "top of the 0% bracket (RMMG 2026)" },
+    { "category": "unmarried",             "dependents": 0, "grossMonthly": 1000, "netMonthly": 854.00,  "socialSecurity": 110.00, "note": "R-dependent formula parcela a abater" },
+    { "category": "unmarried",             "dependents": 0, "grossMonthly": 1500, "netMonthly": 1166.83, "socialSecurity": 165.00 },
+    { "category": "unmarried",             "dependents": 0, "grossMonthly": 2500, "netMonthly": 1753.66, "socialSecurity": 275.00, "note": "just above the 2 499 boundary" },
+    { "category": "unmarried",             "dependents": 2, "grossMonthly": 1800, "netMonthly": 1430.11, "socialSecurity": 198.00, "note": "Tabela II per-dependent 34,29" },
+    { "category": "unmarried",             "dependents": 3, "grossMonthly": 2000, "netMonthly": 1601.53, "socialSecurity": 220.00, "note": "§5.h −1pp for 3+ dependents" },
+    { "category": "married-dual-earner",   "dependents": 0, "grossMonthly": 1500, "netMonthly": 1166.83, "socialSecurity": 165.00 },
+    { "category": "married-dual-earner",   "dependents": 1, "grossMonthly": 2200, "netMonthly": 1612.82, "socialSecurity": 242.00, "note": "Tabela I per-dependent 21,43" },
+    { "category": "married-single-earner", "dependents": 0, "grossMonthly": 1500, "netMonthly": 1240.82, "socialSecurity": 165.00, "note": "Tabela III" },
+    { "category": "married-single-earner", "dependents": 2, "grossMonthly": 3000, "netMonthly": 2355.44, "socialSecurity": 330.00, "note": "Tabela III per-dependent 42,86" },
+    { "category": "unmarried",             "dependents": 0, "grossMonthly": 6000, "netMonthly": 3466.40, "socialSecurity": 660.00, "note": "upper bracket" }
+  ]
+}

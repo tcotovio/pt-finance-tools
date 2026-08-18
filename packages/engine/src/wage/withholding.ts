@@ -2,11 +2,13 @@
 // duodécimos and Segurança Social into one result.
 
 import type {
+  IrsJovemRegime,
   MealAllowanceLimits,
   WageInput,
   WageResult,
   WithholdingDataset,
 } from "../types.js";
+import { irsJovemExemption } from "./irs-jovem.js";
 import { splitMealAllowance } from "./meal.js";
 import { twelfthsDetail } from "./twelfths.js";
 import {
@@ -33,6 +35,7 @@ export function computeNetWage(
   input: WageInput,
   dataset: WithholdingDataset,
   mealLimits?: MealAllowanceLimits,
+  jovemRegime?: IrsJovemRegime,
 ): WageResult {
   if (input.region !== dataset.region) {
     throw new Error(
@@ -65,6 +68,33 @@ export function computeNetWage(
     input.dependents,
     bracket,
   );
+  // IRS Jovem: art. 99.º-F n.º 4 takes the rate from the FULL remuneration —
+  // exempt part included — and levies it only on the non-exempt part.
+  let jovem;
+  let salaryWithholding = detail.withholding;
+  if (input.irsJovem) {
+    if (!jovemRegime) {
+      throw new Error(
+        "IRS Jovem was requested but no IrsJovemRegime dataset was passed.",
+      );
+    }
+    const effectiveRate =
+      taxableBase > 0 ? detail.withholding / taxableBase : 0;
+    const exemption = irsJovemExemption(
+      taxableBase,
+      input.irsJovem.yearOfIncome,
+      jovemRegime,
+    );
+    salaryWithholding = effectiveRate * exemption.taxable;
+    jovem = {
+      fraction: exemption.fraction,
+      exempt: exemption.exempt,
+      cap: exemption.cap,
+      capped: exemption.capped,
+      effectiveRate,
+    };
+  }
+
   // Subsídios in duodécimos: withheld autonomously (art. 99.º-C n.º 5), but
   // they do count as remuneration for Segurança Social.
   let twelfths;
@@ -74,10 +104,13 @@ export function computeNetWage(
       input.subsidyAmount ?? input.grossMonthly,
       input.dependents,
       table,
+      input.irsJovem && jovemRegime
+        ? { input: input.irsJovem, regime: jovemRegime }
+        : undefined,
     );
   }
 
-  const irsWithholding = detail.withholding + (twelfths?.withholding ?? 0);
+  const irsWithholding = salaryWithholding + (twelfths?.withholding ?? 0);
   const socialSecurity = socialSecurityContribution(
     taxableBase + (twelfths?.paid ?? 0),
   );
@@ -101,6 +134,7 @@ export function computeNetWage(
         }
       : {}),
     taxableBase,
+    ...(jovem ? { irsJovem: jovem } : {}),
     ...(twelfths
       ? {
           twelfths: {

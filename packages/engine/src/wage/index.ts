@@ -11,5 +11,11 @@ export {
 export { selectTable, selectBracket } from "./resolver.js";
 export { splitMealAllowance } from "./meal.js";
 export { twelfthsDetail } from "./twelfths.js";
+export {
+  irsJovemExemption,
+  exemptionFraction,
+  paymentExemptionCap,
+} from "./irs-jovem.js";
+export type { IrsJovemExemption } from "./irs-jovem.js";
 export type { TwelfthsDetail } from "./twelfths.js";
 export type { MealAllowanceSplit } from "./meal.js";

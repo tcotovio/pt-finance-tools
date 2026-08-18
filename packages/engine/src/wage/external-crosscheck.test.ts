@@ -15,6 +15,7 @@ import fixture from "../data/fixtures/continente-2026-doutorfinancas.json" with 
 import { computeNetWage } from "./withholding.js";
 import { CONTINENTE_2026 } from "../data/continente-2026.js";
 import { MEAL_ALLOWANCE_2026 } from "../data/meal-allowance-2026.js";
+import { IRS_JOVEM_2026 } from "../data/irs-jovem-2026.js";
 import type {
   MealAllowanceMethod,
   Region,
@@ -65,6 +66,33 @@ describe(`engine vs ${fixture.source}`, () => {
 
         expect(result.netMonthly).toBeCloseTo(s.netMonthly, 2);
         expect(result.socialSecurity).toBeCloseTo(s.socialSecurity, 2);
+      });
+    }
+  });
+  describe("IRS Jovem", () => {
+    for (const c of fixture.irsJovemScenarios.cases) {
+      it(`year ${c.yearOfIncome}, ${c.grossMonthly} € — ${c.note}`, () => {
+        const result = computeNetWage(
+          {
+            grossMonthly: c.grossMonthly,
+            region: fixture.region as Region,
+            category: "unmarried",
+            dependents: 0,
+            referenceDate: fixture.referenceDate,
+            irsJovem: { yearOfIncome: c.yearOfIncome },
+            ...(c.twelfths ? { twelfths: c.twelfths } : {}),
+          },
+          CONTINENTE_2026,
+          MEAL_ALLOWANCE_2026,
+          IRS_JOVEM_2026,
+        );
+
+        // The simulator rounds its displayed rate, so each case carries the
+        // tolerance it was verified within rather than a blanket one.
+        expect(Math.abs(result.netMonthly - c.netMonthly)).toBeLessThanOrEqual(
+          c.tolerance,
+        );
+        expect(result.socialSecurity).toBeCloseTo(c.socialSecurity, 2);
       });
     }
   });

@@ -1,12 +1,14 @@
 // Registry of versioned withholding datasets + date-aware lookup.
 
 import type {
+  IrsJovemRegime,
   MealAllowanceLimits,
   Region,
   WithholdingDataset,
 } from "../types.js";
 import { CONTINENTE_2026 } from "./continente-2026.js";
 import { MEAL_ALLOWANCE_2026 } from "./meal-allowance-2026.js";
+import { IRS_JOVEM_2026 } from "./irs-jovem-2026.js";
 
 /** All datasets known to the engine. Add a tax year by adding to this list. */
 const DATASETS: readonly WithholdingDataset[] = [CONTINENTE_2026];
@@ -58,4 +60,21 @@ export function getMealAllowanceLimits(
   return limits;
 }
 
-export { CONTINENTE_2026, MEAL_ALLOWANCE_2026 };
+/** IRS Jovem parameters by year, newest first. */
+const JOVEM_REGIMES: readonly IrsJovemRegime[] = [IRS_JOVEM_2026];
+
+/** The IRS Jovem regime in effect on `referenceDate`. Throws if none. */
+export function getIrsJovemRegime(referenceDate: string): IrsJovemRegime {
+  const regime = JOVEM_REGIMES.filter(
+    (r) => r.effectiveFrom <= referenceDate,
+  ).sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? 1 : -1))[0];
+
+  if (!regime) {
+    throw new Error(
+      `No IRS Jovem regime effective on or before ${referenceDate}.`,
+    );
+  }
+  return regime;
+}
+
+export { CONTINENTE_2026, MEAL_ALLOWANCE_2026, IRS_JOVEM_2026 };

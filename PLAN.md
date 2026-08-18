@@ -91,7 +91,9 @@ liquido  = bruto − retencao − seg_social            // seg_social = 11% (emp
 - Exemption schedule (2026 regime, Art. 12.º-B CIRS): **100%** yr 1 · **75%** yrs 2–4 · **50%** yrs 5–7 · **25%** yrs 8–10
 - Eligibility: ages 18–35, no degree requirement
 - Cap: **55 × IAS** on exempt income → **€29,542.15** in 2026 (IAS €537.13); income above is taxed normally
-- ⚠️ Encode the *exact* at-source arithmetic (how the % maps onto the withholding, monthly pro-rating of the annual cap) **straight from the official despacho** that sets the year's tables (Despacho 233-A/2026 for 2026) — do not reconstruct it.
+- **At-source arithmetic (resolved, CIRS art. 99.º-F n.º 4).** The rate is the one the tables give for the **totality** of the income, exempt part included; it is then levied **only on the non-exempt part**. The exemption shrinks the base, not the rate — so a young earner keeps the progressivity of their real salary. Taxing the non-exempt part as if it were the whole salary (the intuitive but wrong reading) would give zero withholding in most cases.
+- **Pro-rating the cap (despacho §5.g).** The annual 55 × IAS ceiling is divided by **14** — 12 salaries plus the two subsídios — giving 2 110,15 €/payment in 2026. A duodécimo carries the same share of the ceiling as it does of the subsidy.
+- IAS 2026 = **537,13 €** (Portaria n.º 480-A/2025/1), so the annual ceiling is 29 542,15 €.
 
 ### Output shape (structured, so the UI can present honestly)
 - gross, net, breakdown (IRS withholding, Seg. Social, exemptions applied)
@@ -203,7 +205,7 @@ These are exactly the parameters that changed this month — which is why they l
 - [x] Case matrix: marital / titulares / dependents (unmarried, married single-earner, married dual-earner)
 - [x] Meal allowance (cash vs card) — per-day ceilings as versioned data (10,46 € card / 6,15 € cash for 2026); excess enters both the IRS withholding base and the Segurança Social base. 4 golden scenarios vs the simulator
 - [x] Duodécimos toggle — subsídios de férias/Natal in twelfths, withheld autonomously per CIRS art. 99.º-C n.ºs 5–6; see §6.1
-- [ ] IRS Jovem modifier (schedule, cap, at-source mechanism from despacho)
+- [x] IRS Jovem modifier — schedule and 55 × IAS cap from CIRS art. 12.º-B, at-source mechanism from art. 99.º-F n.º 4, per-payment ceiling (÷14) from despacho §5.g. 7 golden scenarios vs the IRS Jovem simulator, incl. two where the cap bites
 - [~] Golden tests vs official despacho formula (8 scenarios) — note these are circular by construction (expectations derive from the same transcribed numbers), which is why the Axis A/B cross-checks above exist
 - [ ] UI: single-input default + "advanced" panel (progressive disclosure)
 - [ ] "Simulação, não é aconselhamento" + "retenção ≠ imposto final" notices

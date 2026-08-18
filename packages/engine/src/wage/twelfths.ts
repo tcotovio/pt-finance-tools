@@ -11,7 +11,13 @@
 // computed on the *whole* subsidy and then pro-rated by the fraction paid —
 // equivalently, the subsidy's effective rate applied to the amount paid.
 
-import type { TwelfthsOption, WithholdingTable } from "../types.js";
+import type {
+  IrsJovemInput,
+  IrsJovemRegime,
+  TwelfthsOption,
+  WithholdingTable,
+} from "../types.js";
+import { irsJovemExemption } from "./irs-jovem.js";
 import { selectBracket } from "./resolver.js";
 import { withholdingDetailForBracket } from "./withholding-core.js";
 
@@ -25,6 +31,8 @@ export interface TwelfthsDetail {
   subsidyAmount: number;
   /** Withholding due on one whole subsidy, before pro-rating. */
   withholdingOnFullSubsidy: number;
+  /** IRS Jovem exemption applied to this month's duodécimo, if any. */
+  exempt?: number;
 }
 
 /**
@@ -40,6 +48,7 @@ export function twelfthsDetail(
   subsidyAmount: number,
   dependents: number,
   table: WithholdingTable,
+  irsJovem?: { input: IrsJovemInput; regime: IrsJovemRegime },
 ): TwelfthsDetail {
   const { holiday, christmas } = option;
   for (const [name, f] of [["holiday", holiday], ["christmas", christmas]] as const) {
@@ -58,11 +67,34 @@ export function twelfthsDetail(
   ).withholding;
 
   const fraction = (holiday + christmas) / 12;
+  const paid = subsidyAmount * fraction;
+
+  if (!irsJovem) {
+    return {
+      paid,
+      withholding: withholdingOnFullSubsidy * fraction,
+      subsidyAmount,
+      withholdingOnFullSubsidy,
+    };
+  }
+
+  // The subsidy is exempt income too. Per art. 99.º-F n.º 4 the rate comes
+  // from the whole subsidy and is levied on the non-exempt part; the payment
+  // carries the same share of the annual ceiling as it does of the subsidy.
+  const effectiveRate =
+    subsidyAmount > 0 ? withholdingOnFullSubsidy / subsidyAmount : 0;
+  const exemption = irsJovemExemption(
+    paid,
+    irsJovem.input.yearOfIncome,
+    irsJovem.regime,
+    fraction,
+  );
 
   return {
-    paid: subsidyAmount * fraction,
-    withholding: withholdingOnFullSubsidy * fraction,
+    paid,
+    withholding: effectiveRate * exemption.taxable,
     subsidyAmount,
     withholdingOnFullSubsidy,
+    exempt: exemption.exempt,
   };
 }

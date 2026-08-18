@@ -54,6 +54,32 @@ export interface TwelfthsOption {
   christmas: number;
 }
 
+/**
+ * IRS Jovem parameters for a year (CIRS art. 12.º-B), versioned like every
+ * other time-varying input.
+ */
+export interface IrsJovemRegime {
+  year: number;
+  /** ISO `YYYY-MM-DD` the parameters take effect. */
+  effectiveFrom: string;
+  /** Indexante dos Apoios Sociais for the year. */
+  ias: number;
+  /** Annual exempt-income ceiling as a multiple of IAS (55 for 2026). */
+  capMultiplier: number;
+  /** Payments the annual ceiling is divided across at source (14). */
+  paymentsPerYear: number;
+  /** Exempt share by year of earning, index 0 = first year. */
+  exemptionByYear: readonly number[];
+  source: string;
+  verified: boolean;
+}
+
+/** Opting into IRS Jovem for the month. */
+export interface IrsJovemInput {
+  /** Which year of earning this is, 1-based (1 … 10). */
+  yearOfIncome: number;
+}
+
 /** Inputs to a monthly net-wage (withholding) calculation. */
 export interface WageInput {
   /** Gross monthly remuneration in euros (remuneração mensal bruta). */
@@ -82,6 +108,8 @@ export interface WageInput {
    * Defaults to `grossMonthly`, which is the ordinary case.
    */
   subsidyAmount?: number;
+  /** IRS Jovem, when the worker has invoked it with the employer. */
+  irsJovem?: IrsJovemInput;
 }
 
 /**
@@ -176,6 +204,24 @@ export interface WageResult {
    * art. 99.º-C n.º 5 withholds them autonomously.
    */
   taxableBase: number;
+  /**
+   * IRS Jovem as applied this month. Absent when not opted into.
+   *
+   * Note `exempt` reduces the withholding base only — Segurança Social is
+   * contributed on the full remuneration regardless.
+   */
+  irsJovem?: {
+    /** Exempt share for the year of earning (1 = 100 %). */
+    fraction: number;
+    /** Exempt euros on the salary, after the per-payment ceiling. */
+    exempt: number;
+    /** The ceiling that applied to the salary payment. */
+    cap: number;
+    /** True when the ceiling bit, i.e. the exemption was reduced by it. */
+    capped: boolean;
+    /** Rate levied on the non-exempt part — from the FULL remuneration. */
+    effectiveRate: number;
+  };
   /**
    * Duodécimos paid and withheld this month. Absent when the input carried
    * no `twelfths`.

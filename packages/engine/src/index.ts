@@ -1,6 +1,10 @@
 import type { WageInput, WageResult } from "./types.js";
 import { computeNetWage } from "./wage/index.js";
-import { getMealAllowanceLimits, getWithholdingDataset } from "./data/index.js";
+import {
+  getIrsJovemRegime,
+  getMealAllowanceLimits,
+  getWithholdingDataset,
+} from "./data/index.js";
 
 export const ENGINE_VERSION = "0.0.1";
 
@@ -14,7 +18,10 @@ export function computeNetWageForDate(input: WageInput): WageResult {
   const mealLimits = input.mealAllowance
     ? getMealAllowanceLimits(input.referenceDate)
     : undefined;
-  return computeNetWage(input, dataset, mealLimits);
+  const jovemRegime = input.irsJovem
+    ? getIrsJovemRegime(input.referenceDate)
+    : undefined;
+  return computeNetWage(input, dataset, mealLimits, jovemRegime);
 }
 
 export type {
@@ -24,6 +31,8 @@ export type {
   MealAllowanceMethod,
   MealAllowanceLimits,
   TwelfthsOption,
+  IrsJovemInput,
+  IrsJovemRegime,
   WageInput,
   WageResult,
   Deduction,
@@ -36,6 +45,9 @@ export {
   computeNetWage,
   splitMealAllowance,
   twelfthsDetail,
+  irsJovemExemption,
+  exemptionFraction,
+  paymentExemptionCap,
   withholdingForBracket,
   withholdingDetailForBracket,
   socialSecurityContribution,
@@ -47,11 +59,14 @@ export type {
   WithholdingDetail,
   MealAllowanceSplit,
   TwelfthsDetail,
+  IrsJovemExemption,
 } from "./wage/index.js";
 
 export {
   getWithholdingDataset,
   getMealAllowanceLimits,
+  getIrsJovemRegime,
   CONTINENTE_2026,
   MEAL_ALLOWANCE_2026,
+  IRS_JOVEM_2026,
 } from "./data/index.js";

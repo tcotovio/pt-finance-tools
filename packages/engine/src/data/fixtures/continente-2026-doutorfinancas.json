@@ -7,7 +7,8 @@
   "notes": [
     "Meal allowance zeroed (daily_meal_card_value: 0, meal_card_days: 0) and duodécimos off, so the comparison is base salary only — matching the engine's Phase 1 scope.",
     "The simulator's displayed 'Retenção IRS' line floors to whole euros (e.g. 168.17 renders as 168,00), so `net` is the field compared; it is computed from the unrounded withholding.",
-    "mealScenarios pin the 2026 per-day ceilings (10,46 card / 6,15 cash) empirically: the at-ceiling cases leave the Segurança Social base at 11% of base salary, and the over-ceiling cases move it by exactly the excess."
+    "mealScenarios pin the 2026 per-day ceilings (10,46 card / 6,15 cash) empirically: the at-ceiling cases leave the Segurança Social base at 11% of base salary, and the over-ceiling cases move it by exactly the excess.",
+    "irsJovemScenarios confirm the art. 99.º-F n.º 4 mechanism empirically: at 1 500 € in year 2 the simulator withholds 42 €, which is the full salary's effective rate (11,21 %) on the non-exempt 375 € — not the rate the 375 € would attract on its own (which would be zero)."
   ],
   "region": "continente",
   "referenceDate": "2026-08-18",
@@ -152,5 +153,71 @@
       "socialSecurity": 169.48,
       "note": "cash above the ceiling — 40,70 € excess enters both bases"
     }
-  ]
+  ],
+  "irsJovemScenarios": {
+    "_comment": "Captured from the sibling IRS Jovem simulator (simulador-irs-jovem). Its displayed rate is rounded to 2 dp, so its net can sit up to ~0,70 € from an unrounded calculation; `tolerance` records what each case is asserted within.",
+    "sourceUrl": "https://www.doutorfinancas.pt/ferramentas/simulador-irs-jovem/",
+    "cases": [
+      {
+        "yearOfIncome": 1,
+        "grossMonthly": 1500,
+        "netMonthly": 1335,
+        "socialSecurity": 165,
+        "tolerance": 0.01,
+        "note": "year 1 — 100 % exempt, no withholding at all"
+      },
+      {
+        "yearOfIncome": 2,
+        "grossMonthly": 1500,
+        "netMonthly": 1293,
+        "socialSecurity": 165,
+        "tolerance": 0.1,
+        "note": "75 % exempt; rate from the full 1 500 €, levied on 375 €"
+      },
+      {
+        "yearOfIncome": 5,
+        "grossMonthly": 1500,
+        "netMonthly": 1251,
+        "socialSecurity": 165,
+        "tolerance": 0.1,
+        "note": "50 % exempt"
+      },
+      {
+        "yearOfIncome": 8,
+        "grossMonthly": 1500,
+        "netMonthly": 1209,
+        "socialSecurity": 165,
+        "tolerance": 0.2,
+        "note": "25 % exempt"
+      },
+      {
+        "yearOfIncome": 2,
+        "grossMonthly": 3000,
+        "netMonthly": 2474,
+        "socialSecurity": 330,
+        "tolerance": 0.75,
+        "note": "55 × IAS ceiling bites: exemption capped at 2 110,15 € not 2 250 €"
+      },
+      {
+        "yearOfIncome": 2,
+        "grossMonthly": 6000,
+        "netMonthly": 4126,
+        "socialSecurity": 660,
+        "tolerance": 0.75,
+        "note": "ceiling bites hard — without it the net would be 4 871,60 €"
+      },
+      {
+        "yearOfIncome": 2,
+        "grossMonthly": 1500,
+        "twelfths": {
+          "holiday": 1,
+          "christmas": 1
+        },
+        "netMonthly": 1508.5,
+        "socialSecurity": 192.5,
+        "tolerance": 0.1,
+        "note": "duodécimos are exempt income too, at the same share"
+      }
+    ]
+  }
 }

@@ -9,3 +9,5 @@ export {
   socialSecurityContribution,
 } from "./segsocial.js";
 export { selectTable, selectBracket } from "./resolver.js";
+export { splitMealAllowance } from "./meal.js";
+export type { MealAllowanceSplit } from "./meal.js";

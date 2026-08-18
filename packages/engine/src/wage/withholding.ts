@@ -2,11 +2,13 @@
 
 import type {
   Deduction,
+  MealAllowanceLimits,
   WageInput,
   WageResult,
   WithholdingBracket,
   WithholdingDataset,
 } from "../types.js";
+import { splitMealAllowance } from "./meal.js";
 import {
   EMPLOYEE_SOCIAL_SECURITY_RATE,
   socialSecurityContribution,
@@ -101,6 +103,7 @@ export function withholdingForBracket(
 export function computeNetWage(
   input: WageInput,
   dataset: WithholdingDataset,
+  mealLimits?: MealAllowanceLimits,
 ): WageResult {
   if (input.region !== dataset.region) {
     throw new Error(
@@ -111,19 +114,45 @@ export function computeNetWage(
     throw new Error(`dependents must be a non-negative integer, got ${input.dependents}.`);
   }
 
+  // Meal allowance above the daily ceiling is ordinary remuneration: it
+  // raises the bracket lookup, the withholding and the contribution alike.
+  let meal;
+  if (input.mealAllowance) {
+    if (!mealLimits) {
+      throw new Error(
+        "A meal allowance was given but no MealAllowanceLimits dataset was passed.",
+      );
+    }
+    meal = splitMealAllowance(input.mealAllowance, mealLimits);
+  }
+
+  const taxableBase = input.grossMonthly + (meal?.taxable ?? 0);
+
   const table = selectTable(dataset, input.category);
-  const bracket = selectBracket(table, input.grossMonthly);
+  const bracket = selectBracket(table, taxableBase);
 
   const detail = withholdingDetailForBracket(
-    input.grossMonthly,
+    taxableBase,
     input.dependents,
     bracket,
   );
-  const socialSecurity = socialSecurityContribution(input.grossMonthly);
-  const netMonthly = input.grossMonthly - detail.withholding - socialSecurity;
+  const socialSecurity = socialSecurityContribution(taxableBase);
+  const netMonthly =
+    input.grossMonthly + (meal?.paid ?? 0) - detail.withholding - socialSecurity;
 
   return {
     grossMonthly: input.grossMonthly,
+    ...(meal
+      ? {
+          mealAllowance: {
+            paid: meal.paid,
+            exempt: meal.exempt,
+            taxable: meal.taxable,
+            dailyLimit: meal.dailyLimit,
+          },
+        }
+      : {}),
+    taxableBase,
     irsWithholding: detail.withholding,
     socialSecurity,
     netMonthly,

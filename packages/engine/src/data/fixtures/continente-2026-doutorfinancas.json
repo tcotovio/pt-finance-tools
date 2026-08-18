@@ -6,21 +6,151 @@
   "method": "Simulator state is encoded in a base64 JSON `data=` query param; each scenario was driven by URL and the rendered result read from the page.",
   "notes": [
     "Meal allowance zeroed (daily_meal_card_value: 0, meal_card_days: 0) and duodécimos off, so the comparison is base salary only — matching the engine's Phase 1 scope.",
-    "The simulator's displayed 'Retenção IRS' line floors to whole euros (e.g. 168.17 renders as 168,00), so `net` is the field compared; it is computed from the unrounded withholding."
+    "The simulator's displayed 'Retenção IRS' line floors to whole euros (e.g. 168.17 renders as 168,00), so `net` is the field compared; it is computed from the unrounded withholding.",
+    "mealScenarios pin the 2026 per-day ceilings (10,46 card / 6,15 cash) empirically: the at-ceiling cases leave the Segurança Social base at 11% of base salary, and the over-ceiling cases move it by exactly the excess."
   ],
   "region": "continente",
   "referenceDate": "2026-08-18",
   "scenarios": [
-    { "category": "unmarried",             "dependents": 0, "grossMonthly": 920,  "netMonthly": 818.80,  "socialSecurity": 101.20, "note": "top of the 0% bracket (RMMG 2026)" },
-    { "category": "unmarried",             "dependents": 0, "grossMonthly": 1000, "netMonthly": 854.00,  "socialSecurity": 110.00, "note": "R-dependent formula parcela a abater" },
-    { "category": "unmarried",             "dependents": 0, "grossMonthly": 1500, "netMonthly": 1166.83, "socialSecurity": 165.00 },
-    { "category": "unmarried",             "dependents": 0, "grossMonthly": 2500, "netMonthly": 1753.66, "socialSecurity": 275.00, "note": "just above the 2 499 boundary" },
-    { "category": "unmarried",             "dependents": 2, "grossMonthly": 1800, "netMonthly": 1430.11, "socialSecurity": 198.00, "note": "Tabela II per-dependent 34,29" },
-    { "category": "unmarried",             "dependents": 3, "grossMonthly": 2000, "netMonthly": 1601.53, "socialSecurity": 220.00, "note": "§5.h −1pp for 3+ dependents" },
-    { "category": "married-dual-earner",   "dependents": 0, "grossMonthly": 1500, "netMonthly": 1166.83, "socialSecurity": 165.00 },
-    { "category": "married-dual-earner",   "dependents": 1, "grossMonthly": 2200, "netMonthly": 1612.82, "socialSecurity": 242.00, "note": "Tabela I per-dependent 21,43" },
-    { "category": "married-single-earner", "dependents": 0, "grossMonthly": 1500, "netMonthly": 1240.82, "socialSecurity": 165.00, "note": "Tabela III" },
-    { "category": "married-single-earner", "dependents": 2, "grossMonthly": 3000, "netMonthly": 2355.44, "socialSecurity": 330.00, "note": "Tabela III per-dependent 42,86" },
-    { "category": "unmarried",             "dependents": 0, "grossMonthly": 6000, "netMonthly": 3466.40, "socialSecurity": 660.00, "note": "upper bracket" }
+    {
+      "category": "unmarried",
+      "dependents": 0,
+      "grossMonthly": 920,
+      "netMonthly": 818.8,
+      "socialSecurity": 101.2,
+      "note": "top of the 0% bracket (RMMG 2026)"
+    },
+    {
+      "category": "unmarried",
+      "dependents": 0,
+      "grossMonthly": 1000,
+      "netMonthly": 854,
+      "socialSecurity": 110,
+      "note": "R-dependent formula parcela a abater"
+    },
+    {
+      "category": "unmarried",
+      "dependents": 0,
+      "grossMonthly": 1500,
+      "netMonthly": 1166.83,
+      "socialSecurity": 165
+    },
+    {
+      "category": "unmarried",
+      "dependents": 0,
+      "grossMonthly": 2500,
+      "netMonthly": 1753.66,
+      "socialSecurity": 275,
+      "note": "just above the 2 499 boundary"
+    },
+    {
+      "category": "unmarried",
+      "dependents": 2,
+      "grossMonthly": 1800,
+      "netMonthly": 1430.11,
+      "socialSecurity": 198,
+      "note": "Tabela II per-dependent 34,29"
+    },
+    {
+      "category": "unmarried",
+      "dependents": 3,
+      "grossMonthly": 2000,
+      "netMonthly": 1601.53,
+      "socialSecurity": 220,
+      "note": "§5.h −1pp for 3+ dependents"
+    },
+    {
+      "category": "married-dual-earner",
+      "dependents": 0,
+      "grossMonthly": 1500,
+      "netMonthly": 1166.83,
+      "socialSecurity": 165
+    },
+    {
+      "category": "married-dual-earner",
+      "dependents": 1,
+      "grossMonthly": 2200,
+      "netMonthly": 1612.82,
+      "socialSecurity": 242,
+      "note": "Tabela I per-dependent 21,43"
+    },
+    {
+      "category": "married-single-earner",
+      "dependents": 0,
+      "grossMonthly": 1500,
+      "netMonthly": 1240.82,
+      "socialSecurity": 165,
+      "note": "Tabela III"
+    },
+    {
+      "category": "married-single-earner",
+      "dependents": 2,
+      "grossMonthly": 3000,
+      "netMonthly": 2355.44,
+      "socialSecurity": 330,
+      "note": "Tabela III per-dependent 42,86"
+    },
+    {
+      "category": "unmarried",
+      "dependents": 0,
+      "grossMonthly": 6000,
+      "netMonthly": 3466.4,
+      "socialSecurity": 660,
+      "note": "upper bracket"
+    }
+  ],
+  "mealScenarios": [
+    {
+      "category": "unmarried",
+      "dependents": 0,
+      "grossMonthly": 1500,
+      "meal": {
+        "dailyAmount": 10.46,
+        "days": 22,
+        "method": "card"
+      },
+      "netMonthly": 1396.95,
+      "socialSecurity": 165,
+      "note": "card exactly at the ceiling — fully exempt, SS base untouched"
+    },
+    {
+      "category": "unmarried",
+      "dependents": 0,
+      "grossMonthly": 1500,
+      "meal": {
+        "dailyAmount": 12,
+        "days": 22,
+        "method": "card"
+      },
+      "netMonthly": 1418.94,
+      "socialSecurity": 168.73,
+      "note": "card above the ceiling — 33,88 € excess enters both bases"
+    },
+    {
+      "category": "unmarried",
+      "dependents": 0,
+      "grossMonthly": 1500,
+      "meal": {
+        "dailyAmount": 6.15,
+        "days": 22,
+        "method": "cash"
+      },
+      "netMonthly": 1302.13,
+      "socialSecurity": 165,
+      "note": "cash exactly at the ceiling — fully exempt"
+    },
+    {
+      "category": "unmarried",
+      "dependents": 0,
+      "grossMonthly": 1500,
+      "meal": {
+        "dailyAmount": 8,
+        "days": 22,
+        "method": "cash"
+      },
+      "netMonthly": 1328.54,
+      "socialSecurity": 169.48,
+      "note": "cash above the ceiling — 40,70 € excess enters both bases"
+    }
   ]
 }

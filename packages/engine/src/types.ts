@@ -14,6 +14,34 @@ export type TaxpayerCategory =
   | "married-single-earner" // casado, único titular
   | "married-dual-earner"; // casado, dois titulares
 
+/** How the meal allowance is paid — the exemption ceiling differs by method. */
+export type MealAllowanceMethod = "card" | "cash";
+
+/** A month's meal allowance (subsídio de alimentação). */
+export interface MealAllowance {
+  /** Amount paid per working day, in euros. */
+  dailyAmount: number;
+  /** Number of days it is paid for this month. */
+  days: number;
+  method: MealAllowanceMethod;
+}
+
+/**
+ * Per-day meal allowance exemption ceilings for a year. Above the ceiling the
+ * excess is treated as ordinary remuneration: it enters both the IRS
+ * withholding base and the Segurança Social base.
+ */
+export interface MealAllowanceLimits {
+  year: number;
+  /** ISO `YYYY-MM-DD` the limits take effect. */
+  effectiveFrom: string;
+  perDay: Record<MealAllowanceMethod, number>;
+  /** Human-readable provenance. */
+  source: string;
+  /** Whether the values have been independently cross-checked. */
+  verified: boolean;
+}
+
 /** Inputs to a monthly net-wage (withholding) calculation. */
 export interface WageInput {
   /** Gross monthly remuneration in euros (remuneração mensal bruta). */
@@ -27,6 +55,11 @@ export interface WageInput {
    * Tax tables change at least yearly, so calculations are date-aware.
    */
   referenceDate: string;
+  /**
+   * Meal allowance for the month. Omit when the worker receives none — the
+   * exempt portion changes neither the withholding nor the contribution.
+   */
+  mealAllowance?: MealAllowance;
 }
 
 /**
@@ -99,12 +132,36 @@ export interface WithholdingDataset {
 
 /** Structured, itemized result so the UI can present the breakdown honestly. */
 export interface WageResult {
+  /** Base monthly remuneration, as given on the input. */
   grossMonthly: number;
+  /**
+   * Meal allowance split into its exempt and taxable parts. Absent when the
+   * input carried no allowance.
+   */
+  mealAllowance?: {
+    /** Total paid this month (dailyAmount × days). */
+    paid: number;
+    /** The part within the per-day ceiling: no IRS, no Segurança Social. */
+    exempt: number;
+    /** The part above the ceiling: taxed and contributed on as salary. */
+    taxable: number;
+    /** Ceiling per day applied, from the versioned dataset. */
+    dailyLimit: number;
+  };
+  /**
+   * The amount both the withholding and the contribution are computed on:
+   * `grossMonthly` plus any taxable meal allowance.
+   */
+  taxableBase: number;
   /** IRS retenção na fonte withheld this month. */
   irsWithholding: number;
   /** Employee Social Security contribution (Segurança Social). */
   socialSecurity: number;
-  /** Take-home: gross − withholding − social security. */
+  /**
+   * Take-home: base gross + meal allowance paid − withholding − social
+   * security. The exempt part of the allowance is money in hand, so it is
+   * included here even though it is not taxed.
+   */
   netMonthly: number;
   breakdown: {
     marginalRate: number;

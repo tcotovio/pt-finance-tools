@@ -14,7 +14,12 @@ import { describe, expect, it } from "vitest";
 import fixture from "../data/fixtures/continente-2026-doutorfinancas.json" with { type: "json" };
 import { computeNetWage } from "./withholding.js";
 import { CONTINENTE_2026 } from "../data/continente-2026.js";
-import type { Region, TaxpayerCategory } from "../types.js";
+import { MEAL_ALLOWANCE_2026 } from "../data/meal-allowance-2026.js";
+import type {
+  MealAllowanceMethod,
+  Region,
+  TaxpayerCategory,
+} from "../types.js";
 
 describe(`engine vs ${fixture.source}`, () => {
   for (const s of fixture.scenarios) {
@@ -38,4 +43,29 @@ describe(`engine vs ${fixture.source}`, () => {
       expect(result.socialSecurity).toBeCloseTo(s.socialSecurity, 2);
     });
   }
+  describe("meal allowance (subsídio de alimentação)", () => {
+    for (const s of fixture.mealScenarios) {
+      it(`${s.grossMonthly} € + ${s.meal.dailyAmount}×${s.meal.days} ${s.meal.method} — ${s.note}`, () => {
+        const result = computeNetWage(
+          {
+            grossMonthly: s.grossMonthly,
+            region: fixture.region as Region,
+            category: s.category as TaxpayerCategory,
+            dependents: s.dependents,
+            referenceDate: fixture.referenceDate,
+            mealAllowance: {
+              dailyAmount: s.meal.dailyAmount,
+              days: s.meal.days,
+              method: s.meal.method as MealAllowanceMethod,
+            },
+          },
+          CONTINENTE_2026,
+          MEAL_ALLOWANCE_2026,
+        );
+
+        expect(result.netMonthly).toBeCloseTo(s.netMonthly, 2);
+        expect(result.socialSecurity).toBeCloseTo(s.socialSecurity, 2);
+      });
+    }
+  });
 });

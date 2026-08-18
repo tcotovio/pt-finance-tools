@@ -138,6 +138,34 @@ neither. Both axes must pass before a dataset is marked `verified: true`.
 
 ---
 
+### 6.1 Open question — withholding on duodécimos
+
+Despacho §10 states the principle: when a payment includes more than one
+remuneração (the subsídio months being the named example), each is withheld
+**separately**, with its own rate from the tables. What that means numerically
+for a monthly duodécimo is not spelled out.
+
+Probing the reference simulator gave conflicting readings:
+
+| Salary | Duodécimos | Implied withholding on the duodécimo | Implied rate |
+|---|---|---|---|
+| 1 500 € | 125 € (1 subsídio) | 14,00 € | 11,20 % |
+| 1 500 € | 250 € (2 subsídios) | 28,00 € | 11,20 % |
+| 2 500 € | 416,67 € (2 subsídios) | 78,01 € | 18,72 % |
+
+The first two are consistent with applying the base salary's *effective* rate
+(168,17 / 1 500 = 11,21 %) to the duodécimo. The third is not — that model
+predicts 78,56 € against 78,01 € observed, and no simple rounding of 18,85 %
+reproduces 18,72 %.
+
+Rather than reverse-engineer one implementation's quirk, this stays unbuilt
+until the rule is read from the primary source (CIRS art. 99.º-C) or confirmed
+against the Finanças simulator. What *is* confirmed and can be relied on: the
+duodécimo is added to gross and to the Segurança Social base (11 % of the
+total, matching to the cent in all three probes).
+
+---
+
 ## 7. Loan engine (later phase)
 
 Consolidate the existing React mortgage sim and consumer-loan sim into `@engine`.
@@ -169,7 +197,8 @@ These are exactly the parameters that changed this month — which is why they l
 - [x] End-to-end cross-check (Axis B): 11 scenarios vs the Doutor Finanças 2026 simulator, all matching to the cent — every category, the R-dependent formula parcela, the §5.h 3+ dependents reduction and bracket boundaries (`wage/external-crosscheck.test.ts`). `CONTINENTE_2026.verified` is now `true`
 - [x] Marginal-rate withholding (incl. R-dependent parcela a abater + 3+ dependents −1pp, §5.h) + Seg. Social 11%
 - [x] Case matrix: marital / titulares / dependents (unmarried, married single-earner, married dual-earner)
-- [ ] Meal allowance (cash vs card) + duodécimos toggles
+- [x] Meal allowance (cash vs card) — per-day ceilings as versioned data (10,46 € card / 6,15 € cash for 2026); excess enters both the IRS withholding base and the Segurança Social base. 4 golden scenarios vs the simulator
+- [ ] Duodécimos toggle — gross and Segurança Social treatment confirmed (duodécimos are added to both), but the *withholding* rate applied to the duodécimo could not be pinned to the cent against the reference simulator; see §6.1
 - [ ] IRS Jovem modifier (schedule, cap, at-source mechanism from despacho)
 - [~] Golden tests vs official despacho formula (8 scenarios) — note these are circular by construction (expectations derive from the same transcribed numbers), which is why the Axis A/B cross-checks above exist
 - [ ] UI: single-input default + "advanced" panel (progressive disclosure)

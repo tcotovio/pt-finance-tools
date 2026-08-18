@@ -1,6 +1,6 @@
 import type { WageInput, WageResult } from "./types.js";
 import { computeNetWage } from "./wage/index.js";
-import { getWithholdingDataset } from "./data/index.js";
+import { getMealAllowanceLimits, getWithholdingDataset } from "./data/index.js";
 
 export const ENGINE_VERSION = "0.0.1";
 
@@ -11,12 +11,18 @@ export const ENGINE_VERSION = "0.0.1";
  */
 export function computeNetWageForDate(input: WageInput): WageResult {
   const dataset = getWithholdingDataset(input.region, input.referenceDate);
-  return computeNetWage(input, dataset);
+  const mealLimits = input.mealAllowance
+    ? getMealAllowanceLimits(input.referenceDate)
+    : undefined;
+  return computeNetWage(input, dataset, mealLimits);
 }
 
 export type {
   Region,
   TaxpayerCategory,
+  MealAllowance,
+  MealAllowanceMethod,
+  MealAllowanceLimits,
   WageInput,
   WageResult,
   Deduction,
@@ -27,6 +33,7 @@ export type {
 
 export {
   computeNetWage,
+  splitMealAllowance,
   withholdingForBracket,
   withholdingDetailForBracket,
   socialSecurityContribution,
@@ -34,6 +41,11 @@ export {
   selectTable,
   selectBracket,
 } from "./wage/index.js";
-export type { WithholdingDetail } from "./wage/index.js";
+export type { WithholdingDetail, MealAllowanceSplit } from "./wage/index.js";
 
-export { getWithholdingDataset, CONTINENTE_2026 } from "./data/index.js";
+export {
+  getWithholdingDataset,
+  getMealAllowanceLimits,
+  CONTINENTE_2026,
+  MEAL_ALLOWANCE_2026,
+} from "./data/index.js";

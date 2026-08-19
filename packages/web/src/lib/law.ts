@@ -45,6 +45,12 @@ export const LAW_REFERENCES = {
     summary:
       "Os subsídios de férias e de Natal são sempre objeto de retenção autónoma: para calcular o imposto a reter não são somados à remuneração do mês em que são pagos. Um duodécimo nunca empurra o salário para um escalão mais alto — nem o contrário.",
   },
+  "cirs-99c-8": {
+    label: "art. 99.º-C n.º 8 do CIRS",
+    title: "Trabalho suplementar: metade da taxa",
+    summary:
+      "A retenção sobre trabalho suplementar é autónoma e feita a metade da taxa efetiva do mês — desde a primeira hora, depois de a Lei n.º 45-A/2024 ter eliminado o limite das 100 horas. Não faz o salário subir de escalão, mas conta para a Segurança Social como qualquer remuneração.",
+  },
   "cirs-99f-4": {
     label: "art. 99.º-F n.º 4 do CIRS",
     title: "Como o IRS Jovem entra na retenção",

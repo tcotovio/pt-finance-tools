@@ -91,6 +91,19 @@ describe("buildBreakdown", () => {
     expect(breakdown.gross).toBe(1830);
   });
 
+  it("itemizes trabalho suplementar with the rate it was withheld at", () => {
+    const breakdown = buildBreakdown(
+      computeNetWageForDate({ ...BASE, overtime: 300 }),
+    );
+
+    const overtime = line(breakdown, "overtime");
+    expect(overtime?.amount).toBe(300);
+    expect(overtime?.additive).toBe(true);
+    expect(overtime?.reference).toBe("cirs-99c-8");
+    expect(overtime?.note).toContain("metade da taxa");
+    expect(breakdown.gross).toBe(1800);
+  });
+
   it("says whether the meal allowance was fully exempt", () => {
     const exempt = line(
       buildBreakdown(
@@ -335,6 +348,19 @@ describe("buildBreakdown", () => {
     // does it — so it may differ from the full-precision sum, but only in the
     // last cents.
     expect(buildBreakdown(result).net).toBeCloseTo(result.netMonthly, 1);
+  });
+
+  it("counts trabalho suplementar in the contribution base it reports", () => {
+    const result = computeNetWageForDate({ ...BASE, overtime: 300 });
+    const breakdown = buildBreakdown(result);
+
+    // Overtime is contributory, so both the note and the rate must be over
+    // 1 800 €, not the 1 500 € salary.
+    expect(line(breakdown, "social-security")?.note).toContain("1800,00");
+    expect(breakdown.effectiveIrsRate).toBeCloseTo(
+      result.irsWithholding / 1800,
+      10,
+    );
   });
 
   it("takes the effective rate over everything the IRS was withheld on", () => {

@@ -71,7 +71,7 @@ export function AdvancedPanel({
       <summary>
         <span className="advanced-title">O meu caso</span>
         <span className="advanced-sub">
-          Isenção de horário, subsídio de alimentação, duodécimos, IRS Jovem
+          Isenção de horário, trabalho suplementar, subsídios, IRS Jovem
         </span>
       </summary>
 
@@ -105,6 +105,26 @@ export function AdvancedPanel({
               hint="Depende do contrato ou do IRCT aplicável. Afeta o valor dos subsídios de férias e de Natal, e portanto os duodécimos."
             />
           ) : null}
+        </section>
+
+        <section className="field-group">
+          <h3 className="group-title">Trabalho suplementar</h3>
+          <TextField
+            id="overtime"
+            label="Valor pago este mês"
+            suffix="€"
+            placeholder="0,00"
+            value={form.overtime}
+            error={errors.overtime}
+            hint={
+              <>
+                Retido a metade da taxa do mês, desde a primeira hora
+                (<LawReference id="cirs-99c-8" />). Não sobe o escalão do
+                salário, mas desconta para a Segurança Social.
+              </>
+            }
+            onChange={(value) => update("overtime", value)}
+          />
         </section>
 
         <section className="field-group">

@@ -22,6 +22,7 @@ export interface WageForm {
   region: Region;
   workScheduleExemption: string;
   subsidiesIncludeExemption: boolean;
+  overtime: string;
   meal: boolean;
   mealDailyAmount: string;
   mealDays: string;
@@ -39,6 +40,7 @@ export const DEFAULT_FORM: WageForm = {
   region: "continente",
   workScheduleExemption: "",
   subsidiesIncludeExemption: false,
+  overtime: "",
   meal: false,
   mealDailyAmount: "",
   mealDays: "22",
@@ -105,6 +107,15 @@ export function validateForm(form: WageForm): FormErrors {
     }
   }
 
+  if (form.overtime.trim() !== "") {
+    const amount = parseAmount(form.overtime);
+    if (amount === null || amount < 0) {
+      errors.overtime = "Introduza o valor pago em trabalho suplementar.";
+    } else if (amount > MAX_GROSS) {
+      errors.overtime = "Valor demasiado alto.";
+    }
+  }
+
   if (form.meal) {
     if (form.mealDailyAmount.trim() !== "") {
       const daily = parseAmount(form.mealDailyAmount);
@@ -164,6 +175,11 @@ export function toWageInput(
     if (form.subsidiesIncludeExemption) {
       input.subsidyAmount = grossMonthly + exemption;
     }
+  }
+
+  const overtime = parseAmount(form.overtime) ?? 0;
+  if (overtime > 0) {
+    input.overtime = overtime;
   }
 
   if (form.meal) {

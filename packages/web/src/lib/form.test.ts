@@ -40,6 +40,11 @@ describe("validateForm", () => {
     ).toBeUndefined();
   });
 
+  it("flags trabalho suplementar that is not a number", () => {
+    expect(validateForm(form({ overtime: "abc" })).overtime).toBeDefined();
+    expect(validateForm(form({ overtime: "" })).overtime).toBeUndefined();
+  });
+
   it("rejects fractional dependents", () => {
     expect(validateForm(form({ dependents: "2,5" })).dependents).toBeDefined();
   });
@@ -126,6 +131,13 @@ describe("toWageInput", () => {
         DATE,
       )?.subsidyAmount,
     ).toBeUndefined();
+  });
+
+  it("passes trabalho suplementar through as an amount", () => {
+    expect(
+      toWageInput(form({ gross: "1500", overtime: "300" }), DATE)?.overtime,
+    ).toBe(300);
+    expect(toWageInput(form({ gross: "1500" }), DATE)?.overtime).toBeUndefined();
   });
 
   it("includes the meal allowance once it is complete", () => {

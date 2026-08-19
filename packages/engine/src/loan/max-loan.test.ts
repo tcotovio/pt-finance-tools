@@ -169,6 +169,45 @@ describe("maxLoan — maturity and the shock band", () => {
   });
 });
 
+describe("maxLoan — rate type decides whether the shock applies", () => {
+  it("stresses a variable-rate contract, which is the default", () => {
+    const implicit = solve(base);
+    const explicit = solve({ ...base, rateType: "variable" });
+    expect(implicit.dsti.shock).toBeCloseTo(0.015, 10);
+    expect(implicit.dsti.rateType).toBe("variable");
+    expect(explicit.maxLoan).toBeCloseTo(implicit.maxLoan, 8);
+  });
+
+  it("applies no shock to a fixed-rate contract", () => {
+    // Instrução 23/2023 prescribes a shock for taxa variável and taxa mista
+    // only, and Recomendação art. 6.º n.º 2 defers to it entirely — there is
+    // no indexante on a fixed contract that could rise.
+    const fixed = solve({ ...base, rateType: "fixed" });
+    expect(fixed.dsti.shock).toBe(0);
+    expect(fixed.dsti.stressedRate).toBeCloseTo(base.annualRate, 10);
+    expect(fixed.dsti.rateType).toBe("fixed");
+  });
+
+  it("lets a fixed-rate borrower borrow more, all else equal", () => {
+    // The whole point of the distinction: the stressed instalment is the
+    // binding one, so removing the shock raises capacity.
+    expect(solve({ ...base, rateType: "fixed" }).maxLoan).toBeGreaterThan(
+      solve(base).maxLoan,
+    );
+  });
+
+  it("still respects the LTV ceiling when fixed", () => {
+    const result = solve({
+      ...base,
+      rateType: "fixed",
+      borrower: { monthlyIncome: 9000, age: 30 },
+      propertyPrice: 200_000,
+    });
+    expect(result.bindingConstraint).toBe("ltv");
+    expect(result.maxLoan).toBeCloseTo(180_000, 6);
+  });
+});
+
 describe("maxLoan — income reduction past 70", () => {
   it("reduces capacity for a contract running past 70", () => {
     const young = solve({ ...base, borrower: { monthlyIncome: 2000, age: 30 } });

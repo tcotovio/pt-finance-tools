@@ -12,3 +12,9 @@ export {
   shockForTerm,
 } from "./stress.js";
 export { maxLoan, stressedDsti } from "./max-loan.js";
+export {
+  referenceMonth,
+  isCurrentFor,
+  euriborRate,
+  contractRate,
+} from "./euribor.js";

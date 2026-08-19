@@ -113,6 +113,30 @@ describe("buildLoanSummary — the binding constraint", () => {
   });
 });
 
+describe("buildLoanSummary — fixed rate changes what can be said", () => {
+  it("reports no shock for a fixed-rate contract", () => {
+    const summary = summarize(input({ rateType: "fixed" }));
+    expect(summary.shocked).toBe(false);
+    expect(summary.rateType).toBe("fixed");
+    expect(summary.stressedRate).toBeCloseTo(0.032, 10);
+    expect(summary.stressedPayment).toBeCloseTo(summary.contractPayment, 8);
+  });
+
+  it("never says '0,0 p.p.' when there is no shock", () => {
+    // The failure this guards against is copy, not arithmetic: a shock of
+    // zero rendered into the variable-rate sentence reads as nonsense.
+    const detail = summarize(input({ rateType: "fixed" })).constraints[0].detail;
+    expect(detail).not.toContain("p.p.");
+    expect(detail).toContain("taxa fixa");
+  });
+
+  it("still describes the shock for a variable-rate contract", () => {
+    const detail = summarize(input()).constraints[0].detail;
+    expect(detail).toContain("1,5 p.p.");
+    expect(summarize(input()).shocked).toBe(true);
+  });
+});
+
 describe("buildLoanSummary — the age rules surface", () => {
   it("reports the term cap for an older borrower", () => {
     const summary = summarize(

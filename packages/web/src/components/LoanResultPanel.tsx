@@ -108,9 +108,15 @@ function LoanResultBody({
             Prestação mensal
             <span className="line-note">
               <span>
-                À taxa do contrato. O teste de esforço usa{" "}
-                {formatPercent(summary.stressedRate)} e daria{" "}
-                {formatEuro(summary.stressedPayment)}.
+                {summary.shocked ? (
+                  <>
+                    À taxa do contrato. O teste de esforço usa{" "}
+                    {formatPercent(summary.stressedRate)} e daria{" "}
+                    {formatEuro(summary.stressedPayment)}.
+                  </>
+                ) : (
+                  <>À taxa do contrato, fixa para todo o prazo.</>
+                )}
               </span>
               <LawReference id="instrucao-23-2023" />
             </span>
@@ -136,7 +142,9 @@ function LoanResultBody({
             Juros ao longo do contrato
             <span className="line-note">
               <span>
-                Se a taxa se mantiver — o que em taxa variável não acontece.
+                {summary.shocked
+                  ? "Se a taxa se mantiver — o que em taxa variável não acontece."
+                  : "A taxa é fixa, por isso este valor não muda ao longo do contrato."}
               </span>
             </span>
           </dt>

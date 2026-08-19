@@ -15,6 +15,7 @@ import {
   amortize,
   monthlyPayment,
   type BindingConstraint,
+  type LoanRateType,
   type MaxLoanResult,
 } from "@pt-finance-tools/engine";
 import type { LawReferenceId } from "./law.js";
@@ -57,6 +58,13 @@ export interface LoanSummary {
   dstiRatio: number;
   stressedRate: number;
   shock: number;
+  rateType: LoanRateType;
+  /**
+   * Whether the DSTI test was actually stressed. False for a fixed rate,
+   * where there is no indexante to shock — and the copy has to change with
+   * it, since "tested with a rise of 0,0 p.p." is nonsense.
+   */
+  shocked: boolean;
   /** Income after the past-70 reduction. */
   adjustedIncome: number;
   /** The reduction applied, as a fraction (0 when none). */
@@ -85,6 +93,7 @@ export function buildLoanSummary(
   const maxLoan = Math.floor(result.maxLoan);
   const months = Math.round(result.termYears * 12);
   const contractRate = result.dsti.stressedRate - result.dsti.shock;
+  const shocked = result.dsti.shock > 0;
 
   // Recomputed on the floored amount so the instalment on screen is the one
   // that belongs to the loan on screen.
@@ -99,9 +108,13 @@ export function buildLoanSummary(
       label: "Rendimento (taxa de esforço)",
       amount: Math.floor(result.dsti.maxLoan),
       binding: result.bindingConstraint === "dsti",
-      detail: `A prestação, testada com uma subida de ${formatPoints(
-        result.dsti.shock,
-      )}, não pode passar ${percentLabel(result.dsti.limit)} do rendimento.`,
+      detail: shocked
+        ? `A prestação, testada com uma subida de ${formatPoints(
+            result.dsti.shock,
+          )}, não pode passar ${percentLabel(result.dsti.limit)} do rendimento.`
+        : `A prestação não pode passar ${percentLabel(
+            result.dsti.limit,
+          )} do rendimento. Sendo taxa fixa, é testada à taxa do próprio contrato.`,
       remedy:
         "Uma entrada maior não altera este limite. O que o move: mais rendimento, menos encargos mensais, ou um prazo mais longo (se a idade ainda o permitir).",
       reference: "bdp-1-2026",
@@ -141,6 +154,8 @@ export function buildLoanSummary(
         : 0,
     stressedRate: result.dsti.stressedRate,
     shock: result.dsti.shock,
+    rateType: result.dsti.rateType,
+    shocked,
     adjustedIncome: result.dsti.adjustedIncome,
     incomeReduction: result.dsti.incomeReduction,
     totalInterest:

@@ -94,6 +94,16 @@ export interface WageInput {
    */
   referenceDate: string;
   /**
+   * Retribuição por isenção de horário de trabalho (IHT) for the month, in
+   * euros — the specific pay owed under CT art. 265.º to a worker exempt
+   * from a fixed schedule.
+   *
+   * Ordinary remuneration with no special tax treatment: it enters the IRS
+   * withholding base and the Segurança Social base exactly like base salary.
+   * It is a separate input only so the result can itemize it.
+   */
+  workScheduleExemption?: number;
+  /**
    * Meal allowance for the month. Omit when the worker receives none — the
    * exempt portion changes neither the withholding nor the contribution.
    */
@@ -198,10 +208,13 @@ export interface WageResult {
     /** Ceiling per day applied, from the versioned dataset. */
     dailyLimit: number;
   };
+  /** Retribuição por isenção de horário paid this month, if any. */
+  workScheduleExemption?: number;
   /**
    * The amount the *salary* withholding is computed on: `grossMonthly` plus
-   * any taxable meal allowance. Duodécimos are deliberately excluded — CIRS
-   * art. 99.º-C n.º 5 withholds them autonomously.
+   * any isenção de horário and any taxable meal allowance. Duodécimos are
+   * deliberately excluded — CIRS art. 99.º-C n.º 5 withholds them
+   * autonomously.
    */
   taxableBase: number;
   /**
@@ -221,6 +234,16 @@ export interface WageResult {
     capped: boolean;
     /** Rate levied on the non-exempt part — from the FULL remuneration. */
     effectiveRate: number;
+    /**
+     * IRS that would have been withheld this month had the exemption not
+     * applied — salary plus any duodécimos, at the same table rates.
+     */
+    withholdingWithoutExemption: number;
+    /**
+     * What the regime is worth this month: `withholdingWithoutExemption`
+     * less the {@link WageResult.irsWithholding} actually retained.
+     */
+    relief: number;
   };
   /**
    * Duodécimos paid and withheld this month. Absent when the input carried
@@ -235,6 +258,11 @@ export interface WageResult {
     withholdingOnFullSubsidy: number;
     /** The full-subsidy value used. */
     subsidyAmount: number;
+    /**
+     * The part of this month's duodécimo exempted by IRS Jovem, which has
+     * its own share of the per-payment ceiling. Absent without IRS Jovem.
+     */
+    exempt?: number;
   };
   /**
    * Total IRS retenção na fonte withheld this month — salary plus any
@@ -249,6 +277,25 @@ export interface WageResult {
    * included here even though it is not taxed.
    */
   netMonthly: number;
+  /**
+   * What the month costs the employer: everything paid to the worker plus
+   * the employer's Segurança Social contribution (TSU patronal).
+   *
+   * Direct cost only. It deliberately excludes the mandatory seguro de
+   * acidentes de trabalho, occupational health, training levies and any
+   * other overhead — none of those has a statutory rate the engine could
+   * apply without inventing one.
+   */
+  employerCost: {
+    /** Everything paid to the worker this month, exempt parts included. */
+    remuneration: number;
+    /** Employer contribution, on the same base as the employee's. */
+    socialSecurity: number;
+    /** The rate applied, as a fraction (0.2375). */
+    socialSecurityRate: number;
+    /** `remuneration + socialSecurity`. */
+    total: number;
+  };
   breakdown: {
     marginalRate: number;
     deduction: number;

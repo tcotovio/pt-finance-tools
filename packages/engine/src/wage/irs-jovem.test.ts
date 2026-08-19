@@ -130,6 +130,82 @@ describe("computeNetWage with IRS Jovem", () => {
     expect(withoutJovem.twelfths?.withholding).toBeCloseTo(28.03, 2);
   });
 
+  it("reports what the exemption is worth this month", () => {
+    const withJovem = netWage({
+      ...base,
+      grossMonthly: 1500,
+      irsJovem: { yearOfIncome: 2 },
+    });
+    const withoutJovem = computeNetWage(
+      { ...base, grossMonthly: 1500 },
+      CONTINENTE_2026,
+    );
+
+    // The baseline is the ordinary withholding on the same remuneration...
+    expect(withJovem.irsJovem?.withholdingWithoutExemption).toBeCloseTo(
+      withoutJovem.irsWithholding,
+      10,
+    );
+    // ...and the relief is what is not retained because of it.
+    expect(withJovem.irsJovem?.relief).toBeCloseTo(
+      withoutJovem.irsWithholding - withJovem.irsWithholding,
+      10,
+    );
+  });
+
+  it("counts the duodécimos' own exemption in the relief", () => {
+    const input = {
+      ...base,
+      grossMonthly: 1500,
+      twelfths: { holiday: 1, christmas: 1 },
+    };
+    const withJovem = netWage({ ...input, irsJovem: { yearOfIncome: 2 } });
+    const withoutJovem = computeNetWage(input, CONTINENTE_2026);
+
+    expect(withJovem.irsJovem?.withholdingWithoutExemption).toBeCloseTo(
+      withoutJovem.irsWithholding,
+      10,
+    );
+    expect(withJovem.irsJovem?.relief).toBeCloseTo(
+      withoutJovem.irsWithholding - withJovem.irsWithholding,
+      10,
+    );
+    // The duodécimo relief is a real part of it: 28,03 − 7,01 € (see above).
+    expect(withJovem.irsJovem!.relief).toBeGreaterThan(
+      netWage({ ...base, grossMonthly: 1500, irsJovem: { yearOfIncome: 2 } })
+        .irsJovem!.relief,
+    );
+  });
+
+  it("surfaces the exempt part of the duodécimo", () => {
+    const result = netWage({
+      ...base,
+      grossMonthly: 1500,
+      twelfths: { holiday: 1, christmas: 1 },
+      irsJovem: { yearOfIncome: 2 },
+    });
+    // 250 € paid, 75 % of it exempt in the second year.
+    expect(result.twelfths?.exempt).toBeCloseTo(187.5, 2);
+  });
+
+  it("leaves the exempt field off the duodécimos without IRS Jovem", () => {
+    const result = computeNetWage(
+      { ...base, grossMonthly: 1500, twelfths: { holiday: 1, christmas: 1 } },
+      CONTINENTE_2026,
+    );
+    expect(result.twelfths?.exempt).toBeUndefined();
+    expect(result.irsJovem).toBeUndefined();
+  });
+
+  it("reports no relief once the schedule has run out", () => {
+    const result = netWage({
+      ...base,
+      grossMonthly: 1500,
+      irsJovem: { yearOfIncome: 11 },
+    });
+    expect(result.irsJovem?.relief).toBeCloseTo(0, 10);
+  });
+
   it("throws when IRS Jovem is requested without a regime dataset", () => {
     expect(() =>
       computeNetWage(

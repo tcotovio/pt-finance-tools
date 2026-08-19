@@ -31,6 +31,11 @@ export interface TwelfthsDetail {
   subsidyAmount: number;
   /** Withholding due on one whole subsidy, before pro-rating. */
   withholdingOnFullSubsidy: number;
+  /**
+   * What this month's duodécimo would have withheld without IRS Jovem. Equal
+   * to `withholding` when the regime does not apply.
+   */
+  withholdingWithoutExemption: number;
   /** IRS Jovem exemption applied to this month's duodécimo, if any. */
   exempt?: number;
 }
@@ -69,12 +74,16 @@ export function twelfthsDetail(
   const fraction = (holiday + christmas) / 12;
   const paid = subsidyAmount * fraction;
 
+  // n.º 6: the tax on the whole subsidy, pro-rated by the fraction paid.
+  const withholdingWithoutExemption = withholdingOnFullSubsidy * fraction;
+
   if (!irsJovem) {
     return {
       paid,
-      withholding: withholdingOnFullSubsidy * fraction,
+      withholding: withholdingWithoutExemption,
       subsidyAmount,
       withholdingOnFullSubsidy,
+      withholdingWithoutExemption,
     };
   }
 
@@ -95,6 +104,7 @@ export function twelfthsDetail(
     withholding: effectiveRate * exemption.taxable,
     subsidyAmount,
     withholdingOnFullSubsidy,
+    withholdingWithoutExemption,
     exempt: exemption.exempt,
   };
 }

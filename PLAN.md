@@ -253,7 +253,8 @@ These are exactly the parameters that changed this month — which is why they l
 - [ ] Fold existing mortgage + consumer-loan sims into `@engine` — **blocked**: the sims live outside this repo and no path/URL has been supplied. The forward direction was written from the statute-level formula instead, so nothing downstream waits on it; folding them in is now a reconciliation exercise (diff their output against `amortize`) rather than a port
 - [ ] Euribor live feed + cached fallback — must expose the **previous month's simple average** (Instrução 23/2023 art. 1.º n.º 4), not a spot rate
 - [ ] **Axis B for the loan side**: end-to-end cross-check vs bank simulators. Until it passes, `BDP_2026.verified` and `INTEREST_RATE_SHOCK_2023.verified` stay `false` and `MaxLoanResult.parametersVerified` propagates that to the UI
-- [ ] Loan UI (the engine is currently reachable only from tests)
+- [x] Loan UI — rendimento + preço + idade + prazo on the surface, taxa/finalidade/outros créditos/avaliação behind "O meu caso". The result names **which limit binds** and what moves it, since being capped by income and by the property's value call for opposite responses. Shows the deposit implied, the real effort rate (kept distinct from the supervisory DSTI, which sits on 45 % by construction), and the two ceilings as a shared-scale comparison. Loan amounts are floored to the euro — a ceiling rounded up is a ceiling overstated
+- [ ] Default spread / rate assumption — the form currently starts on a placeholder 3,2 % labelled as an estimate. Resolving §10.1 and wiring the Euribor feed replaces it
 
 ### Phase 3 — Long tail (opt-in scope)
 - [ ] Disability tables

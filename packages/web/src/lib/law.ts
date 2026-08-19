@@ -57,6 +57,20 @@ export const LAW_REFERENCES = {
     summary:
       "A taxa de retenção é a que corresponde à totalidade do rendimento, parte isenta incluída, mas aplica-se apenas à parte não isenta. A isenção reduz a base sobre que o imposto incide, não a taxa — quem ganha mais continua a ter a taxa do seu salário real.",
   },
+  "bdp-1-2026": {
+    label: "Recomendação n.º 1/2026 do Banco de Portugal",
+    title: "Limites ao crédito à habitação",
+    summary:
+      "Aplica-se aos contratos cuja avaliação de solvabilidade ocorra a partir de 1 de agosto de 2026. A prestação, testada com uma subida da taxa de juro, não deve passar 45 % do rendimento; o empréstimo não deve exceder 90 % do imóvel na habitação própria e permanente (80 % nas restantes finalidades); e o prazo não deve exceder 40 anos até aos 35 anos de idade, ou 35 anos acima disso. São recomendações às instituições, não direitos do consumidor: cada banco aplica ainda os seus próprios critérios.",
+    url: "https://www.bportugal.pt/sites/default/files/documents/2026-07/Recomendacao_Macroprudencial_n.1-2026.pdf",
+  },
+  "instrucao-23-2023": {
+    label: "Instrução n.º 23/2023 do Banco de Portugal",
+    title: "O choque de taxa de juro",
+    summary:
+      "A taxa de esforço não é calculada à taxa do contrato, mas a uma taxa agravada: mais 0,5 pontos percentuais em contratos até 5 anos, mais 1 ponto entre 5 e 10 anos, e mais 1,5 pontos acima de 10 anos. Só a prestação do novo crédito é agravada — as dos créditos que já tem contam pelo valor real.",
+    url: "https://www.bportugal.pt/instrucao/232023",
+  },
   "despacho-233a-2026": {
     label: "Despacho n.º 233-A/2026",
     title: "Tabelas de retenção para 2026",

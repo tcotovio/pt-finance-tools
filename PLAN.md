@@ -255,7 +255,8 @@ These are exactly the parameters that changed this month — which is why they l
 - [x] Fixed vs variable rate — Instrução 23/2023 art. 1.º prescribes a shock for *taxa variável* (n.º 1) and *taxa mista* (n.º 2) only, and Recomendação art. 6.º n.º 2 defers to it entirely, so a fully fixed contract is tested at its own rate. Recorded as a reading in `LoanRateType`: the statutes define the shock by scope rather than stating the exemption outright. *Taxa mista* stays unmodelled — n.º 2 needs the length of the fixed period as an input
 - [ ] **Axis B for the loan side**: end-to-end cross-check vs bank simulators. Until it passes, `BDP_2026.verified` and `INTEREST_RATE_SHOCK_2023.verified` stay `false` and `MaxLoanResult.parametersVerified` propagates that to the UI
 - [x] Loan UI — rendimento + preço + idade + prazo on the surface, taxa/finalidade/outros créditos/avaliação behind "O meu caso". The result names **which limit binds** and what moves it, since being capped by income and by the property's value call for opposite responses. Shows the deposit implied, the real effort rate (kept distinct from the supervisory DSTI, which sits on 45 % by construction), and the two ceilings as a shared-scale comparison. Loan amounts are floored to the euro — a ceiling rounded up is a ceiling overstated
-- [~] Default spread — the index is now live, but the **spread on top of it is still a guess** (1,0 %, labelled in the UI as an assumption to replace with the bank's own). Unlike everything else in the project it has no source: no statute sets it and no public feed publishes a representative figure. §10.1 stays open until there is either a defensible source or an explicit decision to keep a labelled placeholder
+- [x] Default spread — **resolved as a labelled placeholder plus sourced context**, because it cannot be derived. The obvious derivation (ECB average new-business mortgage rate − Euribor) is unsound: the average mixes fixed and mixed-rate contracts priced off swaps, and variable ones carry the Euribor fixing from when they were signed, so in a rising market the subtraction measures the lag and the mix, not the margin — it gives ~0,13 pp against 12M in mid-2026 against real retail spreads nearer 1 pp. So the form keeps 1,0 % labelled as an assumption, and shows the actual PT average (ECB MIR, live with the same cache/fallback chain) beside the composed rate for the user to judge against. `euribor.test.ts` pins the non-derivation so nobody later "fixes" it by wiring the subtraction in
+  - Worth knowing: at Euribor 12M + 1,0 % the tool runs ~0,9 pp above the observed average, so it **understates** capacity. That conservatism is now deliberate and visible rather than accidental
 
 ### Phase 3 — Long tail (opt-in scope)
 - [ ] Disability tables
@@ -277,10 +278,10 @@ These are exactly the parameters that changed this month — which is why they l
 
 ## 10. Open decisions
 
-1. Default spread assumptions for the loan calculator's out-of-the-box estimate.
-2. Whether an annual-settlement mode ever enters scope (currently: no).
+1. Whether an annual-settlement mode ever enters scope (currently: no).
 
 **Resolved:**
+- Default spread — not derivable, so: labelled placeholder (1,0 %) plus the live ECB average as context. See Phase 2.
 - Static hosting target — GitHub Pages, deployed from `master` by `.github/workflows/deploy.yml`.
 - IRS withholding-table sourcing — no public API exists, so tables are manually transcribed from the official PDF and cross-checked against an independent source (see §5).
 - Stack — npm workspaces (not pnpm), React + Vite + `vite-plugin-pwa` + Vitest (see §3).

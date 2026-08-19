@@ -569,3 +569,26 @@ export interface EuriborSnapshot {
   /** ISO date the values were retrieved, for staleness reporting. */
   retrievedAt: string;
 }
+
+/**
+ * What Portuguese borrowers actually agreed to recently — context for judging
+ * a composed rate, not an input to any calculation.
+ *
+ * It exists because the spread is the one number in this project with no
+ * source: no statute sets it and no feed publishes a representative figure.
+ * Deriving it as "average rate − current Euribor" is unsound — the ECB's
+ * average mixes fixed and mixed-rate contracts priced off swaps, and variable
+ * ones carry the Euribor fixing from when they were signed, so in a rising
+ * market the subtraction measures the lag and the mix rather than the margin
+ * (it gives ~0,13 pp against 12M in mid-2026, against real retail spreads
+ * nearer 1 pp). So the average is shown beside the user's own rate and left
+ * for them to judge, rather than being reverse-engineered into a default.
+ */
+export interface MarketRateReference {
+  /** The month the average is for, as `YYYY-MM`. Lags Euribor by a month or two. */
+  month: string;
+  /** Average annualised agreed rate on new PT house-purchase loans, as a fraction. */
+  averageRate: number;
+  source: string;
+  retrievedAt: string;
+}

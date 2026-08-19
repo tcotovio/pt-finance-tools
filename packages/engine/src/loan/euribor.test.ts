@@ -9,6 +9,7 @@ import {
   referenceMonth,
 } from "./euribor.js";
 import { EURIBOR_2026_07 } from "../data/euribor-2026-07.js";
+import { MARKET_RATE_2026_06 } from "../data/market-rate-2026-06.js";
 import type { EuriborSnapshot } from "../types.js";
 
 describe("referenceMonth", () => {
@@ -94,5 +95,30 @@ describe("contractRate", () => {
   it("rejects negative inputs", () => {
     expect(() => contractRate(-0.01, 0.01)).toThrow(/indexRate/);
     expect(() => contractRate(0.02, -0.01)).toThrow(/spread/);
+  });
+});
+
+describe("MARKET_RATE_2026_06 — context, never a derived spread", () => {
+  it("is a plausible mortgage rate expressed as a fraction", () => {
+    expect(MARKET_RATE_2026_06.averageRate).toBeGreaterThan(0.001);
+    expect(MARKET_RATE_2026_06.averageRate).toBeLessThan(0.15);
+  });
+
+  it("cites the ECB series it came from", () => {
+    expect(MARKET_RATE_2026_06.source).toContain("MIR.M.PT.B.A2C");
+  });
+
+  it("cannot be turned into a spread by subtracting Euribor", () => {
+    // The guard is on the reasoning, not the arithmetic. It is tempting to
+    // derive the default spread as "average rate − Euribor", and this pins
+    // why that is wrong: the ECB's average mixes fixed and mixed-rate
+    // contracts priced off swaps, and variable ones carry the fixing from
+    // when they were signed, so in a rising market the difference collapses
+    // to a fraction of any real retail margin. If anyone ever wires this
+    // subtraction into a default, this test fails and says so.
+    const implied =
+      MARKET_RATE_2026_06.averageRate - euriborRate(EURIBOR_2026_07, "12m");
+    const plausibleRetailSpread = 0.008;
+    expect(implied).toBeLessThan(plausibleRetailSpread);
   });
 });

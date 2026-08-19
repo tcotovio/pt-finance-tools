@@ -6,7 +6,11 @@
 // silently ignored either would be the wrong number rather than a partial one.
 
 import { useEffect, useMemo, useState } from "react";
-import { euriborRate, EURIBOR_FALLBACK } from "@pt-finance-tools/engine";
+import {
+  euriborRate,
+  EURIBOR_FALLBACK,
+  MARKET_RATE_FALLBACK,
+} from "@pt-finance-tools/engine";
 import { computeMaxLoanSafely, type LoanOutcome } from "../lib/compute.js";
 import {
   DEFAULT_LOAN_FORM,
@@ -16,7 +20,7 @@ import {
   type UpdateLoanForm,
 } from "../lib/loan-form.js";
 import { todayIso, parseAmount } from "../lib/format.js";
-import { loadEuribor, type EuriborState } from "../lib/euribor-feed.js";
+import { loadRateContext, type RateContext } from "../lib/euribor-feed.js";
 import { LoanAdvancedPanel } from "./LoanAdvancedPanel.js";
 import { LoanResultPanel } from "./LoanResultPanel.js";
 import { TextField } from "./fields.js";
@@ -32,23 +36,23 @@ export function LoanCalculator() {
   // it arrives. The calculator is never blocked on the network — a spinner
   // over the whole result would be a worse answer than a slightly stale one,
   // and the panel says which source it used either way.
-  const [euribor, setEuribor] = useState<EuriborState>(() => ({
-    snapshot: EURIBOR_FALLBACK,
-    origin: "bundled",
-    current: false,
+  const [rates, setRates] = useState<RateContext>(() => ({
+    euribor: { snapshot: EURIBOR_FALLBACK, origin: "bundled", current: false },
+    market: MARKET_RATE_FALLBACK,
+    marketOrigin: "bundled",
   }));
 
   useEffect(() => {
     let cancelled = false;
-    loadEuribor(assessmentDate).then((state) => {
-      if (!cancelled) setEuribor(state);
+    loadRateContext(assessmentDate).then((context) => {
+      if (!cancelled) setRates(context);
     });
     return () => {
       cancelled = true;
     };
   }, [assessmentDate]);
 
-  const indexRate = euriborRate(euribor.snapshot, form.tenor);
+  const indexRate = euriborRate(rates.euribor.snapshot, form.tenor);
 
   const update: UpdateLoanForm = (key, value) =>
     setForm((previous) => ({ ...previous, [key]: value }));
@@ -120,7 +124,7 @@ export function LoanCalculator() {
           form={form}
           errors={errors}
           update={update}
-          euribor={euribor}
+          rates={rates}
           indexRate={indexRate}
         />
       </form>

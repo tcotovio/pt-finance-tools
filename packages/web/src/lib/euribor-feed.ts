@@ -20,10 +20,12 @@
 
 import {
   EURIBOR_FALLBACK,
+  MARKET_RATE_FALLBACK,
   isCurrentFor,
   referenceMonth,
   type EuriborSnapshot,
   type EuriborTenor,
+  type MarketRateReference,
 } from "@pt-finance-tools/engine";
 
 /** Where the snapshot in hand came from. */
@@ -44,7 +46,14 @@ const SERIES: Record<EuriborTenor, string> = {
 };
 
 const BASE = "https://data-api.ecb.europa.eu/service/data/FM";
+/**
+ * Average annualised agreed rate on new PT house-purchase loans. Shown as
+ * context beside the user's rate; never used in a calculation.
+ */
+const MARKET_RATE_SERIES = "MIR/M.PT.B.A2C.A.R.A.2250.EUR.N";
+const MARKET_RATE_BASE = "https://data-api.ecb.europa.eu/service/data";
 const CACHE_KEY = "euribor-snapshot-v1";
+const MARKET_CACHE_KEY = "market-rate-v1";
 const FETCH_TIMEOUT_MS = 6000;
 
 /** One observation pulled out of an SDMX-JSON response. */
@@ -230,4 +239,93 @@ export async function loadEuribor(assessmentDate: string): Promise<EuriborState>
     origin: cached ? "cache" : "bundled",
     current: isCurrentFor(best, assessmentDate),
   };
+}
+
+/**
+ * The latest published average, whenever it is from.
+ *
+ * Unlike Euribor this is not pinned to a month: MIR lags by a month or two
+ * and nothing legal depends on it, so the most recent figure is the useful
+ * one — the UI states which month it is.
+ */
+export async function fetchMarketRate(): Promise<MarketRateReference | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const response = await fetch(
+      `${MARKET_RATE_BASE}/${MARKET_RATE_SERIES}?lastNObservations=1&format=jsondata`,
+      { signal: controller.signal },
+    );
+    if (!response.ok) return null;
+    const observation = parseEcbSeries(await response.json());
+    if (!observation) return null;
+    return {
+      month: observation.month,
+      averageRate: observation.rate,
+      source:
+        "European Central Bank, MFI Interest Rate Statistics, series " +
+        "MIR.M.PT.B.A2C.A.R.A.2250.EUR.N (https://data-api.ecb.europa.eu)",
+      retrievedAt: new Date().toISOString().slice(0, 10),
+    };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/** Everything the rate inputs need: the index, and the market context. */
+export interface RateContext {
+  euribor: EuriborState;
+  market: MarketRateReference;
+  marketOrigin: EuriborOrigin;
+}
+
+export async function loadRateContext(
+  assessmentDate: string,
+): Promise<RateContext> {
+  const [euribor, market] = await Promise.all([
+    loadEuribor(assessmentDate),
+    fetchMarketRate(),
+  ]);
+
+  if (market) {
+    writeMarketCache(market);
+    return { euribor, market, marketOrigin: "live" };
+  }
+
+  const cached = readMarketCache();
+  return {
+    euribor,
+    market: cached ?? MARKET_RATE_FALLBACK,
+    marketOrigin: cached ? "cache" : "bundled",
+  };
+}
+
+function readMarketCache(
+  storage: Storage | undefined = safeStorage(),
+): MarketRateReference | null {
+  if (!storage) return null;
+  try {
+    const raw = storage.getItem(MARKET_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as MarketRateReference;
+    return typeof parsed?.month === "string" &&
+      typeof parsed?.averageRate === "number"
+      ? parsed
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeMarketCache(
+  reference: MarketRateReference,
+  storage: Storage | undefined = safeStorage(),
+): void {
+  try {
+    storage?.setItem(MARKET_CACHE_KEY, JSON.stringify(reference));
+  } catch {
+    // Same as the Euribor cache: not a reason to fail anything.
+  }
 }

@@ -12,7 +12,7 @@ import type {
   LoanFormErrors,
   UpdateLoanForm,
 } from "../lib/loan-form.js";
-import type { EuriborState } from "../lib/euribor-feed.js";
+import type { RateContext } from "../lib/euribor-feed.js";
 import { formatRate } from "../lib/format.js";
 import { LawReference } from "./LawReference.js";
 import {
@@ -40,7 +40,7 @@ const TENOR_OPTIONS: readonly SelectOption[] = [
 ];
 
 /** Where the index came from, in words the user can act on. */
-const ORIGIN_LABEL: Record<EuriborState["origin"], string> = {
+const ORIGIN_LABEL: Record<RateContext["marketOrigin"], string> = {
   live: "valor do Banco Central Europeu",
   cache: "valor guardado neste dispositivo",
   bundled: "valor incluído na aplicação",
@@ -50,7 +50,7 @@ interface LoanAdvancedPanelProps {
   form: LoanForm;
   errors: LoanFormErrors;
   update: UpdateLoanForm;
-  euribor: EuriborState;
+  rates: RateContext;
   indexRate: number;
 }
 
@@ -58,9 +58,10 @@ export function LoanAdvancedPanel({
   form,
   errors,
   update,
-  euribor,
+  rates,
   indexRate,
 }: LoanAdvancedPanelProps) {
+  const { euribor, market } = rates;
   const spread = Number(form.spread.replace(",", ".")) || 0;
   const composedRate = indexRate + spread / 100;
 
@@ -133,7 +134,12 @@ export function LoanAdvancedPanel({
               <p className="field-hint">
                 Taxa do contrato:{" "}
                 <span className="num">{formatRate(composedRate)}</span>{" "}
-                (indexante + spread).
+                (indexante + spread). Para comparar, a média das novas
+                operações de crédito à habitação em Portugal foi de{" "}
+                <span className="num">{formatRate(market.averageRate)}</span> em{" "}
+                {market.month} (BCE) — essa média junta taxa fixa e variável,
+                por isso não se lhe pode subtrair a Euribor para obter um
+                spread.
               </p>
             </>
           ) : (

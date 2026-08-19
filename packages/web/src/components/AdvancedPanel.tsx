@@ -87,9 +87,11 @@ export function AdvancedPanel({
             error={errors.workScheduleExemption}
             hint={
               <>
-                Retribuição específica de quem trabalha sem horário fixo
-                (<LawReference id="ct-265" />). Soma-se ao vencimento para IRS
-                e para a Segurança Social.
+                <span>
+                  Retribuição específica de quem trabalha sem horário fixo.
+                  Soma-se ao vencimento para IRS e para a Segurança Social.
+                </span>
+                <LawReference id="ct-265" />
               </>
             }
             onChange={(value) => update("workScheduleExemption", value)}
@@ -118,9 +120,12 @@ export function AdvancedPanel({
             error={errors.overtime}
             hint={
               <>
-                Retido a metade da taxa do mês, desde a primeira hora
-                (<LawReference id="cirs-99c-8" />). Não sobe o escalão do
-                salário, mas desconta para a Segurança Social.
+                <span>
+                  Retido a metade da taxa do mês, desde a primeira hora. Não
+                  sobe o escalão do salário, mas desconta para a Segurança
+                  Social.
+                </span>
+                <LawReference id="cirs-99c-8" />
               </>
             }
             onChange={(value) => update("overtime", value)}
@@ -205,11 +210,14 @@ export function AdvancedPanel({
             hint={
               jovemRegime ? (
                 <>
-                  Isenção parcial nos primeiros{" "}
-                  {jovemRegime.exemptionByYear.length} anos de rendimentos do
-                  trabalho, até{" "}
-                  {formatEuro(jovemRegime.capMultiplier * jovemRegime.ias)}{" "}
-                  isentos por ano (<LawReference id="cirs-12b" />).
+                  <span>
+                    Isenção parcial nos primeiros{" "}
+                    {jovemRegime.exemptionByYear.length} anos de rendimentos do
+                    trabalho, até{" "}
+                    {formatEuro(jovemRegime.capMultiplier * jovemRegime.ias)}{" "}
+                    isentos por ano.
+                  </span>
+                  <LawReference id="cirs-12b" />
                 </>
               ) : undefined
             }

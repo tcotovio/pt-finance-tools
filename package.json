@@ -9,7 +9,7 @@
     "build": "npm run build -w @pt-finance-tools/engine && npm run build -w @pt-finance-tools/web",
     "preview": "npm run build && npm run preview -w @pt-finance-tools/web -- --open",
     "lint": "npm run lint --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
+    "test": "npm run build -w @pt-finance-tools/engine && npm run test --workspaces --if-present",
     "typecheck": "npm run build -w @pt-finance-tools/engine && npm run typecheck --workspaces --if-present"
   },
   "engines": {

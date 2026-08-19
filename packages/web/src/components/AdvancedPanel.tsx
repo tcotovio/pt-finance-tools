@@ -22,9 +22,9 @@ import {
 
 const REGION_OPTIONS: readonly SelectOption[] = [
   { value: "continente", label: "Continente" },
-  // Madeira and the Açores have their own tables; not transcribed yet
-  // (PLAN.md Phase 3), and the engine would refuse the calculation.
-  { value: "madeira", label: "Madeira (em breve)", disabled: true },
+  { value: "madeira", label: "Madeira" },
+  // The Açores despacho publishes its tables as images rather than text, so
+  // they are not transcribed yet and the engine would refuse the calculation.
   { value: "acores", label: "Açores (em breve)", disabled: true },
 ];
 
@@ -241,7 +241,7 @@ export function AdvancedPanel({
             label="Onde tem residência fiscal"
             value={form.region}
             options={REGION_OPTIONS}
-            hint="As regiões autónomas têm tabelas próprias — ainda por transcrever."
+            hint="A Madeira tem tabelas próprias, com taxas mais baixas. Os Açores ainda estão por transcrever."
             onChange={(value) => update("region", value as Region)}
           />
         </section>

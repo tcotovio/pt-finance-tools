@@ -113,7 +113,7 @@ liquido  = bruto − retencao − seg_social            // seg_social = 11% (emp
 Everything time-varying is a versioned dataset keyed by **effective date**, so
 historical and current rules coexist and correctness is date-aware.
 
-- IRS withholding tables — per year, per region. No public API exists — the Autoridade Tributária publishes these as PDFs each year via despacho (e.g. 2026 tables via Despacho 236-A/2025). **Manually transcribe from the official PDF, then cross-check against an independent source** (e.g. Doutor Finanças' published tables or the Finanças simulator) before trusting the data. Revisit PDF-parsing automation only once the document's layout has proven stable across multiple years.
+- IRS withholding tables — per year, per region. Each region publishes its own despacho: Continente via the AT (DR), Madeira via the Secretaria Regional das Finanças (JORAM), Açores via DR. Format varies and matters — the Açores 2026 tables are images, which defeats mechanical extraction entirely. No public API exists — the Autoridade Tributária publishes these as PDFs each year via despacho (e.g. 2026 tables via Despacho 236-A/2025). **Manually transcribe from the official PDF, then cross-check against an independent source** (e.g. Doutor Finanças' published tables or the Finanças simulator) before trusting the data. Revisit PDF-parsing automation only once the document's layout has proven stable across multiple years.
 - IAS — per year (drives the IRS Jovem cap and more).
 - IRS Jovem parameters — schedule, cap multiplier, at-source mechanism per despacho.
 - Banco de Portugal macroprudential parameters — for the loan phase (see §7).
@@ -243,7 +243,8 @@ These are exactly the parameters that changed this month — which is why they l
 
 ### Phase 3 — Long tail (opt-in scope)
 - [ ] Disability tables
-- [ ] Açores / Madeira parity
+- [x] **Madeira** — Despacho n.º 19/2026 (JORAM II Série n.º 13, Supl. 4) transcribed and selectable. Its despacho carries the same alínea h) (−1pp for 3+ dependents) and the same IRS Jovem ÷14 rule as the Continente's, so no logic changed; only the rates differ (exemption to 980 €, lower rates throughout). Axis A passes; **Axis B has no source** — no public simulator found covering Madeira — so the dataset ships `verified: false` and the UI shows "Dados por verificar"
+- [ ] **Açores — blocked on the source format.** Despacho n.º 1179/2026 (DR II Série n.º 23) publishes its tables as **images**, not text: the table pages carry only the captions as text runs, and the PDF holds 11 image objects. The `pdf2json` route used for the Continente and Madeira cannot extract a single bracket. Options, none free: OCR the images (needs an independent second source anyway, since OCR of numeric tables is exactly where transcription errors hide), transcribe visually from a rendered page and cross-check against another publisher's transcription, or wait for a machine-readable republication
 - [ ] (Maybe) separate "annual IRS estimate" mode
 - [ ] EN localization
 

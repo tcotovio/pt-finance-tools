@@ -29,8 +29,10 @@ export function EmployerCost({ employer }: EmployerCostProps) {
             <dt>
               Segurança Social — entidade empregadora
               <span className="line-note">
-                {formatRate(employer.socialSecurityRate)} sobre a
-                remuneração sujeita a contribuições,{" "}
+                <span>
+                  {formatRate(employer.socialSecurityRate)} sobre a remuneração
+                  sujeita a contribuições
+                </span>
                 <LawReference id="cc-53" />
               </span>
             </dt>

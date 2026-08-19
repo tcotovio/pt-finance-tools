@@ -171,9 +171,24 @@ wins; `wage/twelfths.test.ts` records the gap explicitly rather than hiding
 it. Worth re-checking against the Finanças simulator if that ever becomes
 reachable.
 
-Related, and not yet built: **n.º 8** sets withholding on *trabalho
-suplementar* at 50 % of the rate applying to that month's remuneração —
-the same "separate remuneração" shape, a candidate for the next pass.
+### 6.2 Resolved — trabalho suplementar
+
+**n.º 8** halves the rate, and despacho 233-A/2026 §5.f says exactly which
+rate: *"é aplicada a taxa efetiva mensal de retenção na fonte correspondente
+a 50 % da que resultou, após a aplicação da taxa marginal máxima, da parcela
+a abater e, se aplicável, da parcela adicional a abater por dependente, para
+a remuneração mensal [...] referente ao mês"*. So the reference is the
+**effective** rate — withholding ÷ remuneração, after both parcelas — not the
+bracket's marginal rate, and it is the salary's rate: overtime never enters
+the salary's own bracket lookup. It is contributory for Segurança Social.
+
+Lei n.º 45-A/2024 removed the earlier "a partir da 101.ª hora" threshold, so
+the halving applies from the first hour and no cumulative-hour counter is
+needed — which is what kept this cheap.
+
+Under IRS Jovem, despacho §5.g caps the year's *accumulated* monthly
+exemptions at the annual limit ÷ 14, so overtime shares what is left of the
+month's ceiling after the salary rather than carrying a slot of its own.
 
 ---
 
@@ -210,6 +225,7 @@ These are exactly the parameters that changed this month — which is why they l
 - [x] Case matrix: marital / titulares / dependents (unmarried, married single-earner, married dual-earner)
 - [x] Meal allowance (cash vs card) — per-day ceilings as versioned data (10,46 € card / 6,15 € cash for 2026); excess enters both the IRS withholding base and the Segurança Social base. 4 golden scenarios vs the simulator
 - [x] Isenção de horário de trabalho — ordinary remuneration, so it enters both the IRS withholding base and the Segurança Social base. Whether the subsídios include it is contractual (CT art. 264.º/265.º is not decisive), so the UI asks rather than the engine assuming: the answer is expressed through the existing `subsidyAmount` input
+- [x] Trabalho suplementar — autonomous withholding at half the month's effective rate (CIRS art. 99.º-C n.º 8 + despacho §5.f); see §6.2
 - [x] Duodécimos toggle — subsídios de férias/Natal in twelfths, withheld autonomously per CIRS art. 99.º-C n.ºs 5–6; see §6.1
 - [x] IRS Jovem modifier — schedule and 55 × IAS cap from CIRS art. 12.º-B, at-source mechanism from art. 99.º-F n.º 4, per-payment ceiling (÷14) from despacho §5.g. 7 golden scenarios vs the IRS Jovem simulator, incl. two where the cap bites
 - [~] Golden tests vs official despacho formula (8 scenarios) — note these are circular by construction (expectations derive from the same transcribed numbers), which is why the Axis A/B cross-checks above exist

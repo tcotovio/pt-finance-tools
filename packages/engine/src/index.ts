@@ -44,6 +44,8 @@ export type {
 export {
   computeNetWage,
   splitMealAllowance,
+  overtimeDetail,
+  OVERTIME_RATE_FACTOR,
   twelfthsDetail,
   irsJovemExemption,
   exemptionFraction,
@@ -58,6 +60,7 @@ export {
   selectBracket,
 } from "./wage/index.js";
 export type {
+  OvertimeDetail,
   WithholdingDetail,
   MealAllowanceSplit,
   TwelfthsDetail,

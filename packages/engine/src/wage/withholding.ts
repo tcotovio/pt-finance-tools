@@ -9,6 +9,7 @@ import type {
   WithholdingDataset,
 } from "../types.js";
 import { irsJovemExemption } from "./irs-jovem.js";
+import { overtimeDetail, OVERTIME_RATE_FACTOR } from "./overtime.js";
 import { splitMealAllowance } from "./meal.js";
 import { twelfthsDetail } from "./twelfths.js";
 import {
@@ -53,6 +54,10 @@ export function computeNetWage(
       `workScheduleExemption must not be negative, got ${workScheduleExemption}.`,
     );
   }
+  const overtimePaid = input.overtime ?? 0;
+  if (overtimePaid < 0) {
+    throw new Error(`overtime must not be negative, got ${overtimePaid}.`);
+  }
 
   // Meal allowance above the daily ceiling is ordinary remuneration: it
   // raises the bracket lookup, the withholding and the contribution alike.
@@ -81,8 +86,13 @@ export function computeNetWage(
   );
   // IRS Jovem: art. 99.º-F n.º 4 takes the rate from the FULL remuneration —
   // exempt part included — and levies it only on the non-exempt part.
+  // The "taxa efetiva mensal" — withholding over remuneração, after both
+  // parcelas. Both IRS Jovem (art. 99.º-F n.º 4) and trabalho suplementar
+  // (despacho §5.f) are defined against it, so it is computed unconditionally.
+  const monthlyEffectiveRate =
+    taxableBase > 0 ? detail.withholding / taxableBase : 0;
+
   let salaryExemption;
-  let salaryEffectiveRate = 0;
   let salaryWithholding = detail.withholding;
   if (input.irsJovem) {
     if (!jovemRegime) {
@@ -90,14 +100,29 @@ export function computeNetWage(
         "IRS Jovem was requested but no IrsJovemRegime dataset was passed.",
       );
     }
-    salaryEffectiveRate =
-      taxableBase > 0 ? detail.withholding / taxableBase : 0;
     salaryExemption = irsJovemExemption(
       taxableBase,
       input.irsJovem.yearOfIncome,
       jovemRegime,
     );
-    salaryWithholding = salaryEffectiveRate * salaryExemption.taxable;
+    salaryWithholding = monthlyEffectiveRate * salaryExemption.taxable;
+  }
+
+  // Trabalho suplementar: autonomous like the subsídios, so it never enters the
+  // salary's bracket lookup — but it is contributory, and under IRS Jovem it
+  // shares what is left of the month's exemption ceiling (despacho §5.g).
+  let overtime;
+  if (overtimePaid > 0) {
+    overtime = overtimeDetail(
+      overtimePaid,
+      monthlyEffectiveRate,
+      salaryExemption
+        ? {
+            fraction: salaryExemption.fraction,
+            capHeadroom: salaryExemption.cap - salaryExemption.exempt,
+          }
+        : undefined,
+    );
   }
 
   // Subsídios in duodécimos: withheld autonomously (art. 99.º-C n.º 5), but
@@ -115,26 +140,32 @@ export function computeNetWage(
     );
   }
 
-  const irsWithholding = salaryWithholding + (twelfths?.withholding ?? 0);
+  const irsWithholding =
+    salaryWithholding +
+    (overtime?.withholding ?? 0) +
+    (twelfths?.withholding ?? 0);
 
   // The baseline the exemption is measured against: what this month would
   // have withheld under the ordinary rules, salary and duodécimos alike.
   // Assembled here, after the duodécimos, so the relief covers both.
   const withholdingWithoutExemption =
-    detail.withholding + (twelfths?.withholdingWithoutExemption ?? 0);
+    detail.withholding +
+    monthlyEffectiveRate * OVERTIME_RATE_FACTOR * overtimePaid +
+    (twelfths?.withholdingWithoutExemption ?? 0);
   const jovem = salaryExemption
     ? {
         fraction: salaryExemption.fraction,
         exempt: salaryExemption.exempt,
         cap: salaryExemption.cap,
         capped: salaryExemption.capped,
-        effectiveRate: salaryEffectiveRate,
+        effectiveRate: monthlyEffectiveRate,
         withholdingWithoutExemption,
         relief: withholdingWithoutExemption - irsWithholding,
       }
     : undefined;
 
-  const contributionBase = taxableBase + (twelfths?.paid ?? 0);
+  const contributionBase =
+    taxableBase + overtimePaid + (twelfths?.paid ?? 0);
   const socialSecurity = socialSecurityContribution(contributionBase);
 
   // The employer contributes on the same base, at its own rate; the exempt
@@ -143,6 +174,7 @@ export function computeNetWage(
   const remunerationPaid =
     input.grossMonthly +
     workScheduleExemption +
+    overtimePaid +
     (meal?.paid ?? 0) +
     (twelfths?.paid ?? 0);
   const employerSocialSecurity =
@@ -150,6 +182,7 @@ export function computeNetWage(
   const netMonthly =
     input.grossMonthly +
     workScheduleExemption +
+    overtimePaid +
     (meal?.paid ?? 0) +
     (twelfths?.paid ?? 0) -
     irsWithholding -
@@ -170,6 +203,18 @@ export function computeNetWage(
       : {}),
     taxableBase,
     ...(jovem ? { irsJovem: jovem } : {}),
+    ...(overtime
+      ? {
+          overtime: {
+            paid: overtime.paid,
+            rate: overtime.rate,
+            withholding: overtime.withholding,
+            ...(overtime.exempt !== undefined
+              ? { exempt: overtime.exempt }
+              : {}),
+          },
+        }
+      : {}),
     ...(twelfths
       ? {
           twelfths: {

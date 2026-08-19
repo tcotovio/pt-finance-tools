@@ -12,6 +12,8 @@ export {
 } from "./segsocial.js";
 export { selectTable, selectBracket } from "./resolver.js";
 export { splitMealAllowance } from "./meal.js";
+export { overtimeDetail, OVERTIME_RATE_FACTOR } from "./overtime.js";
+export type { OvertimeDetail, OvertimeExemption } from "./overtime.js";
 export { twelfthsDetail } from "./twelfths.js";
 export {
   irsJovemExemption,

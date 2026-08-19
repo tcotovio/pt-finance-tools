@@ -104,6 +104,12 @@ export interface WageInput {
    */
   workScheduleExemption?: number;
   /**
+   * Remuneração por trabalho suplementar paid this month, in euros. Withheld
+   * autonomously at half the month's effective rate (CIRS art. 99.º-C n.º 8,
+   * despacho 233-A/2026 §5.f) and contributory for Segurança Social.
+   */
+  overtime?: number;
+  /**
    * Meal allowance for the month. Omit when the worker receives none — the
    * exempt portion changes neither the withholding nor the contribution.
    */
@@ -265,8 +271,22 @@ export interface WageResult {
     exempt?: number;
   };
   /**
-   * Total IRS retenção na fonte withheld this month — salary plus any
-   * duodécimos, which are computed separately and summed only here.
+   * Trabalho suplementar paid and withheld this month. Absent when none was
+   * paid.
+   */
+  overtime?: {
+    /** Amount paid this month. */
+    paid: number;
+    /** The rate levied: half the month's effective rate. */
+    rate: number;
+    /** IRS withheld on it, computed autonomously. */
+    withholding: number;
+    /** The part exempted by IRS Jovem, if any. */
+    exempt?: number;
+  };
+  /**
+   * Total IRS retenção na fonte withheld this month — salary, duodécimos and
+   * trabalho suplementar, each computed separately and summed only here.
    */
   irsWithholding: number;
   /** Employee Social Security contribution (Segurança Social). */

@@ -11,7 +11,7 @@
 // its `netMonthly` and the total shown here is at most a cent or two.
 
 import type { WageResult } from "@pt-finance-tools/engine";
-import { formatEuro, formatWholePercent } from "./format.js";
+import { formatEuro, formatPercent, formatWholePercent } from "./format.js";
 import type { LawReferenceId } from "./law.js";
 
 /** Whether a line adds to, subtracts from, or gives back on the total. */
@@ -106,6 +106,18 @@ export function buildBreakdown(result: WageResult): Breakdown {
     });
   }
 
+  if (result.overtime) {
+    lines.push({
+      key: "overtime",
+      label: "Trabalho suplementar",
+      amount: cents(result.overtime.paid),
+      kind: "earning",
+      additive: true,
+      note: `retido a ${formatPercent(result.overtime.rate)}, metade da taxa do mês`,
+      reference: "cirs-99c-8",
+    });
+  }
+
   if (result.mealAllowance) {
     const { paid, exempt, taxable, dailyLimit } = result.mealAllowance;
     lines.push({
@@ -166,7 +178,13 @@ export function buildBreakdown(result: WageResult): Breakdown {
     });
   }
 
-  const taxedRemuneration = result.taxableBase + (result.twelfths?.paid ?? 0);
+  // Everything the month's IRS and contributions were actually levied on:
+  // salary base plus the two autonomous remunerações. Leaving either out
+  // understates the base in the note and overstates the effective rate.
+  const taxedRemuneration =
+    result.taxableBase +
+    (result.overtime?.paid ?? 0) +
+    (result.twelfths?.paid ?? 0);
 
   lines.push({
     key: "social-security",

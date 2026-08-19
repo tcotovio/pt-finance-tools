@@ -172,6 +172,19 @@
   color: var(--text-muted);
 }
 
+/* Same reason as .line-note: an inline citation cannot be broken, so it gets
+   its own row rather than orphaning the punctuation before it. */
+.field-hint:has(.law-ref) {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.field-hint .law-ref {
+  text-align: left;
+}
+
 .field-error {
   font-size: 0.8125rem;
   color: var(--negative);
@@ -428,9 +441,20 @@
 }
 
 .line-note {
+  /* The citation is a <button>, which the browser will not break across lines,
+     so an inline one forces a ragged early wrap in a narrow column. Giving it
+     its own row makes the break deliberate instead of accidental. */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
   font-size: 0.75rem;
   font-weight: 400;
   color: var(--text-muted);
+}
+
+.line-note .law-ref {
+  text-align: left;
 }
 
 .line.is-earning dd {

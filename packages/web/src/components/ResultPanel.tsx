@@ -75,8 +75,7 @@ function ResultBody({ result }: { result: WageResult }) {
               {line.label}
               {line.note || line.reference ? (
                 <span className="line-note">
-                  {line.note}
-                  {line.note && line.reference ? ", " : null}
+                  {line.note ? <span>{line.note}</span> : null}
                   {line.reference ? <LawReference id={line.reference} /> : null}
                 </span>
               ) : null}

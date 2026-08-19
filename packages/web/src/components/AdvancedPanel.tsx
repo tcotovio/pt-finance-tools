@@ -71,7 +71,7 @@ export function AdvancedPanel({
       <summary>
         <span className="advanced-title">O meu caso</span>
         <span className="advanced-sub">
-          Isenção de horário, subsídio de alimentação, duodécimos, IRS Jovem
+          Isenção de horário, trabalho suplementar, subsídios, IRS Jovem
         </span>
       </summary>
 
@@ -87,9 +87,11 @@ export function AdvancedPanel({
             error={errors.workScheduleExemption}
             hint={
               <>
-                Retribuição específica de quem trabalha sem horário fixo
-                (<LawReference id="ct-265" />). Soma-se ao vencimento para IRS
-                e para a Segurança Social.
+                <span>
+                  Retribuição específica de quem trabalha sem horário fixo.
+                  Soma-se ao vencimento para IRS e para a Segurança Social.
+                </span>
+                <LawReference id="ct-265" />
               </>
             }
             onChange={(value) => update("workScheduleExemption", value)}
@@ -105,6 +107,29 @@ export function AdvancedPanel({
               hint="Depende do contrato ou do IRCT aplicável. Afeta o valor dos subsídios de férias e de Natal, e portanto os duodécimos."
             />
           ) : null}
+        </section>
+
+        <section className="field-group">
+          <h3 className="group-title">Trabalho suplementar</h3>
+          <TextField
+            id="overtime"
+            label="Valor pago este mês"
+            suffix="€"
+            placeholder="0,00"
+            value={form.overtime}
+            error={errors.overtime}
+            hint={
+              <>
+                <span>
+                  Retido a metade da taxa do mês, desde a primeira hora. Não
+                  sobe o escalão do salário, mas desconta para a Segurança
+                  Social.
+                </span>
+                <LawReference id="cirs-99c-8" />
+              </>
+            }
+            onChange={(value) => update("overtime", value)}
+          />
         </section>
 
         <section className="field-group">
@@ -185,11 +210,14 @@ export function AdvancedPanel({
             hint={
               jovemRegime ? (
                 <>
-                  Isenção parcial nos primeiros{" "}
-                  {jovemRegime.exemptionByYear.length} anos de rendimentos do
-                  trabalho, até{" "}
-                  {formatEuro(jovemRegime.capMultiplier * jovemRegime.ias)}{" "}
-                  isentos por ano (<LawReference id="cirs-12b" />).
+                  <span>
+                    Isenção parcial nos primeiros{" "}
+                    {jovemRegime.exemptionByYear.length} anos de rendimentos do
+                    trabalho, até{" "}
+                    {formatEuro(jovemRegime.capMultiplier * jovemRegime.ias)}{" "}
+                    isentos por ano.
+                  </span>
+                  <LawReference id="cirs-12b" />
                 </>
               ) : undefined
             }

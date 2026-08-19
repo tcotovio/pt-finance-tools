@@ -1,0 +1,66 @@
+{
+  "dataSets": [
+    {
+      "series": {
+        "0:0:0:0:0:0:0": {
+          "attributes": [
+            0,
+            null,
+            0,
+            null,
+            null,
+            0,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            0,
+            null,
+            null,
+            0,
+            0,
+            0,
+            0
+          ],
+          "observations": {
+            "0": [
+              2.4253913,
+              0,
+              0,
+              null,
+              null
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "structure": {
+    "dimensions": {
+      "observation": [
+        {
+          "id": "TIME_PERIOD",
+          "name": "Time period or range",
+          "role": "time",
+          "values": [
+            {
+              "id": "2026-07",
+              "name": "2026-07",
+              "start": "2026-07-01T00:00:00.000+02:00",
+              "end": "2026-07-31T23:59:59.999+02:00"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

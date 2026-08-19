@@ -117,7 +117,7 @@ historical and current rules coexist and correctness is date-aware.
 - IAS — per year (drives the IRS Jovem cap and more).
 - IRS Jovem parameters — schedule, cap multiplier, at-source mechanism per despacho.
 - Banco de Portugal macroprudential parameters — for the loan phase (see §7).
-- Euribor — live feed with cached fallback (loan phase); never hardcoded.
+- Euribor — live feed (ECB Data Portal) with a browser cache and a bundled snapshot as last resort; never hardcoded. Monthly averages, because Instrução 23/2023 art. 1.º n.º 4 defines the index as the previous month's simple average of daily quotes — the ECB publishes exactly that series, and the equivalence is written down in the dataset rather than left implicit.
 
 The engine selects the right dataset by date. **Adding a year = a data PR with no logic change.**
 
@@ -251,10 +251,11 @@ These are exactly the parameters that changed this month — which is why they l
 - [x] Forward: French amortization — instalment, totals, and the full `mapa de amortização`. Anchored on published annuities (200 000 @ 6 %/30 y = 1 199,10) and on structural invariants, not on a re-run of its own formula
 - [x] Reverse solver: max loan from salary — stressed DSTI, LTV on the lower of price/appraisal, maturity capped by the older borrower's age, and the weighted past-70 income reduction. Reports **which constraint binds** rather than only the minimum, since the remedy differs entirely (earn more / bigger deposit / longer term)
 - [ ] Fold existing mortgage + consumer-loan sims into `@engine` — **blocked**: the sims live outside this repo and no path/URL has been supplied. The forward direction was written from the statute-level formula instead, so nothing downstream waits on it; folding them in is now a reconciliation exercise (diff their output against `amortize`) rather than a port
-- [ ] Euribor live feed + cached fallback — must expose the **previous month's simple average** (Instrução 23/2023 art. 1.º n.º 4), not a spot rate
+- [x] Euribor live feed + cached fallback — ECB Data Portal (`FM.M.U2.EUR.RT.MM.EURIBOR*.HSTA`), which publishes **monthly averages** directly, so no daily-quote averaging is needed. It sends `access-control-allow-origin: *`, so the fetch runs from the browser with no proxy and no backend — the privacy claim is untouched, since the request carries nothing about the user. Order of preference: cache for the right month → live fetch → snapshot compiled into the bundle; the UI names which one it used. Usability is decided by **month, not TTL** (`isCurrentFor`): a snapshot from the wrong month is wrong however fresh it is
+- [x] Fixed vs variable rate — Instrução 23/2023 art. 1.º prescribes a shock for *taxa variável* (n.º 1) and *taxa mista* (n.º 2) only, and Recomendação art. 6.º n.º 2 defers to it entirely, so a fully fixed contract is tested at its own rate. Recorded as a reading in `LoanRateType`: the statutes define the shock by scope rather than stating the exemption outright. *Taxa mista* stays unmodelled — n.º 2 needs the length of the fixed period as an input
 - [ ] **Axis B for the loan side**: end-to-end cross-check vs bank simulators. Until it passes, `BDP_2026.verified` and `INTEREST_RATE_SHOCK_2023.verified` stay `false` and `MaxLoanResult.parametersVerified` propagates that to the UI
 - [x] Loan UI — rendimento + preço + idade + prazo on the surface, taxa/finalidade/outros créditos/avaliação behind "O meu caso". The result names **which limit binds** and what moves it, since being capped by income and by the property's value call for opposite responses. Shows the deposit implied, the real effort rate (kept distinct from the supervisory DSTI, which sits on 45 % by construction), and the two ceilings as a shared-scale comparison. Loan amounts are floored to the euro — a ceiling rounded up is a ceiling overstated
-- [ ] Default spread / rate assumption — the form currently starts on a placeholder 3,2 % labelled as an estimate. Resolving §10.1 and wiring the Euribor feed replaces it
+- [~] Default spread — the index is now live, but the **spread on top of it is still a guess** (1,0 %, labelled in the UI as an assumption to replace with the bank's own). Unlike everything else in the project it has no source: no statute sets it and no public feed publishes a representative figure. §10.1 stays open until there is either a defensible source or an explicit decision to keep a labelled placeholder
 
 ### Phase 3 — Long tail (opt-in scope)
 - [ ] Disability tables

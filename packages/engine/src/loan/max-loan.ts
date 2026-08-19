@@ -68,8 +68,12 @@ export function maxLoan(
   const effectiveTerm = Math.min(termYears, ceiling);
   const months = Math.round(effectiveTerm * 12);
 
-  // 1. DSTI.
-  const shock = shockForTerm(effectiveTerm, shockTable);
+  // 1. DSTI. The shock only exists for contracts whose rate can move:
+  // Instrução 23/2023 prescribes one for taxa variável and taxa mista, and
+  // Recomendação art. 6.º n.º 2 defers to it entirely, so a fully fixed
+  // contract is tested at its own rate. See `LoanRateType`.
+  const rateType = input.rateType ?? "variable";
+  const shock = rateType === "fixed" ? 0 : shockForTerm(effectiveTerm, shockTable);
   const stressedRate = annualRate + shock;
   const income = adjustedIncome(borrower, effectiveTerm, params);
   const existing = borrower.existingMonthlyDebt ?? 0;
@@ -103,6 +107,7 @@ export function maxLoan(
       paymentBudget,
       stressedRate,
       shock,
+      rateType,
       maxLoan: dstiMax,
     },
     ltv: {

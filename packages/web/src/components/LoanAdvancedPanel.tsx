@@ -2,16 +2,22 @@
 // most people either do not have yet (an appraisal) or would rather not think
 // about first (their other credit).
 
-import type { LoanPurpose } from "@pt-finance-tools/engine";
+import type {
+  EuriborTenor,
+  LoanPurpose,
+  LoanRateType,
+} from "@pt-finance-tools/engine";
 import type {
   LoanForm,
   LoanFormErrors,
   UpdateLoanForm,
 } from "../lib/loan-form.js";
-import { DEFAULT_ANNUAL_RATE } from "../lib/loan-form.js";
+import type { EuriborState } from "../lib/euribor-feed.js";
+import { formatRate } from "../lib/format.js";
 import { LawReference } from "./LawReference.js";
 import {
   SegmentedField,
+  SelectField,
   TextField,
   ToggleField,
   type SelectOption,
@@ -22,23 +28,48 @@ const PURPOSE_OPTIONS: readonly SelectOption[] = [
   { value: "other", label: "Outra finalidade" },
 ];
 
+const RATE_TYPE_OPTIONS: readonly SelectOption[] = [
+  { value: "variable", label: "Variável" },
+  { value: "fixed", label: "Fixa" },
+];
+
+const TENOR_OPTIONS: readonly SelectOption[] = [
+  { value: "3m", label: "Euribor 3 meses" },
+  { value: "6m", label: "Euribor 6 meses" },
+  { value: "12m", label: "Euribor 12 meses" },
+];
+
+/** Where the index came from, in words the user can act on. */
+const ORIGIN_LABEL: Record<EuriborState["origin"], string> = {
+  live: "valor do Banco Central Europeu",
+  cache: "valor guardado neste dispositivo",
+  bundled: "valor incluído na aplicação",
+};
+
 interface LoanAdvancedPanelProps {
   form: LoanForm;
   errors: LoanFormErrors;
   update: UpdateLoanForm;
+  euribor: EuriborState;
+  indexRate: number;
 }
 
 export function LoanAdvancedPanel({
   form,
   errors,
   update,
+  euribor,
+  indexRate,
 }: LoanAdvancedPanelProps) {
+  const spread = Number(form.spread.replace(",", ".")) || 0;
+  const composedRate = indexRate + spread / 100;
+
   return (
     <details className="advanced">
       <summary>
         <span className="advanced-title">O meu caso</span>
         <span className="advanced-sub">
-          Taxa, finalidade, outros créditos, avaliação
+          Taxa e indexante, finalidade, outros créditos, avaliação
         </span>
       </summary>
 
@@ -53,25 +84,69 @@ export function LoanAdvancedPanel({
             onChange={(value) => update("purpose", value as LoanPurpose)}
             hint="Habitação própria e permanente financia até 90 % do imóvel; as restantes finalidades até 80 %."
           />
-          <TextField
-            id="loan-rate"
-            label="Taxa de juro anual"
-            suffix="%"
-            value={form.annualRate}
-            error={errors.annualRate}
+          <SegmentedField
+            name="loan-rate-type"
+            legend="Tipo de taxa"
+            value={form.rateType}
+            options={RATE_TYPE_OPTIONS}
+            onChange={(value) => update("rateType", value as LoanRateType)}
             hint={
               <>
                 <span>
-                  Euribor + spread. O valor por omissão ({DEFAULT_ANNUAL_RATE} %)
-                  é uma estimativa, não uma proposta: substitua-o pela taxa que
-                  o banco lhe indicar. A taxa de esforço é depois testada com
-                  uma taxa agravada.
+                  Só a taxa variável é testada com uma subida do indexante — na
+                  taxa fixa não há indexante que possa subir, por isso a taxa
+                  de esforço é calculada à taxa do contrato.
                 </span>
                 <LawReference id="instrucao-23-2023" />
               </>
             }
-            onChange={(value) => update("annualRate", value)}
           />
+
+          {form.rateType === "variable" ? (
+            <>
+              <SelectField
+                id="loan-tenor"
+                label="Indexante"
+                value={form.tenor}
+                options={TENOR_OPTIONS}
+                onChange={(value) => update("tenor", value as EuriborTenor)}
+                hint={
+                  <span>
+                    Média de {euribor.snapshot.month}:{" "}
+                    <span className="num">{formatRate(indexRate)}</span> —{" "}
+                    {ORIGIN_LABEL[euribor.origin]}.
+                    {euribor.current
+                      ? " É o mês que a lei manda usar."
+                      : " Ainda não é o mês exigido pela lei, por isso o resultado é uma estimativa."}
+                  </span>
+                }
+              />
+              <TextField
+                id="loan-spread"
+                label="Spread"
+                suffix="%"
+                value={form.spread}
+                error={errors.spread}
+                hint="A margem do banco sobre o indexante. O valor por omissão é uma estimativa, não uma proposta: substitua-o pelo spread que lhe for indicado."
+                onChange={(value) => update("spread", value)}
+              />
+              <p className="field-hint">
+                Taxa do contrato:{" "}
+                <span className="num">{formatRate(composedRate)}</span>{" "}
+                (indexante + spread).
+              </p>
+            </>
+          ) : (
+            <TextField
+              id="loan-rate"
+              label="Taxa de juro anual"
+              suffix="%"
+              value={form.annualRate}
+              error={errors.annualRate}
+              hint="A taxa fixada no contrato, para todo o prazo."
+              onChange={(value) => update("annualRate", value)}
+            />
+          )}
         </section>
 
         <section className="field-group">

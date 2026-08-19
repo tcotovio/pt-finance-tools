@@ -3,7 +3,13 @@
 // Same shape as the wage form: raw strings so the user can type freely, one
 // pure place for validation and conversion.
 
-import type { LoanPurpose, MaxLoanInput } from "@pt-finance-tools/engine";
+import {
+  contractRate,
+  type EuriborTenor,
+  type LoanPurpose,
+  type LoanRateType,
+  type MaxLoanInput,
+} from "@pt-finance-tools/engine";
 import { parseAmount } from "./format.js";
 
 export interface LoanForm {
@@ -13,6 +19,13 @@ export interface LoanForm {
   propertyPrice: string;
   termYears: string;
   purpose: LoanPurpose;
+  /** Whether the rate is indexed to Euribor or fixed for the whole term. */
+  rateType: LoanRateType;
+  /** Which Euribor the contract follows, when variable. */
+  tenor: EuriborTenor;
+  /** The bank's margin over the index, as a percentage. */
+  spread: string;
+  /** The whole rate, used only when `rateType` is "fixed". */
   annualRate: string;
   existingDebt: string;
   appraisalValue: string;
@@ -20,14 +33,24 @@ export interface LoanForm {
 }
 
 /**
- * The rate the form starts on, as a percentage.
+ * The spread the form starts on, as a percentage.
  *
- * A placeholder, and labelled as one in the UI: the Euribor feed is not built
- * yet and the spread is PLAN.md open decision §10.1, so this is a plausible
- * 2026 figure rather than a sourced one. It is the single input most worth
- * the user overriding with their actual proposal.
+ * Unlike everything else in this project this number has no source: no
+ * statute sets it and no public feed publishes a representative figure, so it
+ * is a plausible 2026 retail margin and is labelled in the UI as an
+ * assumption to be replaced with the bank's actual proposal. The index it
+ * sits on top of, by contrast, is fetched from the ECB.
  */
+export const DEFAULT_SPREAD = "1,0";
+
+/** The rate the form starts on when the contract is fixed, as a percentage. */
 export const DEFAULT_ANNUAL_RATE = "3,2";
+
+/**
+ * The tenor the form starts on. Euribor 12M is the most common index on new
+ * Portuguese mortgages; 6M and 3M are offered too, hence the choice.
+ */
+export const DEFAULT_TENOR: EuriborTenor = "12m";
 
 export const DEFAULT_LOAN_FORM: LoanForm = {
   income: "",
@@ -35,6 +58,9 @@ export const DEFAULT_LOAN_FORM: LoanForm = {
   propertyPrice: "",
   termYears: "40",
   purpose: "own-permanent-residence",
+  rateType: "variable",
+  tenor: DEFAULT_TENOR,
+  spread: DEFAULT_SPREAD,
   annualRate: DEFAULT_ANNUAL_RATE,
   existingDebt: "",
   appraisalValue: "",
@@ -47,6 +73,8 @@ const MAX_INCOME = 1_000_000;
 const MAX_PRICE = 100_000_000;
 /** Above this the annuity stops meaning anything; also catches "320" for 3,20 %. */
 const MAX_RATE_PERCENT = 25;
+/** A retail spread above this is a typo, not an offer. */
+const MAX_SPREAD_PERCENT = 10;
 const MIN_AGE = 18;
 const MAX_AGE = 100;
 /** The longest any BdP maturity ceiling allows, so anything beyond is a typo. */
@@ -120,6 +148,15 @@ export function validateLoanForm(form: LoanForm): LoanFormErrors {
     }
   }
 
+  if (form.spread.trim() !== "") {
+    const spread = parseAmount(form.spread);
+    if (spread === null || spread < 0) {
+      errors.spread = "Introduza o spread, por exemplo 1,0.";
+    } else if (spread > MAX_SPREAD_PERCENT) {
+      errors.spread = "Spread demasiado alto para uma proposta real.";
+    }
+  }
+
   if (form.existingDebt.trim() !== "") {
     const debt = parseAmount(form.existingDebt);
     if (debt === null || debt < 0) {
@@ -140,13 +177,20 @@ export function validateLoanForm(form: LoanForm): LoanFormErrors {
 export function toMaxLoanInput(
   form: LoanForm,
   assessmentDate: string,
+  indexRate: number,
 ): MaxLoanInput | null {
   const monthlyIncome = parseAmount(form.income);
   const propertyPrice = parseAmount(form.propertyPrice);
   if (monthlyIncome === null || monthlyIncome <= 0) return null;
   if (propertyPrice === null || propertyPrice <= 0) return null;
 
-  const ratePercent = parseAmount(form.annualRate);
+  // Variable: the ECB's index plus the bank's margin. Fixed: whatever the
+  // proposal says, with no index involved.
+  const annualRate =
+    form.rateType === "variable"
+      ? contractRate(indexRate, (parseAmount(form.spread) ?? 0) / 100)
+      : (parseAmount(form.annualRate) ?? 0) / 100;
+
   const input: MaxLoanInput = {
     borrower: {
       monthlyIncome,
@@ -154,8 +198,8 @@ export function toMaxLoanInput(
     },
     purpose: form.purpose,
     propertyPrice,
-    // Entered as a percentage, used as a fraction.
-    annualRate: (ratePercent ?? 0) / 100,
+    annualRate,
+    rateType: form.rateType,
     termYears: parseCount(form.termYears) ?? MAX_TERM_YEARS,
     assessmentDate,
   };

@@ -466,11 +466,38 @@ export interface MaxLoanInput {
   appraisalValue?: number;
   /** Contract annual nominal rate (indexante + spread), as a fraction. */
   annualRate: number;
+  /**
+   * Whether the contract's rate can move. Defaults to `"variable"`, which is
+   * the overwhelmingly common Portuguese mortgage and the conservative
+   * assumption — see {@link LoanRateType} for why it changes the answer.
+   */
+  rateType?: LoanRateType;
   /** Requested term in years, before the age-based ceiling is applied. */
   termYears: number;
   /** ISO `YYYY-MM-DD` of the solvency assessment — selects the parameters. */
   assessmentDate: string;
 }
+
+/**
+ * Whether the contract's rate can move over its life.
+ *
+ * This is not cosmetic: it decides whether the DSTI stress test applies at
+ * all. Instrução 23/2023 art. 1.º prescribes a shock for contracts "a taxa de
+ * juro variável" (n.º 1) and "a taxa de juro mista" (n.º 2) — it says nothing
+ * about a rate fixed for the whole term, because there is no indexante that
+ * could rise. Recomendação art. 6.º n.º 2 in turn defers the shock entirely
+ * to that Instrução, so for a fully fixed contract there is no prescribed
+ * shock to apply and the DSTI is tested at the contract rate.
+ *
+ * Recorded as a reading, with its limits: the statutes define the shock by
+ * scope rather than saying "no shock for fixed rates" in as many words. The
+ * inference is that a rule written for a rising indexante cannot bind a
+ * contract that has none. `"mixed"` (taxa mista) is deliberately absent —
+ * art. 1.º n.º 2 wants the higher of the fixed-period instalment and the
+ * shocked post-fixed one, which needs the length of the fixed period as an
+ * input and is not modelled yet.
+ */
+export type LoanRateType = "variable" | "fixed";
 
 /** Which rule capped the loan. */
 export type BindingConstraint = "dsti" | "ltv";
@@ -496,8 +523,10 @@ export interface MaxLoanResult {
     paymentBudget: number;
     /** Rate the budget was converted at: contract rate + shock. */
     stressedRate: number;
-    /** Shock added, in absolute rate terms. */
+    /** Shock added, in absolute rate terms; 0 for a fixed-rate contract. */
     shock: number;
+    /** The rate type the shock decision was made on. */
+    rateType: LoanRateType;
     /** Loan the budget supports at the stressed rate. */
     maxLoan: number;
   };
@@ -519,4 +548,24 @@ export interface MaxLoanResult {
   };
   /** Whether both parameter sets have been independently cross-checked. */
   parametersVerified: boolean;
+}
+
+/** Euribor tenors Portuguese mortgages index to. */
+export type EuriborTenor = "3m" | "6m" | "12m";
+
+/**
+ * A month's Euribor averages, one per tenor.
+ *
+ * Monthly rather than spot by law, not by convenience: Instrução 23/2023
+ * art. 1.º n.º 4 requires "a média aritmética simples das cotações diárias no
+ * mês anterior ao da realização da avaliação da solvabilidade".
+ */
+export interface EuriborSnapshot {
+  /** The month the averages are for, as `YYYY-MM`. */
+  month: string;
+  /** Average rate per tenor, as a fraction (0.024253913 = 2,4253913 %). */
+  rates: Record<EuriborTenor, number>;
+  source: string;
+  /** ISO date the values were retrieved, for staleness reporting. */
+  retrievedAt: string;
 }

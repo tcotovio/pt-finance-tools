@@ -70,6 +70,9 @@ export type {
   MaxLoanInput,
   BindingConstraint,
   MaxLoanResult,
+  LoanRateType,
+  EuriborTenor,
+  EuriborSnapshot,
 } from "./types.js";
 
 export {
@@ -110,6 +113,10 @@ export {
   shockForTerm,
   maxLoan,
   stressedDsti,
+  referenceMonth,
+  isCurrentFor,
+  euriborRate,
+  contractRate,
 } from "./loan/index.js";
 
 export {
@@ -124,4 +131,6 @@ export {
   IRS_JOVEM_2026,
   BDP_2026,
   INTEREST_RATE_SHOCK_2023,
+  EURIBOR_2026_07,
+  EURIBOR_FALLBACK,
 } from "./data/index.js";

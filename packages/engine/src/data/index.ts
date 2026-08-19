@@ -1,7 +1,9 @@
 // Registry of versioned withholding datasets + date-aware lookup.
 
 import type {
+  InterestRateShock,
   IrsJovemRegime,
+  MacroprudentialParameters,
   MealAllowanceLimits,
   Region,
   WithholdingDataset,
@@ -10,6 +12,8 @@ import { CONTINENTE_2026 } from "./continente-2026.js";
 import { MADEIRA_2026 } from "./madeira-2026.js";
 import { MEAL_ALLOWANCE_2026 } from "./meal-allowance-2026.js";
 import { IRS_JOVEM_2026 } from "./irs-jovem-2026.js";
+import { BDP_2026 } from "./bdp-2026.js";
+import { INTEREST_RATE_SHOCK_2023 } from "./interest-rate-shock-2023.js";
 
 /** All datasets known to the engine. Add a tax year by adding to this list. */
 const DATASETS: readonly WithholdingDataset[] = [
@@ -81,9 +85,53 @@ export function getIrsJovemRegime(referenceDate: string): IrsJovemRegime {
   return regime;
 }
 
+/**
+ * Banco de Portugal macroprudential parameters, newest first. Keyed on the
+ * date of the *solvency assessment* (Recomendação art. 11.º), not the date
+ * the contract is signed.
+ */
+const MACROPRUDENTIAL: readonly MacroprudentialParameters[] = [BDP_2026];
+
+/** The macroprudential parameters in effect on `assessmentDate`. Throws if none. */
+export function getMacroprudentialParameters(
+  assessmentDate: string,
+): MacroprudentialParameters {
+  const params = MACROPRUDENTIAL.filter(
+    (p) => p.effectiveFrom <= assessmentDate,
+  ).sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? 1 : -1))[0];
+
+  if (!params) {
+    throw new Error(
+      `No macroprudential parameters effective on or before ${assessmentDate}. ` +
+        "Assessments before 2026-08-01 fall under the 2018 Recomendação, which " +
+        "is not yet modelled.",
+    );
+  }
+  return params;
+}
+
+/** DSTI interest-rate shock tables, newest first. */
+const SHOCKS: readonly InterestRateShock[] = [INTEREST_RATE_SHOCK_2023];
+
+/** The interest-rate shock in effect on `assessmentDate`. Throws if none. */
+export function getInterestRateShock(assessmentDate: string): InterestRateShock {
+  const shock = SHOCKS.filter((s) => s.effectiveFrom <= assessmentDate).sort(
+    (a, b) => (a.effectiveFrom < b.effectiveFrom ? 1 : -1),
+  )[0];
+
+  if (!shock) {
+    throw new Error(
+      `No interest rate shock effective on or before ${assessmentDate}.`,
+    );
+  }
+  return shock;
+}
+
 export {
   CONTINENTE_2026,
   MADEIRA_2026,
   MEAL_ALLOWANCE_2026,
   IRS_JOVEM_2026,
+  BDP_2026,
+  INTEREST_RATE_SHOCK_2023,
 };

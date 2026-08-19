@@ -332,3 +332,191 @@ export interface WageResult {
    */
   isWithholdingEstimate: true;
 }
+
+// ---------------------------------------------------------------------------
+// Loan (Phase 2)
+// ---------------------------------------------------------------------------
+
+/** Purpose of the credit, which selects the LTV ceiling (Recomendação art. 5.º). */
+export type LoanPurpose =
+  | "own-permanent-residence" // habitação própria e permanente
+  | "other";
+
+/**
+ * Banco de Portugal macroprudential limits for new credit contracts, versioned
+ * by the date the solvency assessment takes place — which is what the
+ * Recomendação keys on, not the date the contract is signed.
+ */
+export interface MacroprudentialParameters {
+  year: number;
+  /** ISO `YYYY-MM-DD` the parameters take effect. */
+  effectiveFrom: string;
+  /** DSTI ceiling as a fraction (0.45 for 2026). */
+  dstiLimit: number;
+  /** Share of a semester's lending that may exceed the ceiling (0.10). */
+  dstiExceptionShare: number;
+  /** LTV ceiling by purpose, as a fraction. */
+  ltvLimit: Record<LoanPurpose, number>;
+  /** Maturity ceilings in years, by the oldest borrower's age. */
+  maturity: {
+    /** Age at or below which the longer ceiling applies (35). */
+    ageThreshold: number;
+    yearsAtOrBelowThreshold: number;
+    yearsAboveThreshold: number;
+  };
+  /** The income haircut for contracts running past retirement age. */
+  incomeReduction: {
+    /** Age past which it applies (70). */
+    age: number;
+    /** Fraction of income removed, before weighting (0.20). */
+    fraction: number;
+  };
+  source: string;
+  verified: boolean;
+}
+
+/** One band of the DSTI stress test's rate shock, by contract term. */
+export interface InterestRateShockBand {
+  /** Inclusive upper bound of the term in years; `null` = open-ended. */
+  upToYears: number | null;
+  /** Shock in absolute rate terms (0.015 = 1,5 p.p.). */
+  shock: number;
+}
+
+/**
+ * The interest-rate shock applied to the DSTI numerator — a separate legal
+ * instrument from the Recomendação, so it is versioned separately.
+ */
+export interface InterestRateShock {
+  effectiveFrom: string;
+  /** Ordered ascending by `upToYears`, open-ended band last. */
+  bands: readonly InterestRateShockBand[];
+  /** Months the indexante is averaged over before the assessment (1). */
+  indexAveragingMonths: number;
+  source: string;
+  verified: boolean;
+}
+
+/** One period of a French amortization schedule. */
+export interface AmortizationPeriod {
+  /** 1-based period number. */
+  period: number;
+  /** Constant instalment. */
+  payment: number;
+  /** Interest part of this instalment. */
+  interest: number;
+  /** Capital part of this instalment. */
+  principal: number;
+  /** Outstanding capital after this instalment. */
+  balance: number;
+}
+
+/** A loan's forward calculation: what it costs to borrow a given amount. */
+export interface AmortizationResult {
+  /** Amount borrowed. */
+  principal: number;
+  /** Monthly instalment (prestação). */
+  monthlyPayment: number;
+  /** Annual nominal rate used, as a fraction. */
+  annualRate: number;
+  /** Term in months. */
+  months: number;
+  /** Sum of every instalment. */
+  totalPaid: number;
+  /** `totalPaid − principal`. */
+  totalInterest: number;
+}
+
+/** A borrower's situation, as the DSTI and maturity rules see it. */
+export interface BorrowerProfile {
+  /**
+   * Monthly income for the DSTI denominator. Art. 4.º n.º 5 al. a) takes the
+   * annual income divided by 12 — so a 14-payment Portuguese salary should be
+   * annualized *including* the subsídios before being divided, not simply the
+   * monthly net.
+   */
+  monthlyIncome: number;
+  /**
+   * Age of the borrower with the earliest date of birth, i.e. the oldest —
+   * art. 4.º n.º 5 al. b) and art. 7.º n.º 2 both key on that one.
+   */
+  age: number;
+  /**
+   * Monthly instalments on credit already held. Art. 6.º n.º 2 counts these
+   * at face value: only the *new* contract's instalment is stressed.
+   */
+  existingMonthlyDebt?: number;
+  /**
+   * Whether the borrower is already retired at the time of assessment, which
+   * waives the past-70 income reduction (art. 4.º n.º 5 al. b), final part).
+   */
+  retired?: boolean;
+}
+
+/** Inputs to the reverse solver: how much can this borrower borrow? */
+export interface MaxLoanInput {
+  borrower: BorrowerProfile;
+  purpose: LoanPurpose;
+  /** Purchase price of the property. */
+  propertyPrice: number;
+  /**
+   * Appraisal value, when it differs. Art. 4.º takes the *lower* of the two
+   * for the LTV denominator; defaults to `propertyPrice`.
+   */
+  appraisalValue?: number;
+  /** Contract annual nominal rate (indexante + spread), as a fraction. */
+  annualRate: number;
+  /** Requested term in years, before the age-based ceiling is applied. */
+  termYears: number;
+  /** ISO `YYYY-MM-DD` of the solvency assessment — selects the parameters. */
+  assessmentDate: string;
+}
+
+/** Which rule capped the loan. */
+export type BindingConstraint = "dsti" | "ltv";
+
+/** The reverse solver's answer, with every limit shown rather than just the min. */
+export interface MaxLoanResult {
+  /** The lowest of the ceilings below — what the borrower can actually get. */
+  maxLoan: number;
+  /** Which rule produced it. */
+  bindingConstraint: BindingConstraint;
+  /** Term actually used, after the age-based maturity ceiling. */
+  termYears: number;
+  /** True when `termYears` is shorter than the term requested. */
+  termCappedByAge: boolean;
+  dsti: {
+    /** Ceiling applied (0.45). */
+    limit: number;
+    /** Income after the past-70 reduction, if any. */
+    adjustedIncome: number;
+    /** The reduction applied, as a fraction of income (0 when none). */
+    incomeReduction: number;
+    /** Monthly instalment budget left for the new loan, after existing debt. */
+    paymentBudget: number;
+    /** Rate the budget was converted at: contract rate + shock. */
+    stressedRate: number;
+    /** Shock added, in absolute rate terms. */
+    shock: number;
+    /** Loan the budget supports at the stressed rate. */
+    maxLoan: number;
+  };
+  ltv: {
+    limit: number;
+    /** min(price, appraisal) — the denominator art. 4.º prescribes. */
+    propertyValue: number;
+    maxLoan: number;
+  };
+  /**
+   * The instalment actually payable at the contract rate on `maxLoan` — what
+   * the borrower pays, as opposed to the stressed figure used to test them.
+   */
+  contractPayment: number;
+  /** Provenance of the parameter sets used. */
+  sources: {
+    macroprudential: string;
+    shock: string;
+  };
+  /** Whether both parameter sets have been independently cross-checked. */
+  parametersVerified: boolean;
+}

@@ -1,0 +1,44 @@
+{
+  "instrument": "Recomendação Macroprudencial n.º 1/2026",
+  "sourceUrl": "https://www.bportugal.pt/sites/default/files/documents/2026-07/Recomendacao_Macroprudencial_n.1-2026.pdf",
+  "extractedWith": "pdf2json 4.0.3",
+  "note": "Verbatim provisions from a mechanical extraction of the official PDF. The dataset in bdp-2026.ts was transcribed by reading the document; this fixture exists to be diffed against it.",
+  "provisions": {
+    "dstiLimit": {
+      "article": "6.º n.º 1",
+      "text": "É recomendado que as instituições não concedam crédito que resulte num DSTI superior a 45%."
+    },
+    "dstiExceptionShare": {
+      "article": "6.º n.º 2",
+      "text": "Em cada semestre, até 10% do montante total de créditos concedidos pela instituição, pode ultrapassar o limite ao DSTI previsto no n.º 1."
+    },
+    "ltvOwnPermanentResidence": {
+      "article": "5.º n.º 1",
+      "text": "É recomendado que as instituições não concedam créditos à habitação destinados à aquisição, à construção ou à realização de obras em habitação própria e permanente que apresentem um LTV superior a 90%."
+    },
+    "ltvOther": {
+      "article": "5.º n.º 2",
+      "text": "É recomendado que as instituições não concedam créditos à habitação, créditos com garantia hipotecária ou equivalente destinados a outras finalidades, não previstos no n.º 1, que apresentem um LTV superior a 80%."
+    },
+    "maturityYounger": {
+      "article": "7.º n.º 1 al. a)",
+      "text": "40 anos, no caso de mutuários com idade inferior ou igual a 35 anos;"
+    },
+    "maturityOlder": {
+      "article": "7.º n.º 1 al. b)",
+      "text": "35 anos, no caso de mutuários com idade superior a 35 anos."
+    },
+    "incomeReduction": {
+      "article": "4.º n.º 5 al. b)",
+      "text": "quando a idade do mutuário no termo previsto do contrato for superior a 70 anos deve ser considerada uma redução do rendimento de, pelo menos, 20% ponderada pelo rácio entre o número de anos de vigência do contrato em que a idade do(s) mutuário(s) é superior a 70 anos e a maturidade total do contrato. Esta redução não deve ser considerada se, no momento da avaliação da solvabilidade, o(s) mutuário(s) já se encontrar(em) reformados."
+    },
+    "effectiveFrom": {
+      "article": "11.º n.º 1",
+      "text": "A presente Recomendação aplica-se aos novos contratos cuja avaliação da solvabilidade ocorra a partir de 1 de agosto de 2026."
+    },
+    "shockDeferral": {
+      "article": "6.º n.º 2 (cálculo do DSTI, art. 4.º n.º 2)",
+      "text": "as prestações do novo contrato devem assumir-se constantes e refletir impacto de um aumento da taxa de juro, nos termos definidos na Instrução n.º 23/2023, de 9 de outubro."
+    }
+  }
+}

@@ -1,7 +1,15 @@
-import type { WageInput, WageResult } from "./types.js";
+import type {
+  MaxLoanInput,
+  MaxLoanResult,
+  WageInput,
+  WageResult,
+} from "./types.js";
 import { computeNetWage } from "./wage/index.js";
+import { maxLoan } from "./loan/index.js";
 import {
+  getInterestRateShock,
   getIrsJovemRegime,
+  getMacroprudentialParameters,
   getMealAllowanceLimits,
   getWithholdingDataset,
 } from "./data/index.js";
@@ -24,6 +32,19 @@ export function computeNetWageForDate(input: WageInput): WageResult {
   return computeNetWage(input, dataset, mealLimits, jovemRegime);
 }
 
+/**
+ * Solve for the largest loan the Banco de Portugal limits allow, resolving the
+ * parameter sets in force on the input's `assessmentDate` automatically.
+ * Throws if none covers that date.
+ */
+export function maxLoanForDate(input: MaxLoanInput): MaxLoanResult {
+  return maxLoan(
+    input,
+    getMacroprudentialParameters(input.assessmentDate),
+    getInterestRateShock(input.assessmentDate),
+  );
+}
+
 export type {
   Region,
   TaxpayerCategory,
@@ -39,6 +60,16 @@ export type {
   WithholdingBracket,
   WithholdingTable,
   WithholdingDataset,
+  LoanPurpose,
+  MacroprudentialParameters,
+  InterestRateShock,
+  InterestRateShockBand,
+  AmortizationPeriod,
+  AmortizationResult,
+  BorrowerProfile,
+  MaxLoanInput,
+  BindingConstraint,
+  MaxLoanResult,
 } from "./types.js";
 
 export {
@@ -68,11 +99,29 @@ export type {
 } from "./wage/index.js";
 
 export {
+  amortize,
+  amortizationSchedule,
+  monthlyPayment,
+  monthlyRate,
+  principalForPayment,
+  adjustedIncome,
+  incomeReductionFraction,
+  maturityCeiling,
+  shockForTerm,
+  maxLoan,
+  stressedDsti,
+} from "./loan/index.js";
+
+export {
   getWithholdingDataset,
+  getMacroprudentialParameters,
+  getInterestRateShock,
   getMealAllowanceLimits,
   getIrsJovemRegime,
   CONTINENTE_2026,
   MADEIRA_2026,
   MEAL_ALLOWANCE_2026,
   IRS_JOVEM_2026,
+  BDP_2026,
+  INTEREST_RATE_SHOCK_2023,
 } from "./data/index.js";

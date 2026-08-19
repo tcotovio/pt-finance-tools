@@ -51,7 +51,9 @@ export {
   withholdingForBracket,
   withholdingDetailForBracket,
   socialSecurityContribution,
+  employerSocialSecurityContribution,
   EMPLOYEE_SOCIAL_SECURITY_RATE,
+  EMPLOYER_SOCIAL_SECURITY_RATE,
   selectTable,
   selectBracket,
 } from "./wage/index.js";

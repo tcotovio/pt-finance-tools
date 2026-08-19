@@ -1,32 +1,35 @@
-# React + TypeScript + Vite
+# @pt-finance-tools/web
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The PWA front end: a Portuguese net-wage calculator built on
+[`@pt-finance-tools/engine`](../engine), which does all of the arithmetic.
 
-Currently, two official plugins are available:
+- **No backend.** Every calculation runs in the browser; nothing is sent
+  anywhere.
+- **Progressive disclosure.** Gross salary, marital situation and dependents
+  are on the surface; the meal allowance, duodécimos, IRS Jovem and region
+  live behind the "O meu caso" panel.
+- **Honest by construction.** The result always carries the provenance of the
+  dataset it used, whether that dataset has been independently cross-checked,
+  and the reminder that withholding is an advance on IRS rather than the
+  final tax.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Development
 
-## React Compiler
+From the repository root (the engine is built first — the web app imports its
+compiled output):
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+npm run dev      # engine build + vite dev server
+npm run build    # production build of both packages
+npm run lint
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Layout
+
+```
+src/
+├─ components/   # UI only — no tax logic lives here
+└─ lib/          # pure helpers: form state, parsing, formatting, breakdown
+```
+
+Anything that computes money belongs in the engine, not here.

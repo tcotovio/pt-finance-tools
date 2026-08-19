@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Salário líquido">
+  <!-- Maskable variant: full-bleed background (Android crops to its own shape) with
+       the glyph inset to ~66% so it survives the safe zone. Source for the PNGs. -->
+  <rect width="64" height="64" fill="#00674a"/>
+  <!-- The glyph's own bbox centres on x≈28.5, not 32, so the x offset corrects
+       for that rather than being a plain (64 − 64×0.66)/2 inset. -->
+  <g transform="translate(13.19 10.88) scale(0.66)">
+    <path d="M41 21.5a13.5 13.5 0 0 0-20.2 6.9M41 42.5a13.5 13.5 0 0 1-20.2-6.9" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+    <path d="M16 28.4h20M16 35.6h20" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -69,6 +69,7 @@ export {
   getMealAllowanceLimits,
   getIrsJovemRegime,
   CONTINENTE_2026,
+  MADEIRA_2026,
   MEAL_ALLOWANCE_2026,
   IRS_JOVEM_2026,
 } from "./data/index.js";

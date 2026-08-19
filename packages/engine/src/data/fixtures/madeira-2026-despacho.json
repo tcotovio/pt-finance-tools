@@ -1,0 +1,340 @@
+{
+  "_comment": "Bracket rows extracted mechanically from the official JORAM PDF via an independent parse (pdf2json text runs grouped by y, ordered by x), NOT hand-transcribed. This is the second source that madeira-2026.ts is diffed against by madeira-2026.source.test.ts. Note the first row of each table prints a 0,00 parcela adicional por dependente in the source; it is recorded as such. Withholding is clamped at zero, so on a 0 % row the value cannot change any result.",
+  "source": "Despacho n.º 19/2026 (JORAM, II Série, N.º 13, Suplemento 4, 20-01-2026)",
+  "sourceUrl": "https://at.madeira.gov.pt/ficheiros/IISerie-013-2026-01-20Supl4.pdf",
+  "sourcePages": {
+    "tabelaI": 4,
+    "tabelaII": 5,
+    "tabelaIII": 5
+  },
+  "extractedOn": "2026-08-19",
+  "extractionMethod": "pdf2json@4.0.3 text runs grouped by y-coordinate, ordered by x",
+  "tables": {
+    "married-dual-earner": [
+      {
+        "upTo": 980,
+        "marginalRate": 0,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 0
+        },
+        "dependentDeduction": 0
+      },
+      {
+        "upTo": 1028,
+        "marginalRate": 0.0872,
+        "deduction": {
+          "kind": "formula",
+          "multiplier": 2.6,
+          "base": 1356.92
+        },
+        "dependentDeduction": 21.43
+      },
+      {
+        "upTo": 1099,
+        "marginalRate": 0.1204,
+        "deduction": {
+          "kind": "formula",
+          "multiplier": 1.35,
+          "base": 1696.78
+        },
+        "dependentDeduction": 21.43
+      },
+      {
+        "upTo": 1201,
+        "marginalRate": 0.1204,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 97.17
+        },
+        "dependentDeduction": 21.43
+      },
+      {
+        "upTo": 1623,
+        "marginalRate": 0.17629999999999998,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 164.31
+        },
+        "dependentDeduction": 21.43
+      },
+      {
+        "upTo": 2332,
+        "marginalRate": 0.223,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 240.11
+        },
+        "dependentDeduction": 21.43
+      },
+      {
+        "upTo": 3203,
+        "marginalRate": 0.2242,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 242.91
+        },
+        "dependentDeduction": 21.43
+      },
+      {
+        "upTo": 3614,
+        "marginalRate": 0.237,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 283.91
+        },
+        "dependentDeduction": 21.43
+      },
+      {
+        "upTo": 6585,
+        "marginalRate": 0.3028,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 521.72
+        },
+        "dependentDeduction": 21.43
+      },
+      {
+        "upTo": 6954,
+        "marginalRate": 0.2802,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 372.9
+        },
+        "dependentDeduction": 21.43
+      },
+      {
+        "upTo": 21411,
+        "marginalRate": 0.2924,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 457.74
+        },
+        "dependentDeduction": 21.43
+      },
+      {
+        "upTo": null,
+        "marginalRate": 0.32780000000000004,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 1215.69
+        },
+        "dependentDeduction": 21.43
+      }
+    ],
+    "unmarried": [
+      {
+        "upTo": 980,
+        "marginalRate": 0,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 0
+        },
+        "dependentDeduction": 0
+      },
+      {
+        "upTo": 1028,
+        "marginalRate": 0.0872,
+        "deduction": {
+          "kind": "formula",
+          "multiplier": 2.6,
+          "base": 1356.92
+        },
+        "dependentDeduction": 34.29
+      },
+      {
+        "upTo": 1099,
+        "marginalRate": 0.1204,
+        "deduction": {
+          "kind": "formula",
+          "multiplier": 1.35,
+          "base": 1696.78
+        },
+        "dependentDeduction": 34.29
+      },
+      {
+        "upTo": 1201,
+        "marginalRate": 0.1204,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 97.17
+        },
+        "dependentDeduction": 34.29
+      },
+      {
+        "upTo": 1623,
+        "marginalRate": 0.17629999999999998,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 164.31
+        },
+        "dependentDeduction": 34.29
+      },
+      {
+        "upTo": 2332,
+        "marginalRate": 0.223,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 240.11
+        },
+        "dependentDeduction": 34.29
+      },
+      {
+        "upTo": 3203,
+        "marginalRate": 0.2242,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 242.91
+        },
+        "dependentDeduction": 34.29
+      },
+      {
+        "upTo": 3614,
+        "marginalRate": 0.237,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 283.91
+        },
+        "dependentDeduction": 34.29
+      },
+      {
+        "upTo": 6585,
+        "marginalRate": 0.3028,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 521.72
+        },
+        "dependentDeduction": 34.29
+      },
+      {
+        "upTo": 6954,
+        "marginalRate": 0.2802,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 372.9
+        },
+        "dependentDeduction": 34.29
+      },
+      {
+        "upTo": 21411,
+        "marginalRate": 0.2924,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 457.74
+        },
+        "dependentDeduction": 34.29
+      },
+      {
+        "upTo": null,
+        "marginalRate": 0.32780000000000004,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 1215.69
+        },
+        "dependentDeduction": 34.29
+      }
+    ],
+    "married-single-earner": [
+      {
+        "upTo": 997,
+        "marginalRate": 0,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 0
+        },
+        "dependentDeduction": 0
+      },
+      {
+        "upTo": 1099,
+        "marginalRate": 0.0872,
+        "deduction": {
+          "kind": "formula",
+          "multiplier": 1.35,
+          "base": 1819.64
+        },
+        "dependentDeduction": 42.86
+      },
+      {
+        "upTo": 1141,
+        "marginalRate": 0.0872,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 84.84
+        },
+        "dependentDeduction": 42.86
+      },
+      {
+        "upTo": 1857,
+        "marginalRate": 0.1033,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 103.22
+        },
+        "dependentDeduction": 42.86
+      },
+      {
+        "upTo": 2485,
+        "marginalRate": 0.1091,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 114
+        },
+        "dependentDeduction": 42.86
+      },
+      {
+        "upTo": 3331,
+        "marginalRate": 0.12359999999999999,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 150.04
+        },
+        "dependentDeduction": 42.86
+      },
+      {
+        "upTo": 3895,
+        "marginalRate": 0.1404,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 206.01
+        },
+        "dependentDeduction": 42.86
+      },
+      {
+        "upTo": 6673,
+        "marginalRate": 0.1595,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 280.41
+        },
+        "dependentDeduction": 42.86
+      },
+      {
+        "upTo": 6878,
+        "marginalRate": 0.2213,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 692.81
+        },
+        "dependentDeduction": 42.86
+      },
+      {
+        "upTo": 21411,
+        "marginalRate": 0.2493,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 885.4
+        },
+        "dependentDeduction": 42.86
+      },
+      {
+        "upTo": null,
+        "marginalRate": 0.32780000000000004,
+        "deduction": {
+          "kind": "fixed",
+          "amount": 2566.17
+        },
+        "dependentDeduction": 42.86
+      }
+    ]
+  }
+}

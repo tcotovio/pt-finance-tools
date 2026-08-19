@@ -117,8 +117,16 @@ describe("getWithholdingDataset", () => {
     );
   });
 
-  it("throws for a region with no dataset (Madeira/Açores not yet added)", () => {
-    expect(() => getWithholdingDataset("madeira", "2026-06-01")).toThrow(
+  it("resolves Madeira to its own regional dataset", () => {
+    const dataset = getWithholdingDataset("madeira", "2026-06-01");
+    expect(dataset.region).toBe("madeira");
+    // Madeira sets its own rates: the exemption starts higher than the
+    // Continente's 920 €, which is the cheapest proof the two are not mixed up.
+    expect(dataset.tables[0]?.brackets[0]?.upTo).toBe(980);
+  });
+
+  it("throws for a region with no dataset (Açores not yet transcribed)", () => {
+    expect(() => getWithholdingDataset("acores", "2026-06-01")).toThrow(
       /No withholding dataset/,
     );
   });

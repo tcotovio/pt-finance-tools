@@ -7,11 +7,15 @@ import type {
   WithholdingDataset,
 } from "../types.js";
 import { CONTINENTE_2026 } from "./continente-2026.js";
+import { MADEIRA_2026 } from "./madeira-2026.js";
 import { MEAL_ALLOWANCE_2026 } from "./meal-allowance-2026.js";
 import { IRS_JOVEM_2026 } from "./irs-jovem-2026.js";
 
 /** All datasets known to the engine. Add a tax year by adding to this list. */
-const DATASETS: readonly WithholdingDataset[] = [CONTINENTE_2026];
+const DATASETS: readonly WithholdingDataset[] = [
+  CONTINENTE_2026,
+  MADEIRA_2026,
+];
 
 /**
  * The dataset for a region that is in effect on `referenceDate` (ISO
@@ -77,4 +81,9 @@ export function getIrsJovemRegime(referenceDate: string): IrsJovemRegime {
   return regime;
 }
 
-export { CONTINENTE_2026, MEAL_ALLOWANCE_2026, IRS_JOVEM_2026 };
+export {
+  CONTINENTE_2026,
+  MADEIRA_2026,
+  MEAL_ALLOWANCE_2026,
+  IRS_JOVEM_2026,
+};

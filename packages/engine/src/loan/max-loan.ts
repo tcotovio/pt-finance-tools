@@ -25,6 +25,7 @@ import type {
 } from "../types.js";
 import { monthlyPayment, principalForPayment } from "./amortization.js";
 import { adjustedIncome, maturityCeiling, shockForTerm } from "./stress.js";
+import { mixedPrincipalForBudget, mixedStressedPayment } from "./mixed.js";
 
 /**
  * The stressed DSTI a given instalment would produce — the forward check,
@@ -69,19 +70,68 @@ export function maxLoan(
   const months = Math.round(effectiveTerm * 12);
 
   // 1. DSTI. The shock only exists for contracts whose rate can move:
-  // Instrução 23/2023 prescribes one for taxa variável and taxa mista, and
-  // Recomendação art. 6.º n.º 2 defers to it entirely, so a fully fixed
-  // contract is tested at its own rate. See `LoanRateType`.
+  // Instrução 23/2023 prescribes one for taxa variável (n.º 1) and taxa mista
+  // (n.º 2), and Recomendação art. 6.º n.º 2 defers to it entirely, so a fully
+  // fixed contract is tested at its own rate. See `LoanRateType`.
   const rateType = input.rateType ?? "variable";
+  const isMixed = rateType === "mixed";
   const shock = rateType === "fixed" ? 0 : shockForTerm(effectiveTerm, shockTable);
-  const stressedRate = annualRate + shock;
   const income = adjustedIncome(borrower, effectiveTerm, params);
   const existing = borrower.existingMonthlyDebt ?? 0;
   // Negative when existing debt alone already breaches the ceiling; clamped,
   // since "how much more can they borrow" is zero, not a negative loan.
   const paymentBudget = Math.max(0, income * params.dstiLimit - existing);
+
+  // Taxa mista is tested on the dearer of its two legs, so it inverts through
+  // its own helper rather than through a single annuity.
+  if (rateType === "mixed") {
+    if (!input.mixedTerms) {
+      throw new Error(
+        'rateType "mixed" requires mixedTerms (fixedPeriodYears, fixedRate).',
+      );
+    }
+    const dstiMaxMixed = mixedPrincipalForBudget(
+      paymentBudget,
+      input.mixedTerms,
+      annualRate,
+      shock,
+      months,
+    );
+    return assemble(
+      dstiMaxMixed,
+      (limit) =>
+        limit > 0
+          ? mixedStressedPayment(limit, input.mixedTerms!, annualRate, shock, months)
+              .fixedPeriodPayment
+          : 0,
+      (limit) =>
+        limit > 0
+          ? mixedStressedPayment(limit, input.mixedTerms!, annualRate, shock, months)
+              .stressedPayment
+          : 0,
+    );
+  }
+
+  const stressedRate = annualRate + shock;
   const dstiMax = principalForPayment(paymentBudget, stressedRate, months);
 
+  return assemble(
+    dstiMax,
+    (limit) => (limit > 0 ? monthlyPayment(limit, annualRate, months) : 0),
+    (limit) => (limit > 0 ? monthlyPayment(limit, stressedRate, months) : 0),
+  );
+
+  /**
+   * Everything downstream of the DSTI ceiling is identical for all three rate
+   * types: apply LTV, take the lower, and report which one bound. Only the
+   * instalment the borrower actually starts paying differs, which is why it
+   * arrives as a callback.
+   */
+  function assemble(
+    dstiCeiling: number,
+    contractPaymentFor: (limit: number) => number,
+    stressedPaymentFor: (limit: number) => number,
+  ): MaxLoanResult {
   // 2. LTV, on the lower of price and appraisal (art. 4.º).
   const propertyValue = Math.min(
     propertyPrice,
@@ -90,7 +140,12 @@ export function maxLoan(
   const ltvLimit = params.ltvLimit[purpose];
   const ltvMax = propertyValue * ltvLimit;
 
+  const dstiMax = dstiCeiling;
   const limit = Math.min(dstiMax, ltvMax);
+  const mixed =
+    isMixed && input.mixedTerms && limit > 0
+      ? mixedStressedPayment(limit, input.mixedTerms, annualRate, shock, months)
+      : undefined;
 
   return {
     maxLoan: limit,
@@ -105,9 +160,12 @@ export function maxLoan(
       incomeReduction:
         borrower.monthlyIncome > 0 ? 1 - income / borrower.monthlyIncome : 0,
       paymentBudget,
-      stressedRate,
+      // For mista this is the shocked indexed rate, which is the leg the
+      // test usually turns on; `mixedBasis` says when the fixed leg won.
+      stressedRate: mixed ? mixed.stressedPostFixedRate : annualRate + shock,
       shock,
       rateType,
+      mixedBasis: mixed?.basis,
       maxLoan: dstiMax,
     },
     ltv: {
@@ -115,12 +173,13 @@ export function maxLoan(
       propertyValue,
       maxLoan: ltvMax,
     },
-    contractPayment:
-      limit > 0 ? monthlyPayment(limit, annualRate, months) : 0,
+    contractPayment: contractPaymentFor(limit),
+    stressedPayment: stressedPaymentFor(limit),
     sources: {
       macroprudential: params.source,
       shock: shockTable.source,
     },
     parametersVerified: params.verified && shockTable.verified,
   };
+  }
 }

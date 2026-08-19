@@ -99,25 +99,38 @@ describe("contractRate", () => {
 });
 
 describe("MARKET_RATE_2026_06 — context, never a derived spread", () => {
-  it("is a plausible mortgage rate expressed as a fraction", () => {
-    expect(MARKET_RATE_2026_06.averageRate).toBeGreaterThan(0.001);
-    expect(MARKET_RATE_2026_06.averageRate).toBeLessThan(0.15);
+  it("carries a plausible variable-rate distribution, in order", () => {
+    const v = MARKET_RATE_2026_06.variableRate;
+    expect(v.p10).toBeLessThan(v.median);
+    expect(v.median).toBeLessThan(v.p75);
+    expect(v.p75).toBeLessThan(v.p90);
+    expect(v.p10).toBeGreaterThan(0.001);
+    expect(v.p90).toBeLessThan(0.15);
   });
 
-  it("cites the ECB series it came from", () => {
-    expect(MARKET_RATE_2026_06.source).toContain("MIR.M.PT.B.A2C");
+  it("cites Banco de Portugal's own statistics", () => {
+    // Bank-reported to BdP, unlike the simulators used for Axis B.
+    expect(MARKET_RATE_2026_06.source).toContain("BPstat");
+    expect(MARKET_RATE_2026_06.source).toContain("Banco de Portugal");
   });
 
-  it("cannot be turned into a spread by subtracting Euribor", () => {
-    // The guard is on the reasoning, not the arithmetic. It is tempting to
-    // derive the default spread as "average rate − Euribor", and this pins
-    // why that is wrong: the ECB's average mixes fixed and mixed-rate
-    // contracts priced off swaps, and variable ones carry the fixing from
-    // when they were signed, so in a rising market the difference collapses
-    // to a fraction of any real retail margin. If anyone ever wires this
-    // subtraction into a default, this test fails and says so.
+  it("records a market where taxa mista dominates", () => {
+    // The reason mista is modelled at all: it is the market, not an edge case.
+    const share = MARKET_RATE_2026_06.shareOfNewLending;
+    expect(share.mixed).toBeGreaterThan(0.5);
+    expect(share.mixed).toBeGreaterThan(share.variable + share.fixed);
+    expect(share.mixed + share.variable + share.fixed).toBeCloseTo(1, 2);
+  });
+
+  it("still cannot be turned into a spread by subtracting Euribor", () => {
+    // Restricting to variable contracts removes the product-mix problem, but
+    // not the signature lag: a June contract carries the fixing from when it
+    // was agreed, which in a rising market is lower than June's. The implied
+    // margin therefore still reads well under any real retail spread. Pinned
+    // so nobody later wires this subtraction into a default.
     const implied =
-      MARKET_RATE_2026_06.averageRate - euriborRate(EURIBOR_2026_07, "12m");
+      MARKET_RATE_2026_06.variableRate.median -
+      euriborRate(EURIBOR_2026_07, "12m");
     const plausibleRetailSpread = 0.008;
     expect(implied).toBeLessThan(plausibleRetailSpread);
   });

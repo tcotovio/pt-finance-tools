@@ -18,3 +18,9 @@ export {
   euriborRate,
   contractRate,
 } from "./euribor.js";
+export {
+  balanceAfter,
+  mixedStressedPayment,
+  mixedPrincipalForBudget,
+} from "./mixed.js";
+export type { MixedRateTerms, MixedStressResult, MixedStressBasis } from "./mixed.js";

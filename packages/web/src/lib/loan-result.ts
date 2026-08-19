@@ -13,7 +13,6 @@
 
 import {
   amortize,
-  monthlyPayment,
   type BindingConstraint,
   type LoanRateType,
   type MaxLoanResult,
@@ -59,6 +58,8 @@ export interface LoanSummary {
   stressedRate: number;
   shock: number;
   rateType: LoanRateType;
+  /** For taxa mista, which leg of art. 1.º n.º 2 governed the test. */
+  mixedBasis?: "post-fixed" | "fixed-period";
   /**
    * Whether the DSTI test was actually stressed. False for a fixed rate,
    * where there is no indexante to shock — and the copy has to change with
@@ -95,12 +96,14 @@ export function buildLoanSummary(
   const contractRate = result.dsti.stressedRate - result.dsti.shock;
   const shocked = result.dsti.shock > 0;
 
-  // Recomputed on the floored amount so the instalment on screen is the one
-  // that belongs to the loan on screen.
-  const contractPayment =
-    maxLoan > 0 ? monthlyPayment(maxLoan, contractRate, months) : 0;
-  const stressedPayment =
-    maxLoan > 0 ? monthlyPayment(maxLoan, result.dsti.stressedRate, months) : 0;
+  // Both instalments come from the engine and are only rescaled to the
+  // floored amount. They are linear in the principal, so scaling is exact —
+  // and recomputing them here from a rate would be wrong for taxa mista,
+  // where the instalment paid and the instalment tested come from different
+  // legs and different balances.
+  const scale = result.maxLoan > 0 ? maxLoan / result.maxLoan : 0;
+  const contractPayment = result.contractPayment * scale;
+  const stressedPayment = result.stressedPayment * scale;
 
   const constraints: ConstraintRow[] = [
     {
@@ -108,7 +111,17 @@ export function buildLoanSummary(
       label: "Rendimento (taxa de esforço)",
       amount: Math.floor(result.dsti.maxLoan),
       binding: result.bindingConstraint === "dsti",
-      detail: shocked
+      detail: result.dsti.mixedBasis
+        ? `A prestação não pode passar ${percentLabel(
+            result.dsti.limit,
+          )} do rendimento. Sendo taxa mista, foi testada pela ${
+            result.dsti.mixedBasis === "fixed-period"
+              ? "prestação do período fixo, que é a mais alta"
+              : `prestação depois do período fixo, com o indexante agravado em ${formatPoints(
+                  result.dsti.shock,
+                )}`
+          }.`
+        : shocked
         ? `A prestação, testada com uma subida de ${formatPoints(
             result.dsti.shock,
           )}, não pode passar ${percentLabel(result.dsti.limit)} do rendimento.`
@@ -155,6 +168,7 @@ export function buildLoanSummary(
     stressedRate: result.dsti.stressedRate,
     shock: result.dsti.shock,
     rateType: result.dsti.rateType,
+    mixedBasis: result.dsti.mixedBasis,
     shocked,
     adjustedIncome: result.dsti.adjustedIncome,
     incomeReduction: result.dsti.incomeReduction,

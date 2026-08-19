@@ -47,5 +47,14 @@ export const INTEREST_RATE_SHOCK_2023: InterestRateShock = {
   source:
     "Instrução n.º 23/2023 do Banco de Portugal, BO n.º 9/2023 2.º Suplemento " +
     "(https://www.bportugal.pt/instrucao/232023)",
-  verified: false,
+  /**
+   * Axis A diffs the three bands against the extracted Instrução; Axis B
+   * confirms the >10y band is applied as the statute describes — the
+   * comparison source states its own stressed rate (2,798 + 0,7 + 1,5 =
+   * 4,998 %) and the engine reproduces its results to the euro.
+   *
+   * The ≤5y and 5–10y bands are covered by Axis A only: mortgage terms do
+   * not reach them, so no mortgage simulator exercises them.
+   */
+  verified: true,
 };

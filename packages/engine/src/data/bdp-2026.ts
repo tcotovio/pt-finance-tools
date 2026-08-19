@@ -81,10 +81,26 @@ export const BDP_2026: MacroprudentialParameters = {
     "Recomendação Macroprudencial n.º 1/2026, Banco de Portugal " +
     "(https://www.bportugal.pt/sites/default/files/documents/2026-07/Recomendacao_Macroprudencial_n.1-2026.pdf)",
   /**
-   * Transcribed from the primary PDF and re-diffed in CI against a mechanical
-   * extraction of it (bdp-2026.source.test.ts) — Axis A of the §6 strategy.
-   * Axis B (end-to-end against bank simulators) is still open, so this stays
-   * false; see PLAN.md Phase 2.
+   * Both axes of the §6 strategy pass, and the claim is bounded:
+   *
+   *   * Axis A — every limit is re-diffed in CI against verbatim provisions
+   *     mechanically extracted from the official PDF (bdp-2026.source.test.ts);
+   *   * Axis B — the engine reproduces an independent implementation of the
+   *     DSTI rules to the euro across 7 scenarios and 5 terms
+   *     (loan/external-crosscheck.test.ts).
+   *
+   * What `true` asserts here is the **legally determined** computation: the
+   * 45 % ceiling, income as the denominator, existing debt at face value with
+   * only the new instalment stressed, and the inversion of the annuity. It
+   * asserts nothing about commercial pricing — spread, bundling, a bank's own
+   * credit policy or its use of the 10 % exception allowance — none of which
+   * this engine computes.
+   *
+   * Two rules Axis B did NOT reach, for want of a source that models them:
+   * the LTV ceiling (the comparison source takes no property price) and the
+   * past-70 income reduction, which that source does not implement at all —
+   * the divergence it causes is recorded and pinned in the cross-check rather
+   * than smoothed over.
    */
-  verified: false,
+  verified: true,
 };

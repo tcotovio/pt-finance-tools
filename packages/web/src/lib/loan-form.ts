@@ -25,8 +25,14 @@ export interface LoanForm {
   tenor: EuriborTenor;
   /** The bank's margin over the index, as a percentage. */
   spread: string;
-  /** The whole rate, used only when `rateType` is "fixed". */
+  /**
+   * The fixed rate, as a percentage. For `"fixed"` it is the whole term's
+   * rate; for `"mixed"` it is the initial fixed rate, and the indexed rate
+   * that follows is composed from `tenor` + `spread` like a variable one.
+   */
   annualRate: string;
+  /** Years the mista rate stays fixed for. */
+  fixedPeriodYears: string;
   existingDebt: string;
   appraisalValue: string;
   retired: boolean;
@@ -47,6 +53,13 @@ export const DEFAULT_SPREAD = "1,0";
 export const DEFAULT_ANNUAL_RATE = "3,2";
 
 /**
+ * How long a mista contract starts out fixed for. Two and five years are the
+ * common Portuguese offers; five is the middle of the range and the value the
+ * UI labels as an assumption to replace with the bank's own.
+ */
+export const DEFAULT_FIXED_PERIOD_YEARS = "5";
+
+/**
  * The tenor the form starts on. Euribor 12M is the most common index on new
  * Portuguese mortgages; 6M and 3M are offered too, hence the choice.
  */
@@ -62,6 +75,7 @@ export const DEFAULT_LOAN_FORM: LoanForm = {
   tenor: DEFAULT_TENOR,
   spread: DEFAULT_SPREAD,
   annualRate: DEFAULT_ANNUAL_RATE,
+  fixedPeriodYears: DEFAULT_FIXED_PERIOD_YEARS,
   existingDebt: "",
   appraisalValue: "",
   retired: false,
@@ -148,6 +162,18 @@ export function validateLoanForm(form: LoanForm): LoanFormErrors {
     }
   }
 
+  if (form.rateType === "mixed" && form.fixedPeriodYears.trim() !== "") {
+    const years = parseCount(form.fixedPeriodYears);
+    const term = parseCount(form.termYears);
+    if (years === null || years <= 0) {
+      errors.fixedPeriodYears = "Indique quantos anos a taxa fica fixa.";
+    } else if (term !== null && years >= term) {
+      // A rate fixed for the whole term is taxa fixa, and the engine says so.
+      errors.fixedPeriodYears =
+        "O período fixo tem de ser mais curto do que o prazo do crédito.";
+    }
+  }
+
   if (form.spread.trim() !== "") {
     const spread = parseAmount(form.spread);
     if (spread === null || spread < 0) {
@@ -185,11 +211,12 @@ export function toMaxLoanInput(
   if (propertyPrice === null || propertyPrice <= 0) return null;
 
   // Variable: the ECB's index plus the bank's margin. Fixed: whatever the
-  // proposal says, with no index involved.
-  const annualRate =
-    form.rateType === "variable"
-      ? contractRate(indexRate, (parseAmount(form.spread) ?? 0) / 100)
-      : (parseAmount(form.annualRate) ?? 0) / 100;
+  // proposal says, with no index involved. Mixed: BOTH — the indexed rate is
+  // what applies after the fixed period, so it is the one the engine takes as
+  // `annualRate`, with the fixed leg carried separately.
+  const indexed = contractRate(indexRate, (parseAmount(form.spread) ?? 0) / 100);
+  const fixed = (parseAmount(form.annualRate) ?? 0) / 100;
+  const annualRate = form.rateType === "fixed" ? fixed : indexed;
 
   const input: MaxLoanInput = {
     borrower: {
@@ -207,6 +234,13 @@ export function toMaxLoanInput(
   const existingDebt = parseAmount(form.existingDebt) ?? 0;
   if (existingDebt > 0) {
     input.borrower.existingMonthlyDebt = existingDebt;
+  }
+
+  if (form.rateType === "mixed") {
+    input.mixedTerms = {
+      fixedPeriodYears: parseCount(form.fixedPeriodYears) ?? 5,
+      fixedRate: fixed,
+    };
   }
 
   if (form.retired) {

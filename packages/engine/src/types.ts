@@ -472,6 +472,12 @@ export interface MaxLoanInput {
    * assumption — see {@link LoanRateType} for why it changes the answer.
    */
   rateType?: LoanRateType;
+  /**
+   * The fixed leg of a taxa mista contract. Required when `rateType` is
+   * `"mixed"`; ignored otherwise. `annualRate` then means the rate that
+   * applies *after* the fixed period — indexante + spread.
+   */
+  mixedTerms?: { fixedPeriodYears: number; fixedRate: number };
   /** Requested term in years, before the age-based ceiling is applied. */
   termYears: number;
   /** ISO `YYYY-MM-DD` of the solvency assessment — selects the parameters. */
@@ -492,12 +498,15 @@ export interface MaxLoanInput {
  * Recorded as a reading, with its limits: the statutes define the shock by
  * scope rather than saying "no shock for fixed rates" in as many words. The
  * inference is that a rule written for a rising indexante cannot bind a
- * contract that has none. `"mixed"` (taxa mista) is deliberately absent —
- * art. 1.º n.º 2 wants the higher of the fixed-period instalment and the
- * shocked post-fixed one, which needs the length of the fixed period as an
- * input and is not modelled yet.
+ * contract that has none.
+ *
+ * `"mixed"` (taxa mista) follows art. 1.º n.º 2: the tested instalment is the
+ * HIGHER of the shocked post-fixed one and the fixed-period one. It is the
+ * dominant Portuguese product — about 85 % of new lending in mid-2026, per
+ * Banco de Portugal's own statistics — so leaving it out excluded most
+ * borrowers.
  */
-export type LoanRateType = "variable" | "fixed";
+export type LoanRateType = "variable" | "fixed" | "mixed";
 
 /** Which rule capped the loan. */
 export type BindingConstraint = "dsti" | "ltv";
@@ -527,6 +536,11 @@ export interface MaxLoanResult {
     shock: number;
     /** The rate type the shock decision was made on. */
     rateType: LoanRateType;
+    /**
+     * For taxa mista, which leg of art. 1.º n.º 2 governed: the shocked
+     * post-fixed instalment, or the fixed-period one when it is dearer.
+     */
+    mixedBasis?: "post-fixed" | "fixed-period";
     /** Loan the budget supports at the stressed rate. */
     maxLoan: number;
   };
@@ -537,10 +551,18 @@ export interface MaxLoanResult {
     maxLoan: number;
   };
   /**
-   * The instalment actually payable at the contract rate on `maxLoan` — what
-   * the borrower pays, as opposed to the stressed figure used to test them.
+   * The instalment actually payable on `maxLoan` — what the borrower starts
+   * paying, as opposed to the stressed figure used to test them. For taxa
+   * mista this is the fixed-period instalment, not the indexed one.
    */
   contractPayment: number;
+  /**
+   * The instalment the DSTI test was run on at `maxLoan`. Equal to
+   * `contractPayment` only for a fixed rate; for mista it is whichever leg of
+   * art. 1.º n.º 2 governed. Reported so the UI never has to reconstruct it
+   * from a rate, which is impossible to do correctly for mista.
+   */
+  stressedPayment: number;
   /** Provenance of the parameter sets used. */
   sources: {
     macroprudential: string;

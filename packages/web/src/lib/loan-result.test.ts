@@ -137,6 +137,48 @@ describe("buildLoanSummary — fixed rate changes what can be said", () => {
   });
 });
 
+describe("buildLoanSummary — taxa mista", () => {
+  const mixed = () =>
+    summarize(
+      input({
+        rateType: "mixed",
+        mixedTerms: { fixedPeriodYears: 5, fixedRate: 0.031 },
+        termYears: 30,
+      }),
+    );
+
+  it("reports which leg of art. 1.º n.º 2 governed", () => {
+    expect(mixed().mixedBasis).toBe("post-fixed");
+  });
+
+  it("quotes the fixed-period instalment as what is paid", () => {
+    // Not the indexed one, and not the stressed one: a mista borrower starts
+    // on the fixed rate. Reconstructing this from a single rate is exactly
+    // the bug that made the summary take its instalments from the engine.
+    const summary = mixed();
+    expect(summary.contractPayment).toBeLessThan(summary.stressedPayment);
+  });
+
+  it("scales both instalments to the floored loan", () => {
+    const i = input({
+      rateType: "mixed",
+      mixedTerms: { fixedPeriodYears: 5, fixedRate: 0.031 },
+      termYears: 30,
+    });
+    const raw = maxLoanForDate(i);
+    const summary = mixed();
+    const scale = summary.maxLoan / raw.maxLoan;
+    expect(summary.contractPayment).toBeCloseTo(raw.contractPayment * scale, 8);
+    expect(summary.stressedPayment).toBeCloseTo(raw.stressedPayment * scale, 8);
+  });
+
+  it("describes the mista test rather than a plain shock", () => {
+    const detail = mixed().constraints[0].detail;
+    expect(detail).toContain("taxa mista");
+    expect(detail).toContain("indexante agravado");
+  });
+});
+
 describe("buildLoanSummary — the age rules surface", () => {
   it("reports the term cap for an older borrower", () => {
     const summary = summarize(

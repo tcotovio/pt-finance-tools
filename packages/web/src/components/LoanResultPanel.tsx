@@ -108,7 +108,14 @@ function LoanResultBody({
             Prestação mensal
             <span className="line-note">
               <span>
-                {summary.shocked ? (
+                {/* mista first: it is also "shocked", but its wording differs */}
+                {summary.mixedBasis ? (
+                  <>
+                    A prestação do período fixo — a partir daí depende do
+                    indexante. O teste de esforço usou{" "}
+                    {formatEuro(summary.stressedPayment)}.
+                  </>
+                ) : summary.shocked ? (
                   <>
                     À taxa do contrato. O teste de esforço usa{" "}
                     {formatPercent(summary.stressedRate)} e daria{" "}

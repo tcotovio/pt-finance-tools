@@ -48,6 +48,9 @@ repo/
 │  │  │  └─ types.ts     # shared input/output types
 │  │  └─ data/           # versioned datasets keyed by effective date
 │  └─ web/               # the PWA (React) — imports @engine
+│     └─ src/
+│        ├─ components/  # UI only — no tax logic
+│        └─ lib/         # pure helpers: form state, parsing, formatting
 └─ PLAN.md
 ```
 
@@ -83,6 +86,7 @@ liquido  = bruto − retencao − seg_social            // seg_social = 11% (emp
 - Pensioner vs worker; non-resident — *deferred*
 
 ### Non-salary components
+- Isenção de horário de trabalho (IHT, CT art. 265.º): ordinary remuneration — taxed and contributed on like base salary. Modelled as its own input purely so the result can itemize it
 - Meal allowance (subsídio de alimentação): exempt up to a limit; **cash vs card limits differ**
 - Christmas/holiday subsidies: paid as duodécimos (monthly) vs lump sum — changes the monthly picture
 
@@ -97,6 +101,7 @@ liquido  = bruto − retencao − seg_social            // seg_social = 11% (emp
 
 ### Output shape (structured, so the UI can present honestly)
 - gross, net, breakdown (IRS withholding, Seg. Social, exemptions applied)
+- for IRS Jovem, also the counterfactual: what the month *would* have withheld without the exemption, and the resulting relief (salary + duodécimos). The UI shows the ordinary IRS as the deduction and credits the relief back on its own line, so the regime's worth is visible rather than implicit in a smaller number
 - explicit `isWithholdingEstimate: true` + a machine-readable caveat that
   retenção is an advance, not the final tax (sharper for IRS Jovem earners who
   cross the annual cap).
@@ -192,10 +197,10 @@ These are exactly the parameters that changed this month — which is why they l
 ## 8. Roadmap
 
 ### Phase 0 — Scaffolding
-- [ ] Monorepo (pnpm workspace) with `engine` + `web` packages
-- [ ] `engine` package skeleton, shared `types.ts`
-- [ ] Vitest + golden-test harness wired into CI
-- [ ] PWA shell (Vite + `vite-plugin-pwa`), installable, offline-capable
+- [x] Monorepo (npm workspaces — see §10) with `engine` + `web` packages
+- [x] `engine` package skeleton, shared `types.ts`
+- [x] Vitest + golden-test harness wired into CI
+- [x] PWA shell (Vite + `vite-plugin-pwa`), installable, offline-capable — app icons are still the placeholder SVG
 
 ### Phase 1 — Net wage (withholding + IRS Jovem)  ← MVP
 - [x] 2026 IRS tables (Continente) ingested as versioned data — Tabelas I/II/III from Despacho 233-A/2026, transcribed from the official PDF
@@ -204,11 +209,14 @@ These are exactly the parameters that changed this month — which is why they l
 - [x] Marginal-rate withholding (incl. R-dependent parcela a abater + 3+ dependents −1pp, §5.h) + Seg. Social 11%
 - [x] Case matrix: marital / titulares / dependents (unmarried, married single-earner, married dual-earner)
 - [x] Meal allowance (cash vs card) — per-day ceilings as versioned data (10,46 € card / 6,15 € cash for 2026); excess enters both the IRS withholding base and the Segurança Social base. 4 golden scenarios vs the simulator
+- [x] Isenção de horário de trabalho — ordinary remuneration, so it enters both the IRS withholding base and the Segurança Social base. Whether the subsídios include it is contractual (CT art. 264.º/265.º is not decisive), so the UI asks rather than the engine assuming: the answer is expressed through the existing `subsidyAmount` input
 - [x] Duodécimos toggle — subsídios de férias/Natal in twelfths, withheld autonomously per CIRS art. 99.º-C n.ºs 5–6; see §6.1
 - [x] IRS Jovem modifier — schedule and 55 × IAS cap from CIRS art. 12.º-B, at-source mechanism from art. 99.º-F n.º 4, per-payment ceiling (÷14) from despacho §5.g. 7 golden scenarios vs the IRS Jovem simulator, incl. two where the cap bites
 - [~] Golden tests vs official despacho formula (8 scenarios) — note these are circular by construction (expectations derive from the same transcribed numbers), which is why the Axis A/B cross-checks above exist
-- [ ] UI: single-input default + "advanced" panel (progressive disclosure)
-- [ ] "Simulação, não é aconselhamento" + "retenção ≠ imposto final" notices
+- [x] UI: vencimento + situação + dependentes on the surface, everything else behind the "O meu caso" `<details>` panel — subsídio de alimentação, duodécimos, IRS Jovem, região. Live calculation, no submit button; the pure helpers (parsing, form→`WageInput` mapping, breakdown lines) are unit-tested separately from the components
+- [x] Employer cost (custo para a empresa) — everything paid out plus the employer's 23,75 % TSU on the same contribution base as the employee's 11 % (Código Contributivo art. 53.º). Direct cost only: seguro de acidentes de trabalho, medicina no trabalho and training have no statutory rate to apply, and the UI says so rather than inventing one
+- [x] Part-to-whole chart of where the gross goes (líquido / IRS / Segurança Social) — a horizontal stacked bar, not a pie: three slices, long labels, and it holds up at phone width. Palette is the validated categorical slots 1–3, checked in both modes; identity never rests on colour alone (legend + the table below)
+- [x] "Simulação, não é aconselhamento" + "retenção ≠ imposto final" notices, shown with every result alongside the dataset's provenance and its `verified` badge
 
 ### Phase 2 — Loan
 - [ ] Fold existing mortgage + consumer-loan sims into `@engine`

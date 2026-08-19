@@ -12,7 +12,8 @@ import type {
   LoanFormErrors,
   UpdateLoanForm,
 } from "../lib/loan-form.js";
-import type { RateContext } from "../lib/euribor-feed.js";
+import { MARKET_RATE_FALLBACK } from "@pt-finance-tools/engine";
+import type { EuriborState } from "../lib/euribor-feed.js";
 import { formatRate } from "../lib/format.js";
 import { LawReference } from "./LawReference.js";
 import {
@@ -41,7 +42,7 @@ const TENOR_OPTIONS: readonly SelectOption[] = [
 ];
 
 /** Where the index came from, in words the user can act on. */
-const ORIGIN_LABEL: Record<RateContext["marketOrigin"], string> = {
+const ORIGIN_LABEL: Record<EuriborState["origin"], string> = {
   live: "valor do Banco Central Europeu",
   cache: "valor guardado neste dispositivo",
   bundled: "valor incluído na aplicação",
@@ -51,7 +52,7 @@ interface LoanAdvancedPanelProps {
   form: LoanForm;
   errors: LoanFormErrors;
   update: UpdateLoanForm;
-  rates: RateContext;
+  euribor: EuriborState;
   indexRate: number;
 }
 
@@ -59,10 +60,10 @@ export function LoanAdvancedPanel({
   form,
   errors,
   update,
-  rates,
+  euribor,
   indexRate,
 }: LoanAdvancedPanelProps) {
-  const { euribor, market } = rates;
+  const market = MARKET_RATE_FALLBACK;
   const spread = Number(form.spread.replace(",", ".")) || 0;
   const composedRate = indexRate + spread / 100;
 
@@ -166,12 +167,16 @@ export function LoanAdvancedPanel({
                   ? "Taxa depois do período fixo: "
                   : "Taxa do contrato: "}
                 <span className="num">{formatRate(composedRate)}</span>{" "}
-                (indexante + spread). Para comparar, a média das novas
-                operações de crédito à habitação em Portugal foi de{" "}
-                <span className="num">{formatRate(market.averageRate)}</span> em{" "}
-                {market.month} (BCE) — essa média junta taxa fixa e variável,
-                por isso não se lhe pode subtrair a Euribor para obter um
-                spread.
+                (indexante + spread). Para comparar: em {market.month}, metade
+                dos contratos a taxa variável em Portugal ficou abaixo de{" "}
+                <span className="num">
+                  {formatRate(market.variableRate.median)}
+                </span>{" "}
+                e 90 % abaixo de{" "}
+                <span className="num">{formatRate(market.variableRate.p90)}</span>{" "}
+                (Banco de Portugal). Não se lhe pode subtrair a Euribor para
+                obter um spread: cada contrato leva a Euribor da data em que
+                foi assinado, não a de hoje.
               </p>
             </>
           ) : (

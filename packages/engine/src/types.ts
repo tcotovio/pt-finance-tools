@@ -593,24 +593,31 @@ export interface EuriborSnapshot {
 }
 
 /**
- * What Portuguese borrowers actually agreed to recently — context for judging
- * a composed rate, not an input to any calculation.
+ * The distribution of rates on new Portuguese housing loans — context for
+ * judging a composed rate, never an input to any calculation.
  *
- * It exists because the spread is the one number in this project with no
- * source: no statute sets it and no feed publishes a representative figure.
- * Deriving it as "average rate − current Euribor" is unsound — the ECB's
- * average mixes fixed and mixed-rate contracts priced off swaps, and variable
- * ones carry the Euribor fixing from when they were signed, so in a rising
- * market the subtraction measures the lag and the mix rather than the margin
- * (it gives ~0,13 pp against 12M in mid-2026, against real retail spreads
- * nearer 1 pp). So the average is shown beside the user's own rate and left
- * for them to judge, rather than being reverse-engineered into a default.
+ * Restricted to VARIABLE-rate contracts, because that is the only population
+ * comparable to an indexante + spread quote. Even so, no spread is derived
+ * from it: a contract carries the Euribor fixing from when it was signed, so
+ * in a rising market "observed rate − current Euribor" understates the margin.
+ * See the dataset for the full reasoning.
  */
 export interface MarketRateReference {
-  /** The month the average is for, as `YYYY-MM`. Lags Euribor by a month or two. */
+  /** The month the figures are for, as `YYYY-MM`. */
   month: string;
-  /** Average annualised agreed rate on new PT house-purchase loans, as a fraction. */
-  averageRate: number;
+  /** Annualised agreed rate on variable-rate new business, as fractions. */
+  variableRate: {
+    p10: number;
+    median: number;
+    p75: number;
+    p90: number;
+  };
+  /** Share of new lending by rate type, as fractions. */
+  shareOfNewLending: {
+    mixed: number;
+    variable: number;
+    fixed: number;
+  };
   source: string;
   retrievedAt: string;
 }

@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from "vitest";
 import { computeNetWage } from "./withholding.js";
-import { overtimeDetail } from "./overtime.js";
+import { overtimeDetail, OVERTIME_RATE_FACTOR } from "./overtime.js";
 import { CONTINENTE_2026 } from "../data/continente-2026.js";
 import { IRS_JOVEM_2026 } from "../data/irs-jovem-2026.js";
 
@@ -34,6 +34,19 @@ describe("overtimeDetail", () => {
 
   it("rejects a negative amount", () => {
     expect(() => overtimeDetail(-1, 0.18)).toThrow(/must not be negative/);
+  });
+
+  it("turns entirely on one constant, should the reading prove wrong", () => {
+    // The competing (pre-2025) reading applies the full monthly rate. Nothing
+    // else about the model would change under it — this pins that, so the fix
+    // is a one-line data change rather than an investigation.
+    const monthlyRate = 0.137;
+    const detail = overtimeDetail(300, monthlyRate);
+    expect(detail.withholding).toBeCloseTo(
+      300 * monthlyRate * OVERTIME_RATE_FACTOR,
+      10,
+    );
+    expect(OVERTIME_RATE_FACTOR).toBe(0.5);
   });
 });
 

@@ -46,6 +46,22 @@ export interface OvertimeExemption {
   capHeadroom: number;
 }
 
+/**
+ * The halving of art. 99.º-C n.º 8, and the single lever this rule turns on.
+ *
+ * Confidence and its limits, recorded because secondary sources disagree:
+ * despacho 233-A/2026 §5.f (page 3, quoted above) is a primary, 2026-dated
+ * instrument — the same one the tables came from — and it is explicit. But
+ * material still circulates applying the *full* monthly rate to overtime; a
+ * worked example on montepio.org (1 200 € salary, 300 € overtime, 41,10 €
+ * withheld at 13,7 %) does exactly that. It is dated February 2025 and looks
+ * to predate Lei n.º 45-A/2024, which removed the "a partir da 101.ª hora"
+ * threshold with effect from 1 January 2025.
+ *
+ * If a real 2026 payslip ever shows the full rate on overtime, this constant
+ * is the only thing that changes — the rest of the model (autonomous,
+ * contributory, effective-rate reference) holds under either reading.
+ */
 export const OVERTIME_RATE_FACTOR = 0.5;
 
 /**

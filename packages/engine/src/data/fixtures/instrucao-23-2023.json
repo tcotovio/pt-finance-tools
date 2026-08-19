@@ -1,0 +1,29 @@
+{
+  "instrument": "Instrução n.º 23/2023 do Banco de Portugal",
+  "sourceUrl": "https://www.bportugal.pt/instrucao/232023",
+  "publication": "Boletim Oficial n.º 9/2023, 2.º Suplemento, 2023-10-09",
+  "extractedWith": "pdf2json 4.0.3",
+  "note": "Verbatim provisions from a mechanical extraction of the Boletim Oficial PDF.",
+  "provisions": {
+    "shortTerm": {
+      "article": "1.º n.º 1 al. a)",
+      "text": "0,5 pontos percentuais, se o contrato de crédito tiver prazo igual ou inferior a 5 anos;"
+    },
+    "mediumTerm": {
+      "article": "1.º n.º 1 al. b)",
+      "text": "1 ponto percentual, se o contrato de crédito tiver prazo superior a 5 anos e igual ou inferior a 10 anos;"
+    },
+    "longTerm": {
+      "article": "1.º n.º 1 al. c)",
+      "text": "1,5 pontos percentuais, se o contrato de crédito tiver prazo superior a 10 anos."
+    },
+    "indexAveraging": {
+      "article": "1.º n.º 4",
+      "text": "O valor do indexante a ter em conta na aplicação do disposto no número anterior é o resultante da média aritmética simples das cotações diárias no mês anterior ao da realização da avaliação da solvabilidade do consumidor."
+    },
+    "revokes": {
+      "article": "1.º n.º 5",
+      "text": "É revogada a Instrução n.º 3/2018, publicada no Boletim Oficial n.º 1/2018, 3.º Suplemento."
+    }
+  }
+}

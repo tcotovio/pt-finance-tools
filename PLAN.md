@@ -199,11 +199,22 @@ Consolidate the existing React mortgage sim and consumer-loan sim into `@engine`
 - **Forward** (payment from house price): French amortization, `M = P·r·(1+r)ⁿ / ((1+r)ⁿ − 1)`, rate = Euribor(tenor) + spread. Largely done.
 - **Reverse** (max loan from salary): solve for the amount where **stressed DSTI** hits the ceiling, then cross-check LTV and the age-based maturity cap.
 
-Current BdP parameters (config, effective **1 Aug 2026** — Recomendação 1/2026):
-- DSTI ceiling **45%** (up to 10% of a bank's semester volume may exceed it)
-- Stress test: interest-rate shock + income reduction after age 70 applied to DSTI
-- LTV: **90%** own permanent residence · **80%** other purposes
-- Maturity: **40 yrs** for borrowers ≤35 · **35 yrs** for >35
+Current BdP parameters (config, effective **1 Aug 2026** — Recomendação 1/2026, transcribed from the official PDF):
+- DSTI ceiling **45%** (art. 6.º n.º 1); up to **10%** of a bank's semester volume may exceed it (n.º 2)
+- LTV: **90%** own permanent residence · **80%** other purposes (art. 5.º), on the **lower** of price and appraisal value (art. 4.º)
+- Maturity: **40 yrs** for borrowers ≤35 · **35 yrs** for >35 (art. 7.º); with two borrowers, the **older** one's age governs. The 2018 average-maturity recommendation was *eliminated*
+- Income: annual ÷ 12 (art. 4.º n.º 5 a). For contracts ending past 70, a **20% reduction weighted by the share of the contract lived past 70** — not a flat 20%: a 40-year-old on a 35-year loan takes 20% × 5/35 ≈ 2,9%. Waived if already retired (al. b)
+
+### 7.1 The rate shock lives in a different instrument
+
+Recomendação art. 6.º n.º 2 does not state the shock — it defers to **Instrução n.º 23/2023** (BO 9/2023 2.º Supl.), which sets it by contract term: **+0,5 p.p.** (≤5 yrs) · **+1 p.p.** (>5 ≤10) · **+1,5 p.p.** (>10). Bounds are inclusive, so a 10-year contract takes 1 p.p. The 2018 predecessor used a flat 3 p.p., fixed when ECB rates were near zero; Instrução 23/2023 revoked it.
+
+Two consequences the engine encodes:
+
+- The shock is a **separate dated dataset** from the Recomendação, because the two are separate legal instruments on separate revision cycles. Either can be re-issued without touching the other.
+- Only the **new** contract's instalment is stressed. Instalments on credit already held enter the DSTI numerator at face value ("as prestações do novo contrato devem assumir-se constantes e refletir impacto de um aumento da taxa de juro"). Stressing everything — the intuitive reading — understates capacity.
+
+Art. 1.º n.º 4 also fixes what "the Euribor" means for this purpose: the **simple arithmetic mean of the daily quotes in the month before the assessment**. The live feed must therefore expose a monthly average, not a spot rate.
 
 These are exactly the parameters that changed this month — which is why they live in dated config, not in code.
 
@@ -235,11 +246,14 @@ These are exactly the parameters that changed this month — which is why they l
 - [x] "Simulação, não é aconselhamento" + "retenção ≠ imposto final" notices, shown with every result alongside the dataset's provenance and its `verified` badge
 
 ### Phase 2 — Loan
-- [ ] Fold existing mortgage + consumer-loan sims into `@engine`
-- [ ] Euribor live feed + cached fallback
-- [ ] Reverse solver: max loan from salary (stressed DSTI, LTV, maturity-by-age)
-- [ ] BdP params in dated config
-- [ ] Golden tests vs bank simulators
+- [x] BdP params in dated config — `BDP_2026` (Recomendação 1/2026) and `INTEREST_RATE_SHOCK_2023` (Instrução 23/2023) as two separately-versioned datasets, selected by **assessment date** (art. 11.º keys on the solvency assessment, not the signature). Assessments before 1 Aug 2026 throw rather than silently answering under the wrong regime — the 2018 Recomendação is not modelled
+- [x] Transcription cross-check (Axis A): every limit diffed against verbatim provisions mechanically extracted from both official PDFs, checked in as fixtures and re-diffed in CI (`bdp-2026.source.test.ts`). The test pulls the number back out of the quoted article, so editing a limit without the law changing fails
+- [x] Forward: French amortization — instalment, totals, and the full `mapa de amortização`. Anchored on published annuities (200 000 @ 6 %/30 y = 1 199,10) and on structural invariants, not on a re-run of its own formula
+- [x] Reverse solver: max loan from salary — stressed DSTI, LTV on the lower of price/appraisal, maturity capped by the older borrower's age, and the weighted past-70 income reduction. Reports **which constraint binds** rather than only the minimum, since the remedy differs entirely (earn more / bigger deposit / longer term)
+- [ ] Fold existing mortgage + consumer-loan sims into `@engine` — **blocked**: the sims live outside this repo and no path/URL has been supplied. The forward direction was written from the statute-level formula instead, so nothing downstream waits on it; folding them in is now a reconciliation exercise (diff their output against `amortize`) rather than a port
+- [ ] Euribor live feed + cached fallback — must expose the **previous month's simple average** (Instrução 23/2023 art. 1.º n.º 4), not a spot rate
+- [ ] **Axis B for the loan side**: end-to-end cross-check vs bank simulators. Until it passes, `BDP_2026.verified` and `INTEREST_RATE_SHOCK_2023.verified` stay `false` and `MaxLoanResult.parametersVerified` propagates that to the UI
+- [ ] Loan UI (the engine is currently reachable only from tests)
 
 ### Phase 3 — Long tail (opt-in scope)
 - [ ] Disability tables
@@ -261,10 +275,10 @@ These are exactly the parameters that changed this month — which is why they l
 
 ## 10. Open decisions
 
-1. Static hosting target.
-2. Default spread assumptions for the loan calculator's out-of-the-box estimate.
-3. Whether an annual-settlement mode ever enters scope (currently: no).
+1. Default spread assumptions for the loan calculator's out-of-the-box estimate.
+2. Whether an annual-settlement mode ever enters scope (currently: no).
 
 **Resolved:**
+- Static hosting target — GitHub Pages, deployed from `master` by `.github/workflows/deploy.yml`.
 - IRS withholding-table sourcing — no public API exists, so tables are manually transcribed from the official PDF and cross-checked against an independent source (see §5).
 - Stack — npm workspaces (not pnpm), React + Vite + `vite-plugin-pwa` + Vitest (see §3).

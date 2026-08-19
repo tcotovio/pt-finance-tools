@@ -1,0 +1,96 @@
+{
+  "source": "Crédivel — Simulador Taxa de Esforço",
+  "url": "https://credivel.pt/blog/projects/simulador-taxa-esforco/",
+  "capturedAt": "2026-08-19",
+  "statedBasis": "Esta simulação é meramente indicativa e para o cálculo da TAN foi usada a média mensal da Euribor a 12 meses (2,798%) + 1,5 (fator de stress test) + spread base de 0,7 = TAN de 4,998%.",
+  "statedRegime": "Os dados neste simulador foram baseados no documento Recomendação Macroprudencial n.º 1/2026 do Banco de Portugal.",
+  "note": "Captured by driving the published simulator. Its stated arithmetic lets the comparison hold the rate constant: the contract rate is 2,798 + 0,7 = 3,498 %, and the simulator stresses it by the 1,5 p.p. of Instrução 23/2023. Only legally determined outputs are compared — the payment budget and the loan it supports — never commercial pricing.",
+  "contractRate": 0.03498,
+  "scenarios": [
+    {
+      "label": "2 000 €, até 35, 40 anos",
+      "monthlyIncome": 2000,
+      "age": 30,
+      "existingMonthlyDebt": 0,
+      "termYears": 40,
+      "expectedMaxPayment": 900,
+      "expectedMaxLoan": 186697
+    },
+    {
+      "label": "2 000 €, até 35, 30 anos",
+      "monthlyIncome": 2000,
+      "age": 30,
+      "existingMonthlyDebt": 0,
+      "termYears": 30,
+      "expectedMaxPayment": 900,
+      "expectedMaxLoan": 167692
+    },
+    {
+      "label": "2 000 €, até 35, 40 anos, com 230 € de encargos",
+      "monthlyIncome": 2000,
+      "age": 30,
+      "existingMonthlyDebt": 230,
+      "termYears": 40,
+      "expectedMaxPayment": 670,
+      "expectedMaxLoan": 138986
+    },
+    {
+      "label": "1 200 €, até 35, 40 anos",
+      "monthlyIncome": 1200,
+      "age": 30,
+      "existingMonthlyDebt": 0,
+      "termYears": 40,
+      "expectedMaxPayment": 540,
+      "expectedMaxLoan": 112018
+    },
+    {
+      "label": "5 000 €, acima de 35, 30 anos",
+      "monthlyIncome": 5000,
+      "age": 36,
+      "existingMonthlyDebt": 0,
+      "termYears": 30,
+      "expectedMaxPayment": 2250,
+      "expectedMaxLoan": 419229
+    },
+    {
+      "label": "2 500 €, até 35, 25 anos",
+      "monthlyIncome": 2500,
+      "age": 30,
+      "existingMonthlyDebt": 0,
+      "termYears": 25,
+      "expectedMaxPayment": 1125,
+      "expectedMaxLoan": 192481
+    },
+    {
+      "label": "4 000 €, até 35, 20 anos, com 500 € de encargos",
+      "monthlyIncome": 4000,
+      "age": 30,
+      "existingMonthlyDebt": 500,
+      "termYears": 20,
+      "expectedMaxPayment": 1300,
+      "expectedMaxLoan": 197016
+    }
+  ],
+  "divergentScenarios": [
+    {
+      "label": "3 000 €, acima de 35, 35 anos",
+      "monthlyIncome": 3000,
+      "age": 36,
+      "existingMonthlyDebt": 0,
+      "termYears": 35,
+      "expectedMaxPayment": 1350,
+      "expectedMaxLoan": 267560,
+      "divergence": "income-reduction-past-70"
+    },
+    {
+      "label": "3 000 €, acima de 35, 35 anos, com 250 € de encargos",
+      "monthlyIncome": 3000,
+      "age": 36,
+      "existingMonthlyDebt": 250,
+      "termYears": 35,
+      "expectedMaxPayment": 1100,
+      "expectedMaxLoan": 218012,
+      "divergence": "income-reduction-past-70"
+    }
+  ]
+}

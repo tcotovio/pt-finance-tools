@@ -238,10 +238,12 @@ describe("maxLoan — provenance and validation", () => {
     expect(result.sources.shock).toContain("23/2023");
   });
 
-  it("reports the parameters as unverified until Axis B is done", () => {
-    // Deliberate: transcription is cross-checked, but nothing has yet
-    // compared the solver end-to-end against a bank simulator (PLAN.md §6).
-    expect(solve(base).parametersVerified).toBe(false);
+  it("reports the parameters as verified, now that both axes pass", () => {
+    // Axis A diffs the limits against the extracted PDFs; Axis B reproduces
+    // an independent implementation of the DSTI rules to the euro (see
+    // external-crosscheck.test.ts). The flag asserts the legally determined
+    // computation only — never commercial pricing.
+    expect(solve(base).parametersVerified).toBe(true);
   });
 
   it("rejects nonsensical inputs", () => {

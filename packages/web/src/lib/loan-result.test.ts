@@ -164,11 +164,13 @@ describe("buildLoanSummary — the age rules surface", () => {
 });
 
 describe("buildLoanSummary — provenance", () => {
-  it("passes both sources through and flags them unverified", () => {
+  it("passes both sources through and flags them verified", () => {
     const summary = summarize(input());
     expect(summary.sources.macroprudential).toContain("1/2026");
     expect(summary.sources.shock).toContain("23/2023");
-    expect(summary.parametersVerified).toBe(false);
+    // Both axes pass for the legally determined computation; the UI badge
+    // reads "Dados verificados" on the strength of that and nothing wider.
+    expect(summary.parametersVerified).toBe(true);
   });
 });
 

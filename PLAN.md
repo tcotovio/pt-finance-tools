@@ -291,6 +291,8 @@ These are exactly the parameters that changed this month — which is why they l
 - **Maintenance cadence**: January (new IRS tables + IAS), ad-hoc mid-year despachos, BdP recommendation updates. Track these as recurring calendar items.
 - **i18n**: PT primary; EN a nice-to-have (also useful for expats).
 - **Privacy**: 100% client-side calculation — no financial data transmitted.
+- **Staleness is a correctness bug here, not a nuisance.** The app precaches its own shell, so a returning visitor would otherwise run the *previous* build for a whole visit — showing last year's tables behind a "Dados verificados" badge on the very January the tables change. The app therefore reloads as soon as a new service worker activates (`lib/sw-update.ts`).
+  - The obvious hook, `controllerchange`, does **not** work for this: `clients.claim()` only fires it for clients not already controlled by the registration, so an in-place update is silent for exactly the returning visitors who need it. The registration's `updatefound` → `statechange`/`activated` sequence is the signal that fires. Verified against real builds served by a real worker, not reasoned about.
 
 ---
 

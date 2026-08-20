@@ -16,10 +16,10 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'Salário líquido — ferramentas financeiras PT',
-        short_name: 'Salário líquido',
+        name: 'Ferramentas financeiras — Portugal',
+        short_name: 'Ferramentas PT',
         description:
-          'Simulador do salário líquido em Portugal: retenção na fonte, subsídio de alimentação, duodécimos e IRS Jovem. Tudo calculado no dispositivo.',
+          'Salário líquido e crédito à habitação em Portugal: retenção na fonte, subsídio de alimentação, duodécimos, IRS Jovem, e quanto pode pedir ao banco com os limites do Banco de Portugal. Tudo calculado no dispositivo.',
         lang: 'pt-PT',
         // Relative, so they follow `base` instead of pinning the app to the
         // domain root.

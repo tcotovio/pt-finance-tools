@@ -11,6 +11,7 @@ import { buildLoanSummary, type LoanSummary } from "../lib/loan-result.js";
 import { formatEuro, formatPercent, splitOnUrls } from "../lib/format.js";
 import { LawReference } from "./LawReference.js";
 import { LoanLimitCurve } from "./LoanLimitCurve.js";
+import { MarketComparison } from "./MarketComparison.js";
 
 interface LoanResultPanelProps {
   outcome: LoanOutcome | null;
@@ -96,6 +97,14 @@ function LoanResultBody({
       </div>
 
       {input ? <LoanLimitCurve input={input} /> : null}
+
+      {summary.maxLoan > 0 ? (
+        <MarketComparison
+          contractPayment={summary.contractPayment}
+          contractRate={summary.stressedRate - summary.shock}
+          rateType={summary.rateType}
+        />
+      ) : null}
 
       <dl className="lines">
         <div className="line is-earning">

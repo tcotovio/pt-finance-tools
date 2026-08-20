@@ -73,7 +73,8 @@ export type {
   LoanRateType,
   EuriborTenor,
   EuriborSnapshot,
-  MarketRateReference,
+  MortgageMarket,
+  Percentiles,
 } from "./types.js";
 
 export {
@@ -134,6 +135,6 @@ export {
   INTEREST_RATE_SHOCK_2023,
   EURIBOR_2026_07,
   EURIBOR_FALLBACK,
-  MARKET_RATE_2026_06,
-  MARKET_RATE_FALLBACK,
+  MORTGAGE_MARKET_2026_06,
+  MORTGAGE_MARKET,
 } from "./data/index.js";

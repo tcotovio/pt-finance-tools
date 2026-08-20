@@ -1,11 +1,12 @@
 // The result: one headline number, a payslip-style breakdown, and the
 // caveats that make the number honest.
 
-import type { WageResult } from "@pt-finance-tools/engine";
+import type { WageInput, WageResult } from "@pt-finance-tools/engine";
 import { buildBreakdown } from "../lib/breakdown.js";
 import type { BreakdownLine } from "../lib/breakdown.js";
 import type { ComputeOutcome } from "../lib/compute.js";
 import { EmployerCost } from "./EmployerCost.js";
+import { WageRateCurve } from "./WageRateCurve.js";
 import { GrossSplitChart } from "./GrossSplitChart.js";
 import { LawReference } from "./LawReference.js";
 import {
@@ -18,9 +19,11 @@ import {
 
 interface ResultPanelProps {
   outcome: ComputeOutcome | null;
+  /** The engine input behind `outcome`, resampled by the rate curve. */
+  input: WageInput | null;
 }
 
-export function ResultPanel({ outcome }: ResultPanelProps) {
+export function ResultPanel({ outcome, input }: ResultPanelProps) {
   return (
     <section className="panel result" aria-live="polite">
       <h2 className="visually-hidden">Resultado da simulação</h2>
@@ -30,7 +33,7 @@ export function ResultPanel({ outcome }: ResultPanelProps) {
           decomposição.
         </p>
       ) : outcome.ok ? (
-        <ResultBody result={outcome.result} />
+        <ResultBody result={outcome.result} input={input} />
       ) : (
         <p className="result-error" role="alert">
           {outcome.message}
@@ -48,7 +51,13 @@ function formatLine(line: BreakdownLine): string {
   return formatEuro(line.amount);
 }
 
-function ResultBody({ result }: { result: WageResult }) {
+function ResultBody({
+  result,
+  input,
+}: {
+  result: WageResult;
+  input: WageInput | null;
+}) {
   const breakdown = buildBreakdown(result);
 
   return (
@@ -90,6 +99,8 @@ function ResultBody({ result }: { result: WageResult }) {
       </dl>
 
       {result.irsJovem ? <IrsJovemNote result={result} /> : null}
+
+      {input ? <WageRateCurve input={input} /> : null}
 
       <EmployerCost employer={breakdown.employer} />
 

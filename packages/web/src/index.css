@@ -28,6 +28,19 @@
   --mono: ui-monospace, "SF Mono", Consolas, monospace;
 
   --measure: 68ch;
+
+  /* Chart palette. Categorical slots 1-3, in fixed order, validated for both
+     modes (lightness band, chroma floor, CVD separation, normal-vision floor,
+     contrast). Slot 3 sits below 3:1 against the light surface, which is why
+     every chart using it carries a legend AND a table view — that relief is
+     required, not optional. Shared by every chart, so they live with the
+     other tokens rather than inside one component. */
+  --series-net: #2a78d6;
+  --series-irs: #eb6834;
+  --series-social: #1baf7a;
+  /* A fill that must read as present-but-secondary; --border-strong is a
+     hairline colour and disappears at 10px. */
+  --constraint-muted: #8c9aa7;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -48,6 +61,12 @@
     --note-border: #55452a;
 
     --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 10px 30px -18px rgb(0 0 0 / 80%);
+
+    /* Re-stepped for the dark surface, not flipped: same hues, own steps. */
+    --series-net: #3987e5;
+    --series-irs: #d95926;
+    --series-social: #199e70;
+    --constraint-muted: #5b6f7e;
   }
 }
 

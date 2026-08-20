@@ -54,8 +54,13 @@ export function LoanCalculator() {
     setForm((previous) => ({ ...previous, [key]: value }));
 
   const errors = useMemo(() => validateLoanForm(form), [form]);
+  // Lifted for the same reason as on the wage side: the limit curve resamples
+  // this input across contract terms.
+  const input = useMemo(
+    () => toMaxLoanInput(form, assessmentDate, indexRate),
+    [assessmentDate, form, indexRate],
+  );
   const outcome = useMemo<LoanOutcome | null>(() => {
-    const input = toMaxLoanInput(form, assessmentDate, indexRate);
     if (!input) return null;
     if (Object.keys(errors).length > 0) {
       return {
@@ -64,7 +69,7 @@ export function LoanCalculator() {
       };
     }
     return computeMaxLoanSafely(input);
-  }, [assessmentDate, errors, form, indexRate]);
+  }, [errors, input]);
 
   return (
     <div className="calculator">
@@ -127,6 +132,7 @@ export function LoanCalculator() {
 
       <LoanResultPanel
         outcome={outcome}
+        input={input}
         propertyPrice={parseAmount(form.propertyPrice) ?? 0}
         monthlyIncome={parseAmount(form.income) ?? 0}
         existingMonthlyDebt={parseAmount(form.existingDebt) ?? 0}

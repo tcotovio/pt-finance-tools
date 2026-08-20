@@ -5,14 +5,17 @@
 // capped by income and being capped by the property's value call for opposite
 // responses, so the panel names the binding rule and says what moves it.
 
-import type { MaxLoanResult } from "@pt-finance-tools/engine";
+import type { MaxLoanInput, MaxLoanResult } from "@pt-finance-tools/engine";
 import type { LoanOutcome } from "../lib/compute.js";
 import { buildLoanSummary, type LoanSummary } from "../lib/loan-result.js";
 import { formatEuro, formatPercent, splitOnUrls } from "../lib/format.js";
 import { LawReference } from "./LawReference.js";
+import { LoanLimitCurve } from "./LoanLimitCurve.js";
 
 interface LoanResultPanelProps {
   outcome: LoanOutcome | null;
+  /** The engine input behind `outcome`, resampled by the limit curve. */
+  input: MaxLoanInput | null;
   propertyPrice: number;
   monthlyIncome: number;
   existingMonthlyDebt: number;
@@ -20,6 +23,7 @@ interface LoanResultPanelProps {
 
 export function LoanResultPanel({
   outcome,
+  input,
   propertyPrice,
   monthlyIncome,
   existingMonthlyDebt,
@@ -35,6 +39,7 @@ export function LoanResultPanel({
       ) : outcome.ok ? (
         <LoanResultBody
           result={outcome.result}
+          input={input}
           propertyPrice={propertyPrice}
           monthlyIncome={monthlyIncome}
           existingMonthlyDebt={existingMonthlyDebt}
@@ -50,11 +55,13 @@ export function LoanResultPanel({
 
 function LoanResultBody({
   result,
+  input,
   propertyPrice,
   monthlyIncome,
   existingMonthlyDebt,
 }: {
   result: MaxLoanResult;
+  input: MaxLoanInput | null;
   propertyPrice: number;
   monthlyIncome: number;
   existingMonthlyDebt: number;
@@ -87,6 +94,8 @@ function LoanResultBody({
           {summary.binding.remedy}
         </p>
       </div>
+
+      {input ? <LoanLimitCurve input={input} /> : null}
 
       <dl className="lines">
         <div className="line is-earning">

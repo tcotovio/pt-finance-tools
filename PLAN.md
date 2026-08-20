@@ -288,6 +288,9 @@ These are exactly the parameters that changed this month — which is why they l
 ## 9. Cross-cutting concerns
 
 - **Disclaimer** from day one: outputs are simulations, not financial advice.
+- **Every result lists its own sources.** A "Fontes" panel names each dataset the answer actually leaned on — withholding tables, meal-allowance ceilings, IRS Jovem parameters, the BdP limits, the shock, the Euribor month, the market statistics — with what each was used for, whether it is cross-checked, and a link. The verified badge sits on the summary, visible whether the panel is open or shut: a caveat behind a disclosure is not a caveat.
+  - **Links are verified by rendering, never by status code.** `diariodarepublica.pt` answers **200** for consolidated-code URLs that then route client-side to "A página não se encontra disponível" — so `curl` reports success on a dead link. Every URL in the app was opened in a browser and read. The consolidated CIRS and Código do Trabalho check out; the Código dos Regimes Contributivos could not be located at a URL that renders, so `cc-53` deliberately carries no link.
+  - Links point at the consolidated **code**, not the article: DRE's per-article anchors are generated client-side and could not be verified the same way. The citation names the article; the link gets the reader to the right instrument.
 - **Maintenance cadence**: January (new IRS tables + IAS), ad-hoc mid-year despachos, BdP recommendation updates. Track these as recurring calendar items.
 - **i18n**: PT primary; EN a nice-to-have (also useful for expats).
 - **Charts and comparisons**, in two kinds, and the distinction is the point:

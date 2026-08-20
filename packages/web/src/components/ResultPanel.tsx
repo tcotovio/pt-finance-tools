@@ -9,12 +9,13 @@ import { EmployerCost } from "./EmployerCost.js";
 import { WageRateCurve } from "./WageRateCurve.js";
 import { GrossSplitChart } from "./GrossSplitChart.js";
 import { LawReference } from "./LawReference.js";
+import { SourceList } from "./SourceList.js";
+import { wageSources } from "../lib/sources.js";
 import {
   formatEuro,
   formatNegativeEuro,
   formatPercent,
   formatPositiveEuro,
-  splitOnUrls,
 } from "../lib/format.js";
 
 interface ResultPanelProps {
@@ -117,24 +118,7 @@ function ResultBody({
         </p>
       </div>
 
-      <p className="provenance">
-        <span
-          className={`badge${result.datasetVerified ? " is-verified" : " is-unverified"}`}
-        >
-          {result.datasetVerified ? "Dados verificados" : "Dados por verificar"}
-        </span>
-        <span className="provenance-source">
-          {splitOnUrls(result.datasetSource).map((segment, index) =>
-            segment.isUrl ? (
-              <a key={index} href={segment.text} target="_blank" rel="noreferrer">
-                {segment.text}
-              </a>
-            ) : (
-              <span key={index}>{segment.text}</span>
-            ),
-          )}
-        </span>
-      </p>
+      <SourceList entries={input ? wageSources(result, input.referenceDate) : []} />
     </>
   );
 }

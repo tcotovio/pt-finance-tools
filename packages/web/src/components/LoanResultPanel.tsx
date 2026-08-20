@@ -5,18 +5,26 @@
 // capped by income and being capped by the property's value call for opposite
 // responses, so the panel names the binding rule and says what moves it.
 
-import type { MaxLoanInput, MaxLoanResult } from "@pt-finance-tools/engine";
+import type {
+  EuriborSnapshot,
+  MaxLoanInput,
+  MaxLoanResult,
+} from "@pt-finance-tools/engine";
 import type { LoanOutcome } from "../lib/compute.js";
 import { buildLoanSummary, type LoanSummary } from "../lib/loan-result.js";
-import { formatEuro, formatPercent, splitOnUrls } from "../lib/format.js";
+import { formatEuro, formatPercent } from "../lib/format.js";
 import { LawReference } from "./LawReference.js";
 import { LoanLimitCurve } from "./LoanLimitCurve.js";
 import { MarketComparison } from "./MarketComparison.js";
+import { SourceList } from "./SourceList.js";
+import { loanSources } from "../lib/sources.js";
 
 interface LoanResultPanelProps {
   outcome: LoanOutcome | null;
   /** The engine input behind `outcome`, resampled by the limit curve. */
   input: MaxLoanInput | null;
+  /** The index snapshot actually used, so the sources can cite its month. */
+  euribor: EuriborSnapshot;
   propertyPrice: number;
   monthlyIncome: number;
   existingMonthlyDebt: number;
@@ -25,6 +33,7 @@ interface LoanResultPanelProps {
 export function LoanResultPanel({
   outcome,
   input,
+  euribor,
   propertyPrice,
   monthlyIncome,
   existingMonthlyDebt,
@@ -41,6 +50,7 @@ export function LoanResultPanel({
         <LoanResultBody
           result={outcome.result}
           input={input}
+          euribor={euribor}
           propertyPrice={propertyPrice}
           monthlyIncome={monthlyIncome}
           existingMonthlyDebt={existingMonthlyDebt}
@@ -57,12 +67,14 @@ export function LoanResultPanel({
 function LoanResultBody({
   result,
   input,
+  euribor,
   propertyPrice,
   monthlyIncome,
   existingMonthlyDebt,
 }: {
   result: MaxLoanResult;
   input: MaxLoanInput | null;
+  euribor: EuriborSnapshot;
   propertyPrice: number;
   monthlyIncome: number;
   existingMonthlyDebt: number;
@@ -216,26 +228,9 @@ function LoanResultBody({
         </p>
       </div>
 
-      <p className="provenance">
-        <span
-          className={`badge${summary.parametersVerified ? " is-verified" : " is-unverified"}`}
-        >
-          {summary.parametersVerified ? "Dados verificados" : "Dados por verificar"}
-        </span>
-        <span className="provenance-source">
-          {splitOnUrls(
-            `${summary.sources.macroprudential} · ${summary.sources.shock}`,
-          ).map((segment, index) =>
-            segment.isUrl ? (
-              <a key={index} href={segment.text} target="_blank" rel="noreferrer">
-                {segment.text}
-              </a>
-            ) : (
-              <span key={index}>{segment.text}</span>
-            ),
-          )}
-        </span>
-      </p>
+      {input ? (
+        <SourceList entries={loanSources(result, input.assessmentDate, euribor)} />
+      ) : null}
     </>
   );
 }

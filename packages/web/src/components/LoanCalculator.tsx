@@ -133,6 +133,7 @@ export function LoanCalculator() {
       <LoanResultPanel
         outcome={outcome}
         input={input}
+        euribor={euribor.snapshot}
         propertyPrice={parseAmount(form.propertyPrice) ?? 0}
         monthlyIncome={parseAmount(form.income) ?? 0}
         existingMonthlyDebt={parseAmount(form.existingDebt) ?? 0}

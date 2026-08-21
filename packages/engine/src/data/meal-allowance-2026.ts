@@ -23,8 +23,11 @@ export const MEAL_ALLOWANCE_2026: MealAllowanceLimits = {
     /** Paid in cash as part of the salary (em dinheiro). */
     cash: 6.15,
   },
+  // Leads with the instrument that sets the exemption, not the simulator the
+  // values were cross-checked against — a reader following the link wants the
+  // rule, and the cross-check is named after it.
   source:
-    "CIRS art. 2.º n.º 3 b) 2), 2026 values — cross-checked against the " +
-    "Doutor Finanças 2026 simulator (https://www.doutorfinancas.pt/ferramentas/simulador-salario-liquido-2026/)",
+    "CIRS art. 2.º n.º 3 b) 2), valores de 2026 — https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2014-70048167 " +
+    "· confrontado com o simulador do Doutor Finanças 2026",
   verified: true,
 };

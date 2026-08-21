@@ -12,7 +12,7 @@ import type {
   LoanFormErrors,
   UpdateLoanForm,
 } from "../lib/loan-form.js";
-import { MARKET_RATE_FALLBACK } from "@pt-finance-tools/engine";
+import { MORTGAGE_MARKET } from "@pt-finance-tools/engine";
 import type { EuriborState } from "../lib/euribor-feed.js";
 import { formatRate } from "../lib/format.js";
 import { LawReference } from "./LawReference.js";
@@ -63,7 +63,7 @@ export function LoanAdvancedPanel({
   euribor,
   indexRate,
 }: LoanAdvancedPanelProps) {
-  const market = MARKET_RATE_FALLBACK;
+  const market = MORTGAGE_MARKET;
   const spread = Number(form.spread.replace(",", ".")) || 0;
   const composedRate = indexRate + spread / 100;
 
@@ -149,7 +149,17 @@ export function LoanAdvancedPanel({
                     {ORIGIN_LABEL[euribor.origin]}.
                     {euribor.current
                       ? " É o mês que a lei manda usar."
-                      : " Ainda não é o mês exigido pela lei, por isso o resultado é uma estimativa."}
+                      : " Ainda não é o mês exigido pela lei, por isso o resultado é uma estimativa."}{" "}
+                    Em {market.month},{" "}
+                    {Math.round(
+                      market.indexShareOfNewBusiness["6m"] * 100,
+                    )}{" "}
+                    % dos novos contratos a taxa variável seguiam a Euribor a 6
+                    meses, contra{" "}
+                    {Math.round(
+                      market.indexShareOfNewBusiness["12m"] * 100,
+                    )}{" "}
+                    % a 12 meses.
                   </span>
                 }
               />
@@ -167,16 +177,11 @@ export function LoanAdvancedPanel({
                   ? "Taxa depois do período fixo: "
                   : "Taxa do contrato: "}
                 <span className="num">{formatRate(composedRate)}</span>{" "}
-                (indexante + spread). Para comparar: em {market.month}, metade
-                dos contratos a taxa variável em Portugal ficou abaixo de{" "}
-                <span className="num">
-                  {formatRate(market.variableRate.median)}
-                </span>{" "}
-                e 90 % abaixo de{" "}
-                <span className="num">{formatRate(market.variableRate.p90)}</span>{" "}
-                (Banco de Portugal). Não se lhe pode subtrair a Euribor para
-                obter um spread: cada contrato leva a Euribor da data em que
-                foi assinado, não a de hoje.
+                (indexante + spread). Não se pode subtrair a Euribor à
+                média do mercado para obter um spread: cada contrato leva a
+                Euribor da data em que foi assinado, não a de hoje. A
+                comparação com o mercado está no resultado, ao lado da sua
+                prestação.
               </p>
             </>
           ) : (

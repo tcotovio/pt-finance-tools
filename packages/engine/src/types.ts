@@ -593,31 +593,46 @@ export interface EuriborSnapshot {
 }
 
 /**
- * The distribution of rates on new Portuguese housing loans — context for
- * judging a composed rate, never an input to any calculation.
+ * A published distribution, as the percentiles BdP actually reports.
  *
- * Restricted to VARIABLE-rate contracts, because that is the only population
- * comparable to an indexante + spread quote. Even so, no spread is derived
- * from it: a contract carries the Euribor fixing from when it was signed, so
- * in a rising market "observed rate − current Euribor" understates the margin.
- * See the dataset for the full reasoning.
+ * Some series omit quartiles, so p25/p75 are optional rather than faked — a
+ * missing percentile is missing, not interpolated into existence.
  */
-export interface MarketRateReference {
+export interface Percentiles {
+  p10: number;
+  p25?: number;
+  median: number;
+  p75?: number;
+  p90: number;
+}
+
+/**
+ * The mortgage market as Banco de Portugal's statistics describe it — context
+ * shown beside the user's own numbers, never an input to a calculation.
+ *
+ * No spread is derived from it: see the dataset for why "observed rate minus
+ * Euribor" does not survive contact with the product mix or the signature lag.
+ */
+export interface MortgageMarket {
   /** The month the figures are for, as `YYYY-MM`. */
   month: string;
-  /** Annualised agreed rate on variable-rate new business, as fractions. */
-  variableRate: {
-    p10: number;
-    median: number;
-    p75: number;
-    p90: number;
+  /** Annualised agreed rate on new business, by rate type, as fractions. */
+  newBusinessRate: {
+    variable: Percentiles;
+    fixed: Percentiles;
+    /** Taxa mista has no published rate percentiles — only a share. */
+    mixed?: Percentiles;
   };
+  /** Monthly instalment on the outstanding stock, in euros. */
+  instalmentStock: Percentiles;
   /** Share of new lending by rate type, as fractions. */
   shareOfNewLending: {
     mixed: number;
     variable: number;
     fixed: number;
   };
+  /** Share of new variable-rate lending by index, as fractions. */
+  indexShareOfNewBusiness: Record<EuriborTenor | "other", number>;
   source: string;
   retrievedAt: string;
 }

@@ -468,24 +468,10 @@
    repeated in the table below, never carried by colour alone. */
 
 .split-chart {
-  --constraint-muted: #8c9aa7;
-  --series-net: #2a78d6;
-  --series-irs: #eb6834;
-  --series-social: #1baf7a;
-
   margin: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-
-@media (prefers-color-scheme: dark) {
-  .split-chart {
-    --constraint-muted: #5b6f7e;
-    --series-net: #3987e5;
-    --series-irs: #d95926;
-    --series-social: #199e70;
-  }
 }
 
 .split-chart-caption {
@@ -945,5 +931,354 @@ main:focus {
 .constraint-detail {
   margin: 6px 0 0;
   font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+/* --- line charts --------------------------------------------------------
+   Two curves share this: the wage rate curve and the loan limit curve. Marks
+   are thin (2px), the grid recessive, and only the "you are here" marker is
+   labelled directly — values come from the hover layer or the table, never
+   from a number printed on every point.
+
+   The slot colours are the same validated categorical order the split chart
+   uses. Slot 3's contrast against the light surface is below 3:1, which is
+   why a legend and a table view are not optional here. */
+
+.line-chart {
+  /* The explanatory note sits directly below, so the pair carries the gap. */
+  margin: 0 0 6px;
+}
+
+.line-chart-caption {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.line-chart-svg {
+  inline-size: 100%;
+  block-size: auto;
+  overflow: visible;
+  touch-action: pan-y;
+}
+
+.chart-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.chart-tick {
+  fill: var(--text-muted);
+  font-size: 10px;
+  font-family: var(--mono);
+}
+
+.chart-line {
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.chart-line.is-dashed {
+  stroke-dasharray: 5 4;
+}
+
+.chart-line.is-slot-1,
+.chart-dot.is-slot-1 {
+  stroke: var(--series-net);
+}
+
+.chart-line.is-slot-2,
+.chart-dot.is-slot-2 {
+  stroke: var(--series-irs);
+}
+
+.chart-line.is-slot-3,
+.chart-dot.is-slot-3 {
+  stroke: var(--series-social);
+}
+
+.chart-dot {
+  fill: var(--surface);
+  stroke-width: 2;
+}
+
+.chart-crosshair {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+
+.chart-marker {
+  stroke: var(--text-muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.chart-marker-label {
+  fill: var(--text-muted);
+  font-size: 10px;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8125rem;
+}
+
+.chart-legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chart-swatch {
+  inline-size: 14px;
+  block-size: 3px;
+  border-radius: 2px;
+  flex: none;
+}
+
+.chart-swatch.is-dashed {
+  background-image: linear-gradient(90deg, currentColor 60%, transparent 60%);
+  background-size: 6px 3px;
+}
+
+.chart-swatch.is-slot-1 {
+  background-color: var(--series-net);
+  color: var(--series-net);
+}
+
+.chart-swatch.is-slot-2 {
+  background-color: var(--series-irs);
+  color: var(--series-irs);
+}
+
+.chart-swatch.is-slot-3 {
+  background-color: var(--series-social);
+  color: var(--series-social);
+}
+
+.chart-swatch.is-dashed.is-slot-1,
+.chart-swatch.is-dashed.is-slot-2,
+.chart-swatch.is-dashed.is-slot-3 {
+  background-color: transparent;
+}
+
+.chart-legend-label {
+  color: var(--text-muted);
+}
+
+.chart-legend-value {
+  font-weight: 600;
+}
+
+.chart-hover-hint {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  min-block-size: 1.1em;
+}
+
+.chart-table {
+  margin-top: 8px;
+  font-size: 0.8125rem;
+}
+
+.chart-table summary {
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.chart-table-scroll {
+  max-block-size: 260px;
+  overflow: auto;
+  margin-top: 8px;
+}
+
+.chart-table table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.chart-table th,
+.chart-table td {
+  padding: 4px 8px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  font-weight: 400;
+}
+
+.chart-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.chart-note {
+  margin: 6px 0 20px;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+/* --- distribution strip -------------------------------------------------
+   One value against a published range. The track IS the p10–p90 axis, so a
+   marker at the right edge means "at or above the 90th percentile" whatever
+   the magnitude. Colour carries no identity here — the accent is the reader's
+   own value, everything else is surface — and every number on the strip is
+   written out beneath it. */
+
+.distribution {
+  margin: 0 0 18px;
+}
+
+.distribution-caption {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.distribution-track {
+  position: relative;
+  block-size: 12px;
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+}
+
+.distribution-box {
+  position: absolute;
+  inset-block: 0;
+  background: var(--border-strong);
+  opacity: 0.55;
+}
+
+.distribution-median {
+  position: absolute;
+  inset-block: -3px;
+  inline-size: 2px;
+  background: var(--text-muted);
+  transform: translateX(-1px);
+}
+
+.distribution-marker {
+  position: absolute;
+  inset-block: -6px;
+  inline-size: 2px;
+  background: var(--accent);
+  transform: translateX(-1px);
+}
+
+.distribution-marker-dot {
+  position: absolute;
+  inset-block-start: -4px;
+  inset-inline-start: -4px;
+  inline-size: 10px;
+  block-size: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  /* A ring in the surface colour, so the dot stays legible on the median. */
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.distribution-scale {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.distribution-scale-mid {
+  text-align: center;
+}
+
+.distribution-reading {
+  margin: 8px 0 0;
+  font-size: 0.8125rem;
+}
+
+.distribution-source {
+  margin: 4px 0 0;
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+}
+
+/* --- sources -------------------------------------------------------------
+   Collapsed by default: most readers want the answer, not its bibliography.
+   The verified badge stays on the summary, open or shut — a caveat hidden
+   behind a disclosure is not a caveat. */
+
+.sources {
+  margin-top: 18px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.sources summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 0.8125rem;
+}
+
+.sources-title {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.sources-list {
+  display: grid;
+  gap: 14px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sources-label {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sources-flag {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--note-border);
+  background: var(--note-bg);
+  color: var(--text-muted);
+}
+
+.sources-used-for {
+  margin: 2px 0 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.sources-citation {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.sources-note {
+  margin: 14px 0 0;
+  font-size: 0.75rem;
   color: var(--text-muted);
 }

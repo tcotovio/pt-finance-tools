@@ -137,3 +137,14 @@ export function splitOnUrls(text: string): TextSegment[] {
   }
   return segments;
 }
+
+/**
+ * Euros for an axis tick: no cents, no decimals.
+ *
+ * Axis labels are read as landmarks, not as values — the exact figure comes
+ * from the hover layer or the table underneath, so the cents on a tick are
+ * pure noise competing with the marks.
+ */
+export function formatEuroCompact(value: number): string {
+  return `${Math.round(value).toLocaleString("pt-PT")} €`;
+}

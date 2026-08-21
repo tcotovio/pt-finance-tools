@@ -9,7 +9,7 @@ import {
   referenceMonth,
 } from "./euribor.js";
 import { EURIBOR_2026_07 } from "../data/euribor-2026-07.js";
-import { MARKET_RATE_2026_06 } from "../data/market-rate-2026-06.js";
+import { MORTGAGE_MARKET_2026_06 } from "../data/mortgage-market-2026-06.js";
 import type { EuriborSnapshot } from "../types.js";
 
 describe("referenceMonth", () => {
@@ -98,38 +98,58 @@ describe("contractRate", () => {
   });
 });
 
-describe("MARKET_RATE_2026_06 — context, never a derived spread", () => {
-  it("carries a plausible variable-rate distribution, in order", () => {
-    const v = MARKET_RATE_2026_06.variableRate;
+describe("MORTGAGE_MARKET_2026_06 — context, never a derived spread", () => {
+  it("carries variable-rate percentiles in order", () => {
+    const v = MORTGAGE_MARKET_2026_06.newBusinessRate.variable;
     expect(v.p10).toBeLessThan(v.median);
-    expect(v.median).toBeLessThan(v.p75);
-    expect(v.p75).toBeLessThan(v.p90);
+    expect(v.median).toBeLessThan(v.p75!);
+    expect(v.p75!).toBeLessThan(v.p90);
     expect(v.p10).toBeGreaterThan(0.001);
     expect(v.p90).toBeLessThan(0.15);
   });
 
+  it("carries instalment percentiles in order, in euros", () => {
+    const i = MORTGAGE_MARKET_2026_06.instalmentStock;
+    expect(i.p10).toBeLessThan(i.p25!);
+    expect(i.p25!).toBeLessThan(i.median);
+    expect(i.median).toBeLessThan(i.p75!);
+    expect(i.p75!).toBeLessThan(i.p90);
+  });
+
+  it("leaves taxa mista's rate distribution absent rather than guessed", () => {
+    // BdP publishes mista's share but not its price distribution — the
+    // awkward gap in this data, since mista is the dominant product. Absent
+    // beats substituting a neighbouring series.
+    expect(MORTGAGE_MARKET_2026_06.newBusinessRate.mixed).toBeUndefined();
+  });
+
   it("cites Banco de Portugal's own statistics", () => {
-    // Bank-reported to BdP, unlike the simulators used for Axis B.
-    expect(MARKET_RATE_2026_06.source).toContain("BPstat");
-    expect(MARKET_RATE_2026_06.source).toContain("Banco de Portugal");
+    expect(MORTGAGE_MARKET_2026_06.source).toContain("BPstat");
+    expect(MORTGAGE_MARKET_2026_06.source).toContain("Banco de Portugal");
   });
 
   it("records a market where taxa mista dominates", () => {
-    // The reason mista is modelled at all: it is the market, not an edge case.
-    const share = MARKET_RATE_2026_06.shareOfNewLending;
+    const share = MORTGAGE_MARKET_2026_06.shareOfNewLending;
     expect(share.mixed).toBeGreaterThan(0.5);
     expect(share.mixed).toBeGreaterThan(share.variable + share.fixed);
     expect(share.mixed + share.variable + share.fixed).toBeCloseTo(1, 2);
   });
 
+  it("records index shares that account for the whole market", () => {
+    const s = MORTGAGE_MARKET_2026_06.indexShareOfNewBusiness;
+    expect(s["3m"] + s["6m"] + s["12m"] + s.other).toBeCloseTo(1, 2);
+    // 6M is the market's usual choice, which is not the intuitive guess.
+    expect(s["6m"]).toBeGreaterThan(s["12m"]);
+    expect(s["6m"]).toBeGreaterThan(s["3m"]);
+  });
+
   it("still cannot be turned into a spread by subtracting Euribor", () => {
-    // Restricting to variable contracts removes the product-mix problem, but
+    // Restricting to variable contracts removes the product-mix problem but
     // not the signature lag: a June contract carries the fixing from when it
-    // was agreed, which in a rising market is lower than June's. The implied
-    // margin therefore still reads well under any real retail spread. Pinned
-    // so nobody later wires this subtraction into a default.
+    // was agreed, below June's in a rising market. Pinned so nobody later
+    // "fixes" this by wiring the subtraction into a default.
     const implied =
-      MARKET_RATE_2026_06.variableRate.median -
+      MORTGAGE_MARKET_2026_06.newBusinessRate.variable.median -
       euriborRate(EURIBOR_2026_07, "12m");
     const plausibleRetailSpread = 0.008;
     expect(implied).toBeLessThan(plausibleRetailSpread);

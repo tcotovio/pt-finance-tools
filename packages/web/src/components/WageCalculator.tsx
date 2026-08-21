@@ -34,8 +34,10 @@ export function WageCalculator() {
     setForm((previous) => ({ ...previous, [key]: value }));
 
   const errors = useMemo(() => validateForm(form), [form]);
+  // Lifted out of the outcome: the rate curve resamples this same input
+  // across a range of salaries, so it needs the input rather than the result.
+  const input = useMemo(() => toWageInput(form, referenceDate), [form, referenceDate]);
   const outcome = useMemo<ComputeOutcome | null>(() => {
-    const input = toWageInput(form, referenceDate);
     // No usable gross yet: the empty state, not an error.
     if (!input) return null;
     // Something else is malformed — say so instead of showing a number that
@@ -47,7 +49,7 @@ export function WageCalculator() {
       };
     }
     return computeSafely(input);
-  }, [errors, form, referenceDate]);
+  }, [errors, input]);
 
   return (
     <div className="calculator">
@@ -92,7 +94,7 @@ export function WageCalculator() {
         />
       </form>
 
-      <ResultPanel outcome={outcome} />
+      <ResultPanel outcome={outcome} input={input} />
     </div>
   );
 }

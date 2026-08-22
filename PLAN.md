@@ -28,7 +28,7 @@ and the UI.
 | Build order | **Wage-first** | Harder, more differentiating, and less "already solved" than the loan side. |
 | Wage depth | **Withholding-only** | Monthly take-home (retenção na fonte). *Not* the full annual IRS settlement. |
 | IRS Jovem | **In MVP**, at source | Operates at the monthly level, so it fits inside the withholding boundary as a modifier. |
-| Loan side | **Consolidate + extend**, later phase | Reuse the existing React mortgage sim + consumer-loan sim; add the reverse direction. |
+| Loan side | **Consolidate + extend**, later phase | Mortgage and consumer credit, both with the reverse direction. Built from the statutes rather than from the pre-existing sims, which were never supplied. |
 | Annual IRS settlement | **Out of scope** (for now) | Revisit only as a separate, clearly-labelled "annual estimate" mode. |
 
 ---
@@ -277,6 +277,13 @@ These are exactly the parameters that changed this month — which is why they l
   - The UI now says what can be said honestly — "half of variable-rate contracts came in below 3,19 %" — beside the user's own composed rate, and leaves the judgement to them
   - The reference is a **bundled dated dataset**, not a live fetch: it is context, not an input, so unlike the Euribor index it has no legal currency requirement. Refresh with the tax-year datasets
 - [~] **Preçários — investigated, not built.** Aviso 8/2009 makes them mandatory and they are collected on clientebancario.bportugal.pt, including a *folheto de taxas de juro* per institution. But: **169 institutions**, one PDF each, history to 2017, served through an HTML filter form with no API or bulk index — and the spreads inside are representative examples conditional on bundling (one published example: Euribor 12M + 2,6 % unbundled). That is a large, brittle pipeline for a number that stays a conditional range. BPstat already answers the same question market-wide from the same banks' reporting, in JSON. Revisit only if per-institution detail becomes the point, and then for the ~20 retail banks rather than all 169
+
+### Phase 2.1 — Consumer credit
+- [x] **Crédito ao consumo** — the other half of Recomendação 1/2026, and the half PLAN.md §2 had declared in scope since the loan phase began. Same DSTI machinery, two differences straight from the statute: **no LTV** (nothing is secured, so art. 5.º simply does not apply and income is the only ceiling), and **maturity set by purpose rather than age** — 7 yrs crédito pessoal, 10 yrs automóvel, 10 yrs for personal credit earmarked for education, health or the energy transition (art. 7.º n.ºs 3–4). The n.º 4 exception is conditional on the institution verifying the purpose, which the engine cannot do, so the UI presents it as the caller's assertion rather than an entitlement
+  - The past-70 income reduction **does** apply: it is a rule about the DSTI denominator, which is shared, not a housing rule
+  - These terms finally exercise the **≤5 yr and 5–10 yr shock bands** that no mortgage ever reaches — until now those two bands were covered by Axis A only, since no mortgage simulator can exercise them
+  - The default rate is **sourced, not invented**: the ECB's average annualised rate on new Portuguese consumer credit (8,81 %, June 2026). Unlike the mortgage spread this quantity is directly observable — consumer credit is agreed as a single fixed rate, so the published average is exactly what the form needs, with no derivation to go wrong
+  - Axis A extended to the new ceilings, diffed against the same extracted PDF
 
 ### Phase 3 — Long tail (opt-in scope)
 - [ ] Disability tables

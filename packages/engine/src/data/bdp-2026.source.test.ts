@@ -77,6 +77,22 @@ describe("BDP_2026 vs the extracted Recomendação 1/2026", () => {
     );
   });
 
+  it("consumer maturity ceilings match art. 7.º n.ºs 3–4", () => {
+    expect(BDP_2026.consumerMaturityYears.personal).toBe(
+      yearsIn(p.consumerMaturityPersonal.text),
+    );
+    expect(BDP_2026.consumerMaturityYears.auto).toBe(
+      yearsIn(p.consumerMaturityAuto.text),
+    );
+    // The n.º 4 exception raises personal credit to the automóvel ceiling,
+    // conditional on the institution verifying the purpose.
+    expect(BDP_2026.consumerMaturityYears["personal-earmarked"]).toBe(10);
+    expect(p.consumerMaturityEarmarked.text).toContain("educação");
+    expect(p.consumerMaturityEarmarked.text).toContain("saúde");
+    expect(p.consumerMaturityEarmarked.text).toContain("transição energética");
+    expect(p.consumerMaturityEarmarked.text).toContain("devidamente comprovada");
+  });
+
   it("income reduction matches art. 4.º n.º 5 al. b)", () => {
     expect(BDP_2026.incomeReduction.fraction).toBeCloseTo(
       percentIn(p.incomeReduction.text),

@@ -337,6 +337,12 @@ export interface WageResult {
 // Loan (Phase 2)
 // ---------------------------------------------------------------------------
 
+/**
+ * What a consumer credit is for, which selects its maturity ceiling
+ * (Recomendação art. 7.º n.ºs 3–4).
+ */
+export type ConsumerCreditKind = "personal" | "auto" | "personal-earmarked";
+
 /** Purpose of the credit, which selects the LTV ceiling (Recomendação art. 5.º). */
 export type LoanPurpose =
   | "own-permanent-residence" // habitação própria e permanente
@@ -364,6 +370,8 @@ export interface MacroprudentialParameters {
     yearsAtOrBelowThreshold: number;
     yearsAboveThreshold: number;
   };
+  /** Maturity ceilings in years for crédito ao consumo, by what it is for. */
+  consumerMaturityYears: Record<ConsumerCreditKind, number>;
   /** The income haircut for contracts running past retirement age. */
   incomeReduction: {
     /** Age past which it applies (70). */
@@ -633,6 +641,80 @@ export interface MortgageMarket {
   };
   /** Share of new variable-rate lending by index, as fractions. */
   indexShareOfNewBusiness: Record<EuriborTenor | "other", number>;
+  source: string;
+  retrievedAt: string;
+}
+
+/** Inputs to the consumer-credit solver. */
+export interface ConsumerLoanInput {
+  borrower: BorrowerProfile;
+  /** What the credit is for — it decides the maturity ceiling. */
+  kind: ConsumerCreditKind;
+  /** Contract annual nominal rate, as a fraction. */
+  annualRate: number;
+  /** Requested term in years, before the ceiling for its kind is applied. */
+  termYears: number;
+  /**
+   * Whether the rate can move. Consumer credit is commonly fixed, and a fixed
+   * contract takes no shock — see {@link LoanRateType}. Defaults to
+   * `"variable"`, the conservative assumption.
+   */
+  rateType?: LoanRateType;
+  /** ISO `YYYY-MM-DD` of the solvency assessment — selects the parameters. */
+  assessmentDate: string;
+}
+
+/**
+ * The consumer-credit answer.
+ *
+ * Simpler than the mortgage one by construction: there is no property, so no
+ * LTV, so nothing to bind except the DSTI. What replaces it is the maturity
+ * ceiling, which is set by what the money is for rather than by who is
+ * borrowing it.
+ */
+export interface ConsumerLoanResult {
+  /** The largest loan the DSTI ceiling allows. */
+  maxLoan: number;
+  kind: ConsumerCreditKind;
+  /** Term actually used, after the ceiling for this kind. */
+  termYears: number;
+  /** True when the requested term was longer than the kind allows. */
+  termCappedByKind: boolean;
+  /** The ceiling that applied, in years. */
+  maturityCeiling: number;
+  dsti: {
+    limit: number;
+    adjustedIncome: number;
+    incomeReduction: number;
+    paymentBudget: number;
+    stressedRate: number;
+    shock: number;
+    rateType: LoanRateType;
+  };
+  /** The instalment payable at the contract rate on `maxLoan`. */
+  contractPayment: number;
+  /** The instalment the DSTI test was run on. */
+  stressedPayment: number;
+  /** Total interest over the life of the loan, at the contract rate. */
+  totalInterest: number;
+  sources: {
+    macroprudential: string;
+    shock: string;
+  };
+  parametersVerified: boolean;
+}
+
+/**
+ * The consumer-credit market, as bank reporting describes it.
+ *
+ * A single average rate rather than a distribution: BdP publishes percentiles
+ * for mortgages, not for consumer credit. Context and a sensible default, not
+ * an input to any limit.
+ */
+export interface ConsumerCreditMarket {
+  month: string;
+  /** Annualised agreed rate on new consumer credit, as a fraction. */
+  averageRate: number;
   source: string;
   retrievedAt: string;
 }

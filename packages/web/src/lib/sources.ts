@@ -11,9 +11,11 @@
 // independently cross-checked, and where to go and check it.
 
 import {
+  CONSUMER_MARKET,
   getInterestRateShock,
   getMacroprudentialParameters,
   MORTGAGE_MARKET,
+  type ConsumerLoanResult,
   type EuriborSnapshot,
   type MaxLoanResult,
   type WageResult,
@@ -140,6 +142,48 @@ export function loanSources(
       label: `Estatísticas do mercado — ${MORTGAGE_MARKET.month}`,
       usedFor: "A comparação da sua prestação e da sua taxa com o mercado. Não entra em nenhum cálculo.",
       ...splitCitation(MORTGAGE_MARKET.source),
+    },
+  ];
+}
+
+/**
+ * Sources behind a consumer-credit result.
+ *
+ * Three rather than four: there is no Euribor here, because consumer credit is
+ * quoted as a single rate rather than an index plus a margin.
+ */
+export function consumerSources(
+  result: ConsumerLoanResult,
+  assessmentDate: string,
+): SourceEntry[] {
+  const params = getMacroprudentialParameters(assessmentDate);
+  const shock = getInterestRateShock(assessmentDate);
+
+  return [
+    {
+      key: "recomendacao",
+      label: "Limites do Banco de Portugal",
+      usedFor:
+        "A taxa de esforço máxima e o prazo máximo para esta finalidade de crédito.",
+      verified: params.verified,
+      ...splitCitation(result.sources.macroprudential),
+    },
+    {
+      key: "shock",
+      label: "Choque de taxa de juro",
+      usedFor:
+        result.dsti.shock > 0
+          ? "O agravamento aplicado à prestação no teste da taxa de esforço."
+          : "Não aplicado: só a taxa variável e a mista são testadas com uma subida do indexante.",
+      verified: shock.verified,
+      ...splitCitation(result.sources.shock),
+    },
+    {
+      key: "consumer-market",
+      label: `Taxa média do mercado — ${CONSUMER_MARKET.month}`,
+      usedFor:
+        "A taxa que o formulário sugere por omissão. Não entra em nenhum limite.",
+      ...splitCitation(CONSUMER_MARKET.source),
     },
   ];
 }

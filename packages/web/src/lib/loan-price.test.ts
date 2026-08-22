@@ -271,3 +271,47 @@ describe("loanSources with costs", () => {
     }
   });
 });
+
+const result_dstiBinds = (r: ReturnType<typeof solve>) =>
+  r.loanResult.bindingConstraint === "dsti";
+
+describe("the two effort rates", () => {
+  it("puts the supervisory one on 45 % when the income ceiling binds", () => {
+    // The question a user asked of the panel: "how is my taxa de esforço 36 %
+    // when you say the taxa de esforço is what limits me?". Both numbers are
+    // right and they measure different things — this pins the pair, because
+    // showing only the real one made the answer look self-contradictory.
+    const summary = buildPriceSummary(
+      solve({ income: "2000", savings: "200000" }),
+      2_000,
+    );
+    expect(result_dstiBinds(solve({ income: "2000", savings: "200000" }))).toBe(true);
+    expect(summary.dstiRatio).toBeCloseTo(0.45, 6);
+    expect(summary.effortRate).toBeLessThan(summary.dstiRatio);
+  });
+
+  it("separates them by exactly the shock, and nothing else", () => {
+    const result = solve({ income: "2000", savings: "200000" });
+    const summary = buildPriceSummary(result, 2_000);
+    // No past-70 reduction at 30 + 40 years, so the denominators match and the
+    // whole gap is the stressed instalment against the contract one.
+    expect(summary.incomeReduction).toBe(0);
+    expect(summary.stressedRate - summary.contractRate).toBeCloseTo(
+      summary.shock,
+      10,
+    );
+    expect(summary.effortRate / summary.dstiRatio).toBeCloseTo(
+      summary.contractPayment / summary.stressedPayment,
+      6,
+    );
+  });
+
+  it("collapses them onto each other for a fixed rate, which has no shock", () => {
+    const summary = buildPriceSummary(
+      solve({ income: "2000", savings: "200000", rateType: "fixed" }),
+      2_000,
+    );
+    expect(summary.shocked).toBe(false);
+    expect(summary.effortRate).toBeCloseTo(summary.dstiRatio, 6);
+  });
+});

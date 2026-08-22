@@ -17,14 +17,14 @@ import type {
 } from "@pt-finance-tools/engine";
 import type { LoanOutcome } from "../lib/compute.js";
 import { buildLoanSummary, type LoanSummary } from "../lib/loan-result.js";
-import { formatEuro, formatPercent } from "../lib/format.js";
-import { LawReference } from "./LawReference.js";
+import { formatEuro } from "../lib/format.js";
 import { LoanLimitCurve } from "./LoanLimitCurve.js";
 import { MarketComparison } from "./MarketComparison.js";
 import { SourceList } from "./SourceList.js";
 import { loanSources } from "../lib/sources.js";
 import {
   CashSummary,
+  EffortLines,
   ConstraintBars,
   LoanCaveats,
   LoanNotices,
@@ -163,7 +163,7 @@ function LoanResultBody({
         title="Custos, juros e total do crédito"
         summary="IMT, imposto do selo, escritura, e o que paga ao longo do contrato"
       >
-        <LoanDetailLines summary={summary} />
+        <EffortLines summary={summary} />
         <h4 className="group-title">Na escritura</h4>
         <PurchaseCostLines summary={summary} />
         <h4 className="group-title">Ao longo do contrato</h4>
@@ -218,53 +218,5 @@ function SavingsCheck({
         )}
       </p>
     </div>
-  );
-}
-
-/** The instalment, the effort rate — the month-to-month view. */
-function LoanDetailLines({ summary }: { summary: LoanSummary }) {
-  return (
-    <dl className="lines">
-      <div className="line is-deduction">
-        <dt>
-          Prestação mensal
-          <span className="line-note">
-            <span>
-              {/* mista first: it is also "shocked", but its wording differs */}
-              {summary.mixedBasis ? (
-                <>
-                  A prestação do período fixo — a partir daí depende do
-                  indexante. O teste de esforço usou{" "}
-                  {formatEuro(summary.stressedPayment)}.
-                </>
-              ) : summary.shocked ? (
-                <>
-                  À taxa do contrato. O teste de esforço usa{" "}
-                  {formatPercent(summary.stressedRate)} e daria{" "}
-                  {formatEuro(summary.stressedPayment)}.
-                </>
-              ) : (
-                <>À taxa do contrato, fixa para todo o prazo.</>
-              )}
-            </span>
-            <LawReference id="instrucao-23-2023" />
-          </span>
-        </dt>
-        <dd className="num">{formatEuro(summary.contractPayment)}</dd>
-      </div>
-
-      <div className="line is-deduction">
-        <dt>
-          Taxa de esforço real
-          <span className="line-note">
-            <span>
-              Prestação (mais os outros créditos) sobre o rendimento, sem
-              agravamento — o peso no orçamento, não o teste do regulador.
-            </span>
-          </span>
-        </dt>
-        <dd className="num">{formatPercent(summary.effortRate)}</dd>
-      </div>
-    </dl>
   );
 }

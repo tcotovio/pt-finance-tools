@@ -10,13 +10,14 @@
 
 import type { EuriborSnapshot, MaxPriceResult } from "@pt-finance-tools/engine";
 import type { MaxPriceOutcome } from "../lib/compute.js";
-import { buildPriceSummary, type PriceSummary } from "../lib/loan-result.js";
-import { formatEuro, formatPercent } from "../lib/format.js";
+import { buildPriceSummary } from "../lib/loan-result.js";
+import { formatEuro } from "../lib/format.js";
 import { MarketComparison } from "./MarketComparison.js";
 import { SourceList } from "./SourceList.js";
 import { loanSources } from "../lib/sources.js";
 import {
   CashSummary,
+  EffortLines,
   ConstraintBars,
   LoanCaveats,
   LoanNotices,
@@ -158,7 +159,7 @@ function PriceResultBody({
         title="Custos, juros e total do crédito"
         summary="IMT, imposto do selo, escritura, e o que paga ao longo do contrato"
       >
-        <PriceDetailLines summary={summary} />
+        <EffortLines summary={summary} />
         <h4 className="group-title">Na escritura</h4>
         <PurchaseCostLines summary={summary} />
         <h4 className="group-title">Ao longo do contrato</h4>
@@ -176,43 +177,5 @@ function PriceResultBody({
         )}
       />
     </>
-  );
-}
-
-function PriceDetailLines({ summary }: { summary: PriceSummary }) {
-  return (
-    <dl className="lines">
-      <div className="line is-deduction">
-        <dt>
-          Prestação mensal
-          <span className="line-note">
-            <span>
-              {summary.mixedBasis
-                ? `A prestação do período fixo. O teste de esforço usou ${formatEuro(
-                    summary.stressedPayment,
-                  )}.`
-                : summary.shocked
-                  ? `À taxa do contrato. O teste de esforço usa ${formatPercent(
-                      summary.stressedRate,
-                    )} e daria ${formatEuro(summary.stressedPayment)}.`
-                  : "À taxa do contrato, fixa para todo o prazo."}
-            </span>
-          </span>
-        </dt>
-        <dd className="num">{formatEuro(summary.contractPayment)}</dd>
-      </div>
-      <div className="line is-deduction">
-        <dt>
-          Taxa de esforço real
-          <span className="line-note">
-            <span>
-              Prestação (mais os outros créditos) sobre o rendimento, sem
-              agravamento.
-            </span>
-          </span>
-        </dt>
-        <dd className="num">{formatPercent(summary.effortRate)}</dd>
-      </div>
-    </dl>
   );
 }

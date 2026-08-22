@@ -128,6 +128,97 @@ export function CashSummary({ summary }: { summary: LoanSummary }) {
   );
 }
 
+/**
+ * The instalment and the two effort rates — and there have to be two.
+ *
+ * The panel used to show only the real one, computed on the instalment
+ * actually paid over unadjusted income. That reads as a contradiction the
+ * moment the DSTI is what binds: the headline says "limited by taxa de
+ * esforço" and the only taxa de esforço on screen is 36 %, well under the
+ * 45 % ceiling it is supposedly pinned to.
+ *
+ * Both numbers are right and they measure different things. The supervisory
+ * one is the STRESSED instalment over income reduced for a contract running
+ * past 70 — a test of whether the borrower would survive a rate rise, which
+ * by construction sits on 45 % whenever it binds. The real one is what the
+ * household budget actually feels. Showing the second without the first left
+ * the difference — the whole point of the stress test — invisible.
+ */
+export function EffortLines({ summary }: { summary: LoanSummary }) {
+  return (
+    <dl className="lines">
+      <div className="line is-deduction">
+        <dt>
+          Prestação mensal
+          <span className="line-note">
+            <span>
+              {/* mista first: it is also "shocked", but its wording differs */}
+              {summary.mixedBasis ? (
+                <>
+                  A prestação do período fixo — a partir daí depende do
+                  indexante. O teste de esforço usou{" "}
+                  {formatEuro(summary.stressedPayment)}.
+                </>
+              ) : summary.shocked ? (
+                <>
+                  À taxa do contrato, {formatPercent(summary.contractRate)}.
+                </>
+              ) : (
+                <>À taxa do contrato, fixa para todo o prazo.</>
+              )}
+            </span>
+            <LawReference id="instrucao-23-2023" />
+          </span>
+        </dt>
+        <dd className="num">{formatEuro(summary.contractPayment)}</dd>
+      </div>
+
+      <div className="line is-deduction">
+        <dt>
+          Taxa de esforço real
+          <span className="line-note">
+            <span>
+              Prestação (mais os outros créditos) sobre o rendimento, sem
+              agravamento — o peso no seu orçamento.
+            </span>
+          </span>
+        </dt>
+        <dd className="num">{formatPercent(summary.effortRate)}</dd>
+      </div>
+
+      <div className="line is-deduction">
+        <dt>
+          Taxa de esforço do teste
+          <span className="line-note">
+            <span>
+              {summary.shocked ? (
+                <>
+                  É esta que não pode passar 45 %, e é por isso que pode ficar
+                  limitado com uma taxa de esforço real bem abaixo disso. O
+                  teste usa a prestação de{" "}
+                  {formatEuro(summary.stressedPayment)} — a que pagaria se a
+                  taxa subisse para {formatPercent(summary.stressedRate)} —
+                  e não a que vai pagar.
+                </>
+              ) : (
+                <>
+                  Sendo taxa fixa, não há indexante que possa subir: o teste
+                  usa a taxa do próprio contrato, por isso as duas coincidem.
+                </>
+              )}
+              {summary.incomeReduction > 0
+                ? " O rendimento no denominador é o reduzido, por o contrato passar dos 70 anos."
+                : ""}
+            </span>
+            <LawReference id="bdp-1-2026" />
+          </span>
+        </dt>
+        <dd className="num">{formatPercent(summary.dstiRatio)}</dd>
+      </div>
+    </dl>
+  );
+}
+
 /** The itemised taxes, with each zero explained rather than left blank. */
 export function PurchaseCostLines({ summary }: { summary: LoanSummary }) {
   const costs = summary.costs;

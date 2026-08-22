@@ -58,6 +58,8 @@ export interface LoanSummary {
   /** The supervisory ratio itself, which sits on the 45 % ceiling by design. */
   dstiRatio: number;
   stressedRate: number;
+  /** The rate actually paid — `stressedRate` less the shock. */
+  contractRate: number;
   shock: number;
   rateType: LoanRateType;
   /** For taxa mista, which leg of art. 1.º n.º 2 governed the test. */
@@ -211,6 +213,7 @@ export function buildLoanSummary(
         ? (stressedPayment + existingMonthlyDebt) / result.dsti.adjustedIncome
         : 0,
     stressedRate: result.dsti.stressedRate,
+    contractRate,
     shock: result.dsti.shock,
     rateType: result.dsti.rateType,
     mixedBasis: result.dsti.mixedBasis,

@@ -17,6 +17,7 @@ import { INTEREST_RATE_SHOCK_2023 } from "./interest-rate-shock-2023.js";
 import { EURIBOR_2026_07 } from "./euribor-2026-07.js";
 import { MORTGAGE_MARKET_2026_06 } from "./mortgage-market-2026-06.js";
 import { CONSUMER_MARKET_2026_06 } from "./consumer-market-2026-06.js";
+import { WAGE_MARKET_2026_Q2 } from "./wage-market-2026-q2.js";
 
 /** All datasets known to the engine. Add a tax year by adding to this list. */
 const DATASETS: readonly WithholdingDataset[] = [
@@ -143,6 +144,9 @@ export const MORTGAGE_MARKET = MORTGAGE_MARKET_2026_06;
 /** The consumer-credit market reference in use. */
 export const CONSUMER_MARKET = CONSUMER_MARKET_2026_06;
 
+/** The wage reference in use — context beside the user's own salary. */
+export const WAGE_MARKET = WAGE_MARKET_2026_Q2;
+
 export {
   CONTINENTE_2026,
   MADEIRA_2026,
@@ -153,4 +157,5 @@ export {
   EURIBOR_2026_07,
   MORTGAGE_MARKET_2026_06,
   CONSUMER_MARKET_2026_06,
+  WAGE_MARKET_2026_Q2,
 };

@@ -12,6 +12,7 @@
 
 import {
   CONSUMER_MARKET,
+  WAGE_MARKET,
   getInterestRateShock,
   getMacroprudentialParameters,
   MORTGAGE_MARKET,
@@ -103,6 +104,14 @@ export function wageSources(
       });
     }
   }
+
+  entries.push({
+    key: "wage-market",
+    label: `Remuneração média em Portugal — ${WAGE_MARKET.period}`,
+    usedFor:
+      "A comparação do seu vencimento base com a média nacional. Não entra em nenhum cálculo.",
+    ...splitCitation(WAGE_MARKET.source),
+  });
 
   return entries;
 }

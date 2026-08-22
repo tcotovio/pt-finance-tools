@@ -7,6 +7,7 @@ import type { BreakdownLine } from "../lib/breakdown.js";
 import type { ComputeOutcome } from "../lib/compute.js";
 import { EmployerCost } from "./EmployerCost.js";
 import { WageRateCurve } from "./WageRateCurve.js";
+import { WageComparison } from "./WageComparison.js";
 import { GrossSplitChart } from "./GrossSplitChart.js";
 import { LawReference } from "./LawReference.js";
 import { SourceList } from "./SourceList.js";
@@ -102,6 +103,8 @@ function ResultBody({
       {result.irsJovem ? <IrsJovemNote result={result} /> : null}
 
       {input ? <WageRateCurve input={input} /> : null}
+
+      <WageComparison grossMonthly={result.grossMonthly} />
 
       <EmployerCost employer={breakdown.employer} />
 

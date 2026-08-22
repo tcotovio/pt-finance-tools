@@ -718,3 +718,24 @@ export interface ConsumerCreditMarket {
   source: string;
   retrievedAt: string;
 }
+
+/**
+ * Average pay in Portugal, as INE's quarterly release reports it.
+ *
+ * A mean, not a median — INE does not publish a quarterly distribution — and
+ * three means at that, because "average pay" is ambiguous. The calculator
+ * compares against `baseMean`, since base salary is what its own form asks
+ * for; see the dataset for why the total would mislead.
+ */
+export interface WageMarket {
+  /** The quarter the figures are for, as `YYYY-QN`. */
+  period: string;
+  /** Mean base salary, in euros. */
+  baseMean: number;
+  /** Mean regular remuneration (base plus monthly supplements). */
+  regularMean: number;
+  /** Mean total remuneration, subsídios and overtime included. */
+  totalMean: number;
+  source: string;
+  retrievedAt: string;
+}

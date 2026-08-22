@@ -41,13 +41,24 @@ export interface LoanForm {
 /**
  * The spread the form starts on, as a percentage.
  *
- * Unlike everything else in this project this number has no source: no
- * statute sets it and no public feed publishes a representative figure, so it
- * is a plausible 2026 retail margin and is labelled in the UI as an
- * assumption to be replaced with the bank's actual proposal. The index it
- * sits on top of, by contrast, is fetched from the ECB.
+ * Still an assumption — no statute sets a spread and no feed publishes a
+ * representative one — but no longer this project's own invention: 0,7 % is
+ * the "spread base" published in the methodology of the Crédivel simulator,
+ * the same independent implementation the loan engine is cross-checked
+ * against (see loan/external-crosscheck.test.ts).
+ *
+ * Why it changed from 1,0 %. Once the app began showing BdP's distribution of
+ * actual rates, the old default became visibly incoherent: over the Euribor
+ * it composed to roughly the 90th percentile, so a user who touched nothing
+ * saw the tool flag its own starting point as dearer than 90 % of the market.
+ * At 0,7 % over the 6M index the default lands between the median (3,19 %)
+ * and the third quartile (3,43 %) — mildly conservative, which is the right
+ * direction for a borrowing-capacity tool, without the contradiction.
+ *
+ * It is still labelled in the UI as an estimate to replace with the bank's
+ * own proposal.
  */
-export const DEFAULT_SPREAD = "1,0";
+export const DEFAULT_SPREAD = "0,7";
 
 /** The rate the form starts on when the contract is fixed, as a percentage. */
 export const DEFAULT_ANNUAL_RATE = "3,2";
@@ -60,10 +71,14 @@ export const DEFAULT_ANNUAL_RATE = "3,2";
 export const DEFAULT_FIXED_PERIOD_YEARS = "5";
 
 /**
- * The tenor the form starts on. Euribor 12M is the most common index on new
- * Portuguese mortgages; 6M and 3M are offered too, hence the choice.
+ * The tenor the form starts on.
+ *
+ * Euribor 6M, because that is what the market actually uses: 49 % of new
+ * variable-rate contracts follow it against 33 % on 12M and 11 % on 3M (BdP,
+ * June 2026). The previous default of 12M was an assumption that the data,
+ * once fetched, did not support.
  */
-export const DEFAULT_TENOR: EuriborTenor = "12m";
+export const DEFAULT_TENOR: EuriborTenor = "6m";
 
 export const DEFAULT_LOAN_FORM: LoanForm = {
   income: "",

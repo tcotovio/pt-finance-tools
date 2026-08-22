@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  EURIBOR_FALLBACK,
+  MORTGAGE_MARKET,
+  euriborRate,
+} from "@pt-finance-tools/engine";
+import {
   DEFAULT_LOAN_FORM,
+  DEFAULT_SPREAD,
+  DEFAULT_TENOR,
   toMaxLoanInput,
   validateLoanForm,
   type LoanForm,
@@ -139,5 +146,34 @@ describe("toMaxLoanInput", () => {
     expect(input?.borrower.retired).toBe(true);
     expect(input?.appraisalValue).toBe(240_000);
     expect(input?.purpose).toBe("other");
+  });
+});
+
+describe("the defaults are coherent with the market the app displays", () => {
+  // The app shows BdP's distribution of real rates next to the user's own.
+  // A default that composes to an outlier on that very distribution makes the
+  // tool contradict itself on first load — which is exactly what happened
+  // with the old 1,0 % over 12M, landing at the 90th percentile.
+  const spread = Number(DEFAULT_SPREAD.replace(",", ".")) / 100;
+  const composed = euriborRate(EURIBOR_FALLBACK, DEFAULT_TENOR) + spread;
+  const market = MORTGAGE_MARKET.newBusinessRate.variable;
+
+  it("composes to a rate inside the published range", () => {
+    expect(composed).toBeGreaterThan(market.p10);
+    expect(composed).toBeLessThan(market.p90);
+  });
+
+  it("errs on the conservative side of the median", () => {
+    // Slightly dear rather than slightly cheap: this is a borrowing-capacity
+    // tool, and overstating capacity is the worse failure.
+    expect(composed).toBeGreaterThan(market.median);
+  });
+
+  it("starts on the index the market actually uses", () => {
+    const shares = MORTGAGE_MARKET.indexShareOfNewBusiness;
+    const mostCommon = (["3m", "6m", "12m"] as const).reduce((a, b) =>
+      shares[a] >= shares[b] ? a : b,
+    );
+    expect(DEFAULT_TENOR).toBe(mostCommon);
   });
 });

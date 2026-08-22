@@ -19,6 +19,7 @@ import {
   type ConsumerLoanResult,
   type EuriborSnapshot,
   type MaxLoanResult,
+  type PurchaseCosts,
   type WageResult,
 } from "@pt-finance-tools/engine";
 import { irsJovemRegimeFor, mealLimitsFor } from "./reference.js";
@@ -121,11 +122,12 @@ export function loanSources(
   result: MaxLoanResult,
   assessmentDate: string,
   euribor: EuriborSnapshot,
+  costs: PurchaseCosts | null = null,
 ): SourceEntry[] {
   const params = getMacroprudentialParameters(assessmentDate);
   const shock = getInterestRateShock(assessmentDate);
 
-  return [
+  const entries: SourceEntry[] = [
     {
       key: "recomendacao",
       label: "Limites do Banco de Portugal",
@@ -153,6 +155,55 @@ export function loanSources(
       ...splitCitation(MORTGAGE_MARKET.source),
     },
   ];
+
+  // The guarantee only appears when it actually moved the ceiling. Listing it
+  // otherwise would suggest the answer leaned on a regime it did not use.
+  if (result.sources.guarantee) {
+    entries.push({
+      key: "state-guarantee",
+      label: "Garantia pessoal do Estado",
+      usedFor:
+        "O financiamento até 100 % do imóvel, acima dos 90 % recomendados pelo Banco de Portugal.",
+      verified: false,
+      ...splitCitation(result.sources.guarantee),
+    });
+  }
+
+  // The cost datasets, only once there is a transaction to cost. Each keeps
+  // its own `verified` flag: none of the three has an independent
+  // implementation to check against yet, so a costed answer is honestly
+  // reported as unverified rather than borrowing the loan side's badge.
+  if (costs) {
+    const labels: Record<string, { label: string; usedFor: string }> = {
+      imt: {
+        label: "Tabelas do IMT",
+        usedFor:
+          "O imposto municipal sobre a transmissão, pelo escalão em que o imóvel cai.",
+      },
+      "stamp-duty": {
+        label: "Imposto do selo",
+        usedFor:
+          "A verba 1.1 sobre a compra e a verba 17.1 sobre o capital do empréstimo.",
+      },
+      registration: {
+        label: "Escritura e registos",
+        usedFor: "O custo do balcão único, e a redução para jovens.",
+      },
+    };
+    for (const ref of costs.source) {
+      const meta = labels[ref.key];
+      if (!meta) continue;
+      entries.push({
+        key: `cost-${ref.key}`,
+        label: meta.label,
+        usedFor: meta.usedFor,
+        verified: ref.verified,
+        ...splitCitation(ref.citation),
+      });
+    }
+  }
+
+  return entries;
 }
 
 /**

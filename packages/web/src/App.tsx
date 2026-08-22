@@ -2,8 +2,9 @@ import { useState } from "react";
 import "./App.css";
 import { WageCalculator } from "./components/WageCalculator.js";
 import { LoanCalculator } from "./components/LoanCalculator.js";
+import { ConsumerCalculator } from "./components/ConsumerCalculator.js";
 
-type Tool = "wage" | "loan";
+type Tool = "wage" | "loan" | "consumer";
 
 const TOOLS = {
   wage: {
@@ -15,6 +16,11 @@ const TOOLS = {
     tab: "Crédito habitação",
     title: "Quanto posso pedir",
     lede: "O máximo que pode financiar, com os limites do Banco de Portugal em vigor desde 1 de agosto de 2026 — taxa de esforço, valor do imóvel e prazo por idade.",
+  },
+  consumer: {
+    tab: "Crédito ao consumo",
+    title: "Crédito pessoal e automóvel",
+    lede: "Quanto pode pedir num crédito pessoal ou automóvel, com a taxa de esforço e os prazos máximos por finalidade que o Banco de Portugal recomenda desde 1 de agosto de 2026.",
   },
 } as const satisfies Record<Tool, { tab: string; title: string; lede: string }>;
 
@@ -59,7 +65,13 @@ export default function App() {
         aria-labelledby={`tab-${tool}`}
         tabIndex={-1}
       >
-        {tool === "wage" ? <WageCalculator /> : <LoanCalculator />}
+        {tool === "wage" ? (
+          <WageCalculator />
+        ) : tool === "loan" ? (
+          <LoanCalculator />
+        ) : (
+          <ConsumerCalculator />
+        )}
       </main>
 
       <footer className="site-footer">

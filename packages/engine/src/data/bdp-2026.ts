@@ -61,6 +61,33 @@ export const BDP_2026: MacroprudentialParameters = {
   },
 
   /**
+   * Art. 7.º n.º 3–4, for crédito ao consumo. A different product with its own
+   * ceilings: no LTV (there is no property), and maturity capped by what the
+   * credit is FOR rather than by the borrower's age.
+   *
+   *   "3. É recomendado que a maturidade dos contratos de crédito ao consumo
+   *    não exceda: a) 7 anos, no caso dos contratos de crédito pessoal;
+   *    b) 10 anos, no caso dos contratos de crédito automóvel.
+   *    4. Sem prejuízo do disposto na alínea a) do número anterior, os
+   *    contratos de crédito pessoal com as finalidades de educação, saúde e
+   *    transição energética podem ter uma maturidade máxima de 10 anos, desde
+   *    que a afetação do crédito a essas finalidades seja devidamente
+   *    comprovada pela instituição."
+   *
+   * The n.º 4 exception is conditional on the institution verifying the
+   * purpose, which the engine cannot do — so it is the caller's assertion,
+   * and the UI says as much rather than implying an entitlement.
+   */
+  consumerMaturityYears: {
+    /** Crédito pessoal, general purpose (al. a). */
+    personal: 7,
+    /** Crédito automóvel (al. b). */
+    auto: 10,
+    /** Personal credit for education, health or energy transition (n.º 4). */
+    "personal-earmarked": 10,
+  },
+
+  /**
    * Art. 4.º n.º 5 al. b): "quando a idade do mutuário no termo previsto do
    * contrato for superior a 70 anos deve ser considerada uma redução do
    * rendimento de, pelo menos, 20% ponderada pelo rácio entre o número de

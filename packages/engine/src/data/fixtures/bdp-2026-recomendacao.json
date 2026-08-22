@@ -39,6 +39,18 @@
     "shockDeferral": {
       "article": "6.º n.º 2 (cálculo do DSTI, art. 4.º n.º 2)",
       "text": "as prestações do novo contrato devem assumir-se constantes e refletir impacto de um aumento da taxa de juro, nos termos definidos na Instrução n.º 23/2023, de 9 de outubro."
+    },
+    "consumerMaturityPersonal": {
+      "article": "7.º n.º 3 al. a)",
+      "text": "7 anos, no caso dos contratos de crédito pessoal;"
+    },
+    "consumerMaturityAuto": {
+      "article": "7.º n.º 3 al. b)",
+      "text": "10 anos, no caso dos contratos de crédito automóvel."
+    },
+    "consumerMaturityEarmarked": {
+      "article": "7.º n.º 4",
+      "text": "Sem prejuízo do disposto na alínea a) do número anterior, os contratos de crédito pessoal com as finalidades de educação, saúde e transição energética podem ter uma maturidade máxima de 10 anos, desde que a afetação do crédito a essas finalidades seja devidamente comprovada pela instituição."
     }
   }
 }

@@ -1,11 +1,13 @@
 import type {
+  ConsumerLoanInput,
+  ConsumerLoanResult,
   MaxLoanInput,
   MaxLoanResult,
   WageInput,
   WageResult,
 } from "./types.js";
 import { computeNetWage } from "./wage/index.js";
-import { maxLoan } from "./loan/index.js";
+import { maxLoan, maxConsumerLoan } from "./loan/index.js";
 import {
   getInterestRateShock,
   getIrsJovemRegime,
@@ -45,6 +47,20 @@ export function maxLoanForDate(input: MaxLoanInput): MaxLoanResult {
   );
 }
 
+/**
+ * Solve for the largest crédito ao consumo the Banco de Portugal limits allow,
+ * resolving the parameters in force on the assessment date automatically.
+ */
+export function maxConsumerLoanForDate(
+  input: ConsumerLoanInput,
+): ConsumerLoanResult {
+  return maxConsumerLoan(
+    input,
+    getMacroprudentialParameters(input.assessmentDate),
+    getInterestRateShock(input.assessmentDate),
+  );
+}
+
 export type {
   Region,
   TaxpayerCategory,
@@ -70,10 +86,14 @@ export type {
   MaxLoanInput,
   BindingConstraint,
   MaxLoanResult,
+  ConsumerCreditKind,
+  ConsumerLoanInput,
+  ConsumerLoanResult,
   LoanRateType,
   EuriborTenor,
   EuriborSnapshot,
   MortgageMarket,
+  ConsumerCreditMarket,
   Percentiles,
 } from "./types.js";
 
@@ -114,6 +134,7 @@ export {
   maturityCeiling,
   shockForTerm,
   maxLoan,
+  maxConsumerLoan,
   stressedDsti,
   referenceMonth,
   isCurrentFor,
@@ -137,4 +158,6 @@ export {
   EURIBOR_FALLBACK,
   MORTGAGE_MARKET_2026_06,
   MORTGAGE_MARKET,
+  CONSUMER_MARKET_2026_06,
+  CONSUMER_MARKET,
 } from "./data/index.js";

@@ -24,3 +24,4 @@ export {
   mixedPrincipalForBudget,
 } from "./mixed.js";
 export type { MixedRateTerms, MixedStressResult, MixedStressBasis } from "./mixed.js";
+export { maxConsumerLoan } from "./consumer.js";

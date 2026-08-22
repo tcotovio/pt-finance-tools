@@ -79,6 +79,13 @@ export const LAW_REFERENCES = {
       "Aplica-se aos contratos cuja avaliação de solvabilidade ocorra a partir de 1 de agosto de 2026. A prestação, testada com uma subida da taxa de juro, não deve passar 45 % do rendimento; o empréstimo não deve exceder 90 % do imóvel na habitação própria e permanente (80 % nas restantes finalidades); e o prazo não deve exceder 40 anos até aos 35 anos de idade, ou 35 anos acima disso. São recomendações às instituições, não direitos do consumidor: cada banco aplica ainda os seus próprios critérios.",
     url: "https://www.bportugal.pt/sites/default/files/documents/2026-07/Recomendacao_Macroprudencial_n.1-2026.pdf",
   },
+  "bdp-1-2026-consumo": {
+    label: "Recomendação n.º 1/2026 do Banco de Portugal",
+    title: "Prazos máximos no crédito ao consumo",
+    summary:
+      "No crédito ao consumo, o prazo recomendado não deve exceder 7 anos no crédito pessoal e 10 anos no crédito automóvel. O crédito pessoal destinado a educação, saúde ou transição energética pode ir até 10 anos, desde que a instituição comprove essa finalidade. A taxa de esforço máxima de 45 % aplica-se a todo o crédito, não só ao da habitação; o limite de financiamento sobre o imóvel (LTV) não se aplica aqui, porque não há imóvel dado em garantia.",
+    url: "https://www.bportugal.pt/sites/default/files/documents/2026-07/Recomendacao_Macroprudencial_n.1-2026.pdf",
+  },
   "instrucao-23-2023": {
     label: "Instrução n.º 23/2023 do Banco de Portugal",
     title: "O choque de taxa de juro",

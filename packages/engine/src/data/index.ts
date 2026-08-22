@@ -16,6 +16,7 @@ import { BDP_2026 } from "./bdp-2026.js";
 import { INTEREST_RATE_SHOCK_2023 } from "./interest-rate-shock-2023.js";
 import { EURIBOR_2026_07 } from "./euribor-2026-07.js";
 import { MORTGAGE_MARKET_2026_06 } from "./mortgage-market-2026-06.js";
+import { CONSUMER_MARKET_2026_06 } from "./consumer-market-2026-06.js";
 
 /** All datasets known to the engine. Add a tax year by adding to this list. */
 const DATASETS: readonly WithholdingDataset[] = [
@@ -139,6 +140,9 @@ export const EURIBOR_FALLBACK = EURIBOR_2026_07;
 /** The bundled market-rate reference, superseded by a live fetch when one works. */
 export const MORTGAGE_MARKET = MORTGAGE_MARKET_2026_06;
 
+/** The consumer-credit market reference in use. */
+export const CONSUMER_MARKET = CONSUMER_MARKET_2026_06;
+
 export {
   CONTINENTE_2026,
   MADEIRA_2026,
@@ -148,4 +152,5 @@ export {
   INTEREST_RATE_SHOCK_2023,
   EURIBOR_2026_07,
   MORTGAGE_MARKET_2026_06,
+  CONSUMER_MARKET_2026_06,
 };

@@ -9,14 +9,30 @@ import {
   type LoanPurpose,
   type LoanRateType,
   type MaxLoanInput,
+  type MaxPriceInput,
+  type PurchaseCostsInput,
+  type Region,
 } from "@pt-finance-tools/engine";
 import { parseAmount } from "./format.js";
 
+/**
+ * Which question the form is answering.
+ *
+ * The calculator has always been able to test a price the user picked. That is
+ * the wrong shape for the question most people arrive with — it makes them
+ * guess a number and then binary-search by hand — so the same engine is driven
+ * from the other end: savings in, price out.
+ */
+export type LoanMode = "price" | "capacity";
+
 export interface LoanForm {
+  mode: LoanMode;
   /** Monthly income, as the DSTI denominator sees it. */
   income: string;
   age: string;
   propertyPrice: string;
+  /** Cash on hand. The answer in capacity mode; a cross-check in price mode. */
+  savings: string;
   termYears: string;
   purpose: LoanPurpose;
   /** Whether the rate is indexed to Euribor or fixed for the whole term. */
@@ -36,6 +52,20 @@ export interface LoanForm {
   existingDebt: string;
   appraisalValue: string;
   retired: boolean;
+  /** Which IMT tables apply — the country splits in two here, not three. */
+  region: Region;
+  /** VPT, when it is above the price. Blank means "not above it". */
+  vpt: string;
+  /**
+   * The buyer asserts the IMT Jovem conditions (CIMT art. 9.º n.º 2). An
+   * assertion rather than a derivation: two of the conditions — first ever
+   * acquisition, not a dependant for IRS — are things only the buyer knows.
+   */
+  youngFirstHome: boolean;
+  /** The buyer asserts the garantia pessoal do Estado conditions. */
+  stateGuarantee: boolean;
+  /** Bank charges from the FINE. Nothing models these; the user types them. */
+  bankFees: string;
 }
 
 /**
@@ -81,9 +111,11 @@ export const DEFAULT_FIXED_PERIOD_YEARS = "5";
 export const DEFAULT_TENOR: EuriborTenor = "6m";
 
 export const DEFAULT_LOAN_FORM: LoanForm = {
+  mode: "price",
   income: "",
   age: "30",
   propertyPrice: "",
+  savings: "",
   termYears: "40",
   purpose: "own-permanent-residence",
   rateType: "variable",
@@ -94,6 +126,11 @@ export const DEFAULT_LOAN_FORM: LoanForm = {
   existingDebt: "",
   appraisalValue: "",
   retired: false,
+  region: "continente",
+  vpt: "",
+  youngFirstHome: false,
+  stateGuarantee: false,
+  bankFees: "",
 };
 
 export type LoanFormErrors = Partial<Record<keyof LoanForm, string>>;
@@ -140,6 +177,33 @@ export function validateLoanForm(form: LoanForm): LoanFormErrors {
       errors.propertyPrice = "Introduza o preço do imóvel.";
     } else if (price > MAX_PRICE) {
       errors.propertyPrice = "Valor demasiado alto.";
+    }
+  }
+
+  if (form.savings.trim() !== "") {
+    const savings = parseAmount(form.savings);
+    if (savings === null || savings < 0) {
+      errors.savings = "Introduza o que tem de parte, por exemplo 40 000.";
+    } else if (savings > MAX_PRICE) {
+      errors.savings = "Valor demasiado alto.";
+    }
+  }
+
+  if (form.vpt.trim() !== "") {
+    const vpt = parseAmount(form.vpt);
+    if (vpt === null || vpt <= 0) {
+      errors.vpt = "Introduza o valor patrimonial tributário.";
+    } else if (vpt > MAX_PRICE) {
+      errors.vpt = "Valor demasiado alto.";
+    }
+  }
+
+  if (form.bankFees.trim() !== "") {
+    const fees = parseAmount(form.bankFees);
+    if (fees === null || fees < 0) {
+      errors.bankFees = "Introduza o total das comissões, por exemplo 800.";
+    } else if (fees > MAX_INCOME) {
+      errors.bankFees = "Valor demasiado alto.";
     }
   }
 
@@ -266,6 +330,106 @@ export function toMaxLoanInput(
   if (appraisal > 0) {
     input.appraisalValue = appraisal;
   }
+
+  if (form.stateGuarantee) {
+    input.stateGuarantee = true;
+  }
+
+  return input;
+}
+
+/**
+ * Build the reverse-direction input: savings in, price out.
+ *
+ * The appraisal and the VPT arrive as RATIOS rather than amounts, because the
+ * price is the unknown they would be measured against. In price mode the user
+ * gives both in euros; here the honest translation is "the same relationship
+ * to whatever price we land on", and a blank field means "equal to the price"
+ * — which is what the forward direction already assumes.
+ */
+export function toMaxPriceInput(
+  form: LoanForm,
+  assessmentDate: string,
+  indexRate: number,
+): MaxPriceInput | null {
+  const monthlyIncome = parseAmount(form.income);
+  const savings = parseAmount(form.savings);
+  if (monthlyIncome === null || monthlyIncome <= 0) return null;
+  if (savings === null || savings < 0) return null;
+
+  const indexed = contractRate(indexRate, (parseAmount(form.spread) ?? 0) / 100);
+  const fixed = (parseAmount(form.annualRate) ?? 0) / 100;
+  const annualRate = form.rateType === "fixed" ? fixed : indexed;
+
+  const input: MaxPriceInput = {
+    borrower: {
+      monthlyIncome,
+      age: parseCount(form.age) ?? 30,
+    },
+    purpose: form.purpose,
+    annualRate,
+    rateType: form.rateType,
+    termYears: parseCount(form.termYears) ?? MAX_TERM_YEARS,
+    region: form.region,
+    savings,
+    assessmentDate,
+  };
+
+  const existingDebt = parseAmount(form.existingDebt) ?? 0;
+  if (existingDebt > 0) {
+    input.borrower.existingMonthlyDebt = existingDebt;
+  }
+
+  if (form.rateType === "mixed") {
+    input.mixedTerms = {
+      fixedPeriodYears: parseCount(form.fixedPeriodYears) ?? 5,
+      fixedRate: fixed,
+    };
+  }
+
+  if (form.retired) input.borrower.retired = true;
+  if (form.youngFirstHome) input.youngFirstHome = true;
+  if (form.stateGuarantee) input.stateGuarantee = true;
+
+  const bankFees = parseAmount(form.bankFees) ?? 0;
+  if (bankFees > 0) input.bankFees = bankFees;
+
+  return input;
+}
+
+/**
+ * The purchase-cost input for a settled price — the forward direction's
+ * companion to {@link toMaxPriceInput}.
+ *
+ * Returns `null` until there is a price and a loan to cost, since a cost model
+ * with no transaction to attach to would just be a table of rates.
+ */
+export function toPurchaseCostsInput(
+  form: LoanForm,
+  price: number,
+  loanAmount: number,
+  termYears: number,
+  annualRate: number,
+  assessmentDate: string,
+): PurchaseCostsInput | null {
+  if (price <= 0) return null;
+
+  const input: PurchaseCostsInput = {
+    price,
+    loanAmount,
+    purpose: form.purpose,
+    region: form.region,
+    termYears,
+    annualRate,
+    assessmentDate,
+  };
+
+  const vpt = parseAmount(form.vpt) ?? 0;
+  if (vpt > 0) input.vpt = vpt;
+  if (form.youngFirstHome) input.youngFirstHome = true;
+
+  const bankFees = parseAmount(form.bankFees) ?? 0;
+  if (bankFees > 0) input.bankFees = bankFees;
 
   return input;
 }

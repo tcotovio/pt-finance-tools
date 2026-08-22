@@ -1,25 +1,46 @@
-// The loan calculator: four fields on the surface, everything else behind
-// "O meu caso" — the same progressive-disclosure shape as the wage side.
+// The loan calculator, in two directions.
 //
-// Income and property price are both required before anything is shown: one
-// bounds the DSTI ceiling and the other the LTV ceiling, and an answer that
-// silently ignored either would be the wrong number rather than a partial one.
+// "Posso comprar esta casa?" is the original: a price goes in, the loan and
+// the limits come out. "Qual é o meu limite?" is the same engine driven from
+// the other end — savings go in and the price comes out — because that is the
+// question most people actually arrive with, and making them guess a price and
+// binary-search by hand was a bad way to answer it.
+//
+// Both modes need income. Beyond that they need different things, so the
+// second surface field swaps rather than the form growing: a price in one, the
+// entrada in the other. Everything else lives behind "O meu caso", shared.
 
 import { useEffect, useMemo, useState } from "react";
 import { euriborRate, EURIBOR_FALLBACK } from "@pt-finance-tools/engine";
-import { computeMaxLoanSafely, type LoanOutcome } from "../lib/compute.js";
+import type { PurchaseCosts } from "@pt-finance-tools/engine";
+import {
+  computeMaxLoanSafely,
+  computeMaxPriceSafely,
+  type LoanOutcome,
+  type MaxPriceOutcome,
+} from "../lib/compute.js";
 import {
   DEFAULT_LOAN_FORM,
   toMaxLoanInput,
+  toMaxPriceInput,
+  toPurchaseCostsInput,
   validateLoanForm,
   type LoanForm,
+  type LoanMode,
   type UpdateLoanForm,
 } from "../lib/loan-form.js";
 import { todayIso, parseAmount } from "../lib/format.js";
 import { loadEuribor, type EuriborState } from "../lib/euribor-feed.js";
+import { purchaseCostsForDate } from "@pt-finance-tools/engine";
 import { LoanAdvancedPanel } from "./LoanAdvancedPanel.js";
 import { LoanResultPanel } from "./LoanResultPanel.js";
-import { TextField } from "./fields.js";
+import { PriceResultPanel } from "./PriceResultPanel.js";
+import { SegmentedField, TextField, type SelectOption } from "./fields.js";
+
+const MODE_OPTIONS: readonly SelectOption[] = [
+  { value: "price", label: "Posso comprar esta casa?" },
+  { value: "capacity", label: "Qual é o meu limite?" },
+];
 
 export function LoanCalculator() {
   // Fixed for the session, like the wage side: the parameters are keyed by
@@ -54,27 +75,66 @@ export function LoanCalculator() {
     setForm((previous) => ({ ...previous, [key]: value }));
 
   const errors = useMemo(() => validateLoanForm(form), [form]);
+  const valid = Object.keys(errors).length === 0;
+
   // Lifted for the same reason as on the wage side: the limit curve resamples
   // this input across contract terms.
   const input = useMemo(
     () => toMaxLoanInput(form, assessmentDate, indexRate),
     [assessmentDate, form, indexRate],
   );
+
   const outcome = useMemo<LoanOutcome | null>(() => {
-    if (!input) return null;
-    if (Object.keys(errors).length > 0) {
-      return {
-        ok: false,
-        message: "Corrija os campos assinalados para ver o resultado.",
-      };
-    }
+    if (form.mode !== "price" || !input) return null;
+    if (!valid) return { ok: false, message: INVALID };
     return computeMaxLoanSafely(input);
-  }, [errors, input]);
+  }, [form.mode, input, valid]);
+
+  const priceInput = useMemo(
+    () => toMaxPriceInput(form, assessmentDate, indexRate),
+    [assessmentDate, form, indexRate],
+  );
+
+  const priceOutcome = useMemo<MaxPriceOutcome | null>(() => {
+    if (form.mode !== "capacity" || !priceInput) return null;
+    if (!valid) return { ok: false, message: INVALID };
+    return computeMaxPriceSafely(priceInput);
+  }, [form.mode, priceInput, valid]);
+
+  // In price mode the costs are a second call, because the price is known and
+  // the loan has just been solved. In capacity mode the solver already did it
+  // — the costs are part of what it optimised against, so taking them from the
+  // result rather than recomputing keeps the two from disagreeing at the cent.
+  const costs = useMemo<PurchaseCosts | null>(() => {
+    if (form.mode !== "price" || !outcome?.ok || !input) return null;
+    const costInput = toPurchaseCostsInput(
+      form,
+      input.propertyPrice,
+      Math.floor(outcome.result.maxLoan),
+      outcome.result.termYears,
+      input.annualRate,
+      assessmentDate,
+    );
+    if (!costInput) return null;
+    try {
+      return purchaseCostsForDate(costInput);
+    } catch {
+      return null;
+    }
+  }, [assessmentDate, form, input, outcome]);
 
   return (
     <div className="calculator">
       <form className="panel form" onSubmit={(event) => event.preventDefault()}>
         <h2 className="visually-hidden">Os seus dados</h2>
+
+        <SegmentedField
+          name="loan-mode"
+          legend="O que quer saber"
+          value={form.mode}
+          options={MODE_OPTIONS}
+          onChange={(value) => update("mode", value as LoanMode)}
+        />
 
         <TextField
           id="loan-income"
@@ -88,16 +148,30 @@ export function LoanCalculator() {
           onChange={(value) => update("income", value)}
         />
 
-        <TextField
-          id="loan-price"
-          large
-          label="Preço do imóvel"
-          suffix="€"
-          placeholder="250 000,00"
-          value={form.propertyPrice}
-          error={errors.propertyPrice}
-          onChange={(value) => update("propertyPrice", value)}
-        />
+        {form.mode === "price" ? (
+          <TextField
+            id="loan-price"
+            large
+            label="Preço do imóvel"
+            suffix="€"
+            placeholder="250 000,00"
+            value={form.propertyPrice}
+            error={errors.propertyPrice}
+            onChange={(value) => update("propertyPrice", value)}
+          />
+        ) : (
+          <TextField
+            id="loan-savings"
+            large
+            label="Entrada disponível"
+            suffix="€"
+            placeholder="40 000,00"
+            value={form.savings}
+            error={errors.savings}
+            hint="Tudo o que tem de parte para esta compra. Não é só a entrada: o IMT, o imposto do selo e a escritura saem daqui também."
+            onChange={(value) => update("savings", value)}
+          />
+        )}
 
         <div className="field-row">
           <TextField
@@ -130,14 +204,28 @@ export function LoanCalculator() {
         />
       </form>
 
-      <LoanResultPanel
-        outcome={outcome}
-        input={input}
-        euribor={euribor.snapshot}
-        propertyPrice={parseAmount(form.propertyPrice) ?? 0}
-        monthlyIncome={parseAmount(form.income) ?? 0}
-        existingMonthlyDebt={parseAmount(form.existingDebt) ?? 0}
-      />
+      {form.mode === "price" ? (
+        <LoanResultPanel
+          outcome={outcome}
+          input={input}
+          euribor={euribor.snapshot}
+          propertyPrice={parseAmount(form.propertyPrice) ?? 0}
+          monthlyIncome={parseAmount(form.income) ?? 0}
+          existingMonthlyDebt={parseAmount(form.existingDebt) ?? 0}
+          savings={parseAmount(form.savings) ?? 0}
+          costs={costs}
+        />
+      ) : (
+        <PriceResultPanel
+          outcome={priceOutcome}
+          assessmentDate={assessmentDate}
+          euribor={euribor.snapshot}
+          monthlyIncome={parseAmount(form.income) ?? 0}
+          existingMonthlyDebt={parseAmount(form.existingDebt) ?? 0}
+        />
+      )}
     </div>
   );
 }
+
+const INVALID = "Corrija os campos assinalados para ver o resultado.";

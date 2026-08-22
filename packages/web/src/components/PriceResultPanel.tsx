@@ -1,0 +1,218 @@
+// The reverse direction's result: the most expensive house the borrower's
+// income and savings reach together.
+//
+// Structurally the same panel as the forward one, and deliberately so — the
+// answer, the sentence that explains it, the cash, the caveats, then the
+// working behind disclosures. What differs is the headline (a price rather
+// than a loan) and a third ceiling: the savings themselves, which is very
+// often the one that actually binds and which the forward direction had no
+// way to express.
+
+import type { EuriborSnapshot, MaxPriceResult } from "@pt-finance-tools/engine";
+import type { MaxPriceOutcome } from "../lib/compute.js";
+import { buildPriceSummary, type PriceSummary } from "../lib/loan-result.js";
+import { formatEuro, formatPercent } from "../lib/format.js";
+import { MarketComparison } from "./MarketComparison.js";
+import { SourceList } from "./SourceList.js";
+import { loanSources } from "../lib/sources.js";
+import {
+  CashSummary,
+  ConstraintBars,
+  LoanCaveats,
+  LoanNotices,
+  PurchaseCostLines,
+  ResultSection,
+  TotalCreditLines,
+} from "./LoanSections.js";
+
+interface PriceResultPanelProps {
+  outcome: MaxPriceOutcome | null;
+  assessmentDate: string;
+  euribor: EuriborSnapshot;
+  monthlyIncome: number;
+  existingMonthlyDebt: number;
+}
+
+export function PriceResultPanel({
+  outcome,
+  assessmentDate,
+  euribor,
+  monthlyIncome,
+  existingMonthlyDebt,
+}: PriceResultPanelProps) {
+  return (
+    <section className="panel result" aria-live="polite">
+      <h2 className="visually-hidden">Resultado da simulação</h2>
+      {outcome === null ? (
+        <p className="result-empty">
+          Introduza o rendimento e o que tem de parte para ver até quanto pode
+          comprar.
+        </p>
+      ) : outcome.ok ? (
+        <PriceResultBody
+          result={outcome.result}
+          assessmentDate={assessmentDate}
+          euribor={euribor}
+          monthlyIncome={monthlyIncome}
+          existingMonthlyDebt={existingMonthlyDebt}
+        />
+      ) : (
+        <p className="result-error" role="alert">
+          {outcome.message}
+        </p>
+      )}
+    </section>
+  );
+}
+
+function PriceResultBody({
+  result,
+  assessmentDate,
+  euribor,
+  monthlyIncome,
+  existingMonthlyDebt,
+}: {
+  result: MaxPriceResult;
+  assessmentDate: string;
+  euribor: EuriborSnapshot;
+  monthlyIncome: number;
+  existingMonthlyDebt: number;
+}) {
+  const summary = buildPriceSummary(result, monthlyIncome, existingMonthlyDebt);
+
+  if (summary.maxPrice <= 0) {
+    return (
+      <>
+        <p className="result-empty">
+          Com este valor de parte não chega para os impostos e a escritura, que
+          se pagam mesmo quando o banco financia tudo o resto.
+        </p>
+        <LoanNotices summary={summary} />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div className="result-headline">
+        <p className="result-label">Pode comprar até</p>
+        <p className="result-net num">{formatEuro(summary.maxPrice)}</p>
+        <p className="result-sub">
+          empréstimo de{" "}
+          <span className="num">{formatEuro(summary.maxLoan)}</span>, prestação
+          de <span className="num">{formatEuro(summary.contractPayment)}</span>{" "}
+          por mês a <span className="num">{summary.termYears}</span> anos
+        </p>
+      </div>
+
+      <div className="callout">
+        <p>
+          <strong>O que o limita: {summary.binding.label}.</strong>{" "}
+          {summary.binding.remedy}
+        </p>
+      </div>
+
+      <CashSummary summary={summary} />
+
+      {/*
+        The sensitivity ("cada 1 000 € que junte dá para…") lives in the
+        binding callout above, and saying it twice with two different
+        roundings — which is what happened here first — reads as two different
+        numbers rather than one.
+      */}
+      {summary.unusedFunds >= 1 ? (
+        <p className="chart-note">
+          Sobram-lhe{" "}
+          <span className="num">{formatEuro(summary.unusedFunds)}</span> do que
+          tem de parte: aqui o que trava não é o dinheiro.
+        </p>
+      ) : null}
+
+      <LoanCaveats summary={summary} />
+
+      <ResultSection
+        title="Como se compara com o mercado"
+        summary="A sua prestação e a sua taxa, face aos dados do Banco de Portugal"
+      >
+        <MarketComparison
+          contractPayment={summary.contractPayment}
+          contractRate={summary.stressedRate - summary.shock}
+          rateType={summary.rateType}
+        />
+      </ResultSection>
+
+      <ResultSection
+        title="Os limites, e qual deles manda"
+        summary="Rendimento, valor do imóvel e poupança, lado a lado"
+      >
+        <ConstraintBars summary={summary} />
+        <p className="chart-note">
+          As barras mostram o <strong>empréstimo</strong> que cada limite
+          permitiria, excepto a da poupança, que mostra o{" "}
+          <strong>preço</strong> a que ela chega — é essa a grandeza que este
+          modo procura.
+        </p>
+      </ResultSection>
+
+      <ResultSection
+        title="Custos, juros e total do crédito"
+        summary="IMT, imposto do selo, escritura, e o que paga ao longo do contrato"
+      >
+        <PriceDetailLines summary={summary} />
+        <h4 className="group-title">Na escritura</h4>
+        <PurchaseCostLines summary={summary} />
+        <h4 className="group-title">Ao longo do contrato</h4>
+        <TotalCreditLines summary={summary} />
+      </ResultSection>
+
+      <LoanNotices summary={summary} />
+
+      <SourceList
+        entries={loanSources(
+          result.loanResult,
+          assessmentDate,
+          euribor,
+          result.costs,
+        )}
+      />
+    </>
+  );
+}
+
+function PriceDetailLines({ summary }: { summary: PriceSummary }) {
+  return (
+    <dl className="lines">
+      <div className="line is-deduction">
+        <dt>
+          Prestação mensal
+          <span className="line-note">
+            <span>
+              {summary.mixedBasis
+                ? `A prestação do período fixo. O teste de esforço usou ${formatEuro(
+                    summary.stressedPayment,
+                  )}.`
+                : summary.shocked
+                  ? `À taxa do contrato. O teste de esforço usa ${formatPercent(
+                      summary.stressedRate,
+                    )} e daria ${formatEuro(summary.stressedPayment)}.`
+                  : "À taxa do contrato, fixa para todo o prazo."}
+            </span>
+          </span>
+        </dt>
+        <dd className="num">{formatEuro(summary.contractPayment)}</dd>
+      </div>
+      <div className="line is-deduction">
+        <dt>
+          Taxa de esforço real
+          <span className="line-note">
+            <span>
+              Prestação (mais os outros créditos) sobre o rendimento, sem
+              agravamento.
+            </span>
+          </span>
+        </dt>
+        <dd className="num">{formatPercent(summary.effortRate)}</dd>
+      </div>
+    </dl>
+  );
+}

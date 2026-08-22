@@ -14,8 +14,10 @@ const TOOLS = {
   },
   loan: {
     tab: "Crédito habitação",
-    title: "Quanto posso pedir",
-    lede: "O máximo que pode financiar, com os limites do Banco de Portugal em vigor desde 1 de agosto de 2026 — taxa de esforço, valor do imóvel e prazo por idade.",
+    // Not "Quanto posso pedir" any more: the page answers two questions now,
+    // and naming one of them in the h1 would mislabel the other.
+    title: "Crédito à habitação",
+    lede: "Quanto pode financiar, ou até quanto pode comprar com o que tem de parte. Com os limites do Banco de Portugal em vigor desde 1 de agosto de 2026 e os impostos da compra — IMT, imposto do selo e escritura.",
   },
   consumer: {
     tab: "Crédito ao consumo",

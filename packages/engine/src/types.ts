@@ -488,6 +488,18 @@ export interface MaxLoanInput {
   mixedTerms?: { fixedPeriodYears: number; fixedRate: number };
   /** Requested term in years, before the age-based ceiling is applied. */
   termYears: number;
+  /**
+   * The borrower asserts the conditions of the garantia pessoal do Estado
+   * (DL n.º 44/2024) are met.
+   *
+   * Never derived. Two of its conditions are invisible to this engine — that
+   * this is the first home ever, and that rendimento coletável falls within
+   * the 8.º escalão do IRS, an ANNUAL taxable figure that no honest mapping
+   * turns monthly income into. The two the engine *can* check — the borrower's
+   * age and the transaction value — it does check, and it withdraws the
+   * guarantee when they fail rather than trusting the assertion over them.
+   */
+  stateGuarantee?: boolean;
   /** ISO `YYYY-MM-DD` of the solvency assessment — selects the parameters. */
   assessmentDate: string;
 }
@@ -557,6 +569,17 @@ export interface MaxLoanResult {
     /** min(price, appraisal) — the denominator art. 4.º prescribes. */
     propertyValue: number;
     maxLoan: number;
+    /**
+     * Where the ceiling came from, and it matters which.
+     *
+     * `"recomendacao"` is the 90 %/80 % of art. 5.º. `"state-guarantee"` is
+     * the 100 % the garantia pessoal do Estado is designed to make possible —
+     * which is a justified DEVIATION from the Recomendação, not a proviso
+     * inside it, and which the bank grants one contract at a time. A result
+     * that does not distinguish the two would present a bank's discretion as
+     * a borrower's entitlement.
+     */
+    source: "recomendacao" | "state-guarantee";
   };
   /**
    * The instalment actually payable on `maxLoan` — what the borrower starts
@@ -575,9 +598,297 @@ export interface MaxLoanResult {
   sources: {
     macroprudential: string;
     shock: string;
+    /** Present only when the state guarantee actually raised the ceiling. */
+    guarantee?: string;
   };
-  /** Whether both parameter sets have been independently cross-checked. */
+  /**
+   * Whether every parameter set the answer leaned on has been independently
+   * cross-checked. Note this goes FALSE once the state guarantee is in play:
+   * that dataset has no Axis B and structurally cannot have one, so an answer
+   * resting on it is not a verified answer.
+   */
   parametersVerified: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Purchase taxes and costs
+// ---------------------------------------------------------------------------
+
+/**
+ * Which IMT table an acquisition falls under. The three Continente tables of
+ * CIMT art. 17.º n.º 1 als. a)–c) and their Regiões Autónomas counterparts,
+ * whose thresholds run 25 % higher under the artigo único da Lei n.º 21/90.
+ */
+export type ImtTableId =
+  /** Al. a) — habitação própria e permanente. Tabela I / IV. */
+  | "own-permanent-residence"
+  /** Al. b) — HPP adquirida por jovens até 35 anos. Tabela II / V. */
+  | "young-own-permanent-residence"
+  /** Al. c) — habitação que não seja própria e permanente. Tabela III / VI. */
+  | "housing";
+
+/** Which set of tables applies. IMT splits the country in two, not three. */
+export type ImtTerritory = "continente" | "regioes-autonomas";
+
+/**
+ * One row of an IMT practical table.
+ *
+ * The statute (art. 17.º n.º 3) expresses the split-bracket calculation as
+ * "a primeira parte à taxa média, o excedente à taxa marginal"; AT publishes
+ * the algebraically identical `valor × taxa − parcela a abater`, which is what
+ * this encodes. The top rows are *taxas únicas* applied to the whole value —
+ * `deduct: 0` and `single: true`, which is why crossing into one can make the
+ * tax jump upward.
+ */
+export interface ImtBracket {
+  /** Upper bound of the bracket, inclusive. `null` for the open top row. */
+  upTo: number | null;
+  /** Taxa marginal (or taxa única when `single`), as a fraction. */
+  rate: number;
+  /** Parcela a abater, in euros. Zero on the 0 % and taxa-única rows. */
+  deduct: number;
+  /** True for a "taxa única de X %" row, which ignores every bracket below. */
+  single?: boolean;
+}
+
+/** The IMT rate tables in force for a year. */
+export interface ImtTables {
+  year: number;
+  effectiveFrom: string;
+  effectiveTo?: string;
+  tables: Record<ImtTerritory, Record<ImtTableId, readonly ImtBracket[]>>;
+  /** Al. d) — aquisição de prédios rústicos. */
+  rusticRate: number;
+  /** Al. e) — outros prédios urbanos e outras aquisições onerosas. */
+  otherUrbanRate: number;
+  source: string;
+  verified: boolean;
+}
+
+/**
+ * Imposto do Selo rates that a property purchase touches. Rates from the
+ * Tabela Geral; the young deduction from CIS art. 7.º-A.
+ */
+export interface StampDuty {
+  effectiveFrom: string;
+  effectiveTo?: string;
+  /** Verba 1.1 — aquisição onerosa do direito de propriedade sobre imóveis. */
+  transfer: number;
+  /** Verba 17.1 — utilização de crédito, by contract term. */
+  credit: {
+    /** 17.1.1 — prazo inferior a um ano, per month or fraction. */
+    underOneYearPerMonth: number;
+    /** 17.1.2 — prazo igual ou superior a um ano. */
+    oneYearOrMore: number;
+    /** 17.1.3 — prazo igual ou superior a cinco anos. */
+    fiveYearsOrMore: number;
+  };
+  /** Verba 17.3.1 — juros. Not charged on own-housing credit; see art. 7.º n.º 1 al. l). */
+  interest: number;
+  source: string;
+  verified: boolean;
+}
+
+/**
+ * Registration and deed costs. Emolumental rather than fiscal — a third kind
+ * of instrument, on its own revision cycle.
+ */
+export interface RegistrationFees {
+  effectiveFrom: string;
+  effectiveTo?: string;
+  /** One registration act — a purchase paid in full, with no mortgage. */
+  singleAct: number;
+  /** More than one act — a purchase with bank financing, which is every case here. */
+  multipleActs: number;
+  /** Per additional prédio in the same process. */
+  extraProperty: number;
+  /**
+   * What DL n.º 48-D/2024 takes off for a qualifying young first-time buyer.
+   *
+   * A REDUCTION, not an exemption, and the distinction is worth 250 €. RERN
+   * art. 28.º n.º 37 does exempt the registos themselves — but n.º 40 says
+   * that when the purchase goes through the procedimento especial (which is
+   * what Casa Pronta is), what happens instead is that the procedure's
+   * emoluments are reduced by a fixed amount. Secondary sources routinely
+   * describe this as "isento", and it is not.
+   */
+  youngReduction: {
+    /** N.º 40 al. a): one fact registered. */
+    singleAct: number;
+    /** N.º 40 al. b): more than one, i.e. a purchase with a mortgage. */
+    multipleActs: number;
+  };
+  source: string;
+  verified: boolean;
+}
+
+/**
+ * The garantia pessoal do Estado for young first-time buyers.
+ *
+ * Deliberately NOT folded into {@link MacroprudentialParameters}: the
+ * Recomendação's art. 5.º caps LTV at 90 % with no proviso, so lending at
+ * 100 % against this guarantee is a *deviation* from it that the institution
+ * justifies, not a carve-out inside it. Keeping the two apart is what lets the
+ * result say which of the two it is.
+ */
+export interface StateGuarantee {
+  effectiveFrom: string;
+  /** The regime is time-limited, unlike every other dataset here. */
+  effectiveTo?: string;
+  maxAge: number;
+  /** Above this transaction value the guarantee is simply unavailable. */
+  maxTransactionValue: number;
+  /** The share of the transaction value the State may guarantee. */
+  guaranteeShare: number;
+  /** The LTV the guarantee is designed to make possible. */
+  maxLtv: number;
+  guaranteeYears: number;
+  source: string;
+  verified: boolean;
+}
+
+/** Where a number in a result came from, so the UI can list it. */
+export interface SourceRef {
+  /** Stable key, so the UI can attach its own copy. */
+  key: string;
+  /** The dataset's own citation string, URL included. */
+  citation: string;
+  /** Whether that dataset has passed both cross-check axes. */
+  verified: boolean;
+}
+
+/**
+ * What stopped the reverse solver. The two regulatory ceilings, plus the one
+ * the borrower's own balance sheet imposes.
+ */
+export type PriceBindingConstraint = BindingConstraint | "cash";
+
+export interface MaxPriceInput
+  extends Omit<MaxLoanInput, "propertyPrice" | "appraisalValue"> {
+  /** Cash on hand for the deposit and the purchase costs together. */
+  savings: number;
+  /**
+   * Bank appraisal as a ratio of the price, because the price is the unknown.
+   * Omitted means "the appraisal matches the price", the same default the
+   * forward direction takes.
+   */
+  appraisalRatio?: number;
+  /** VPT as a ratio of the price, for the same reason. */
+  vptRatio?: number;
+  region: Region;
+  /** Asserted, never derived — see {@link PurchaseCostsInput.youngFirstHome}. */
+  youngFirstHome?: boolean;
+  /** Bank fees from the FINE, which nothing here models. */
+  bankFees?: number;
+}
+
+export interface MaxPriceResult {
+  /** The answer, floored to the euro. */
+  maxPrice: number;
+  loan: number;
+  /** Price − loan: the entrada proper, before any tax. */
+  deposit: number;
+  costs: PurchaseCosts;
+  /** Deposit + upfront costs — what has to be on hand at the deed. */
+  cashNeeded: number;
+  /** Savings left over, which the notches can make surprisingly large. */
+  unusedFunds: number;
+  bindingConstraint: PriceBindingConstraint;
+  /**
+   * Cash needed per extra euro of price, at the answer.
+   *
+   * The sensitivity, and worth reporting rather than leaving implicit: with a
+   * 90 % LTV it sits near 0,10 €, but under the state guarantee it falls to
+   * roughly 0,014 € — so a thousand euros more savings moves the reachable
+   * price by tens of thousands, and the answer is correspondingly fragile to
+   * the bank fees this engine does not model.
+   */
+  cashPerEuroOfPrice: number;
+  /** The forward answer at `maxPrice`, so the UI has one summary path. */
+  loanResult: MaxLoanResult;
+}
+
+export interface PurchaseCostsInput {
+  /** The price agreed. */
+  price: number;
+  /**
+   * Valor patrimonial tributário, when it is higher than the price.
+   *
+   * CIMT art. 12.º puts IMT — and with it verba 1.1 — on the GREATER of the
+   * two. Note this runs opposite to the LTV rule of Recomendação art. 4.º,
+   * which takes the LOWER of price and bank appraisal. Three different
+   * valuations of one property, and two of them pull in opposite directions.
+   */
+  vpt?: number;
+  loanAmount: number;
+  purpose: LoanPurpose;
+  region: Region;
+  /**
+   * The buyer asserts the young-first-home conditions of CIMT art. 9.º n.º 2
+   * are met. Never derived: two of the four conditions (first acquisition,
+   * not a dependent for IRS) are invisible to this engine.
+   */
+  youngFirstHome?: boolean;
+  termYears: number;
+  annualRate: number;
+  assessmentDate: string;
+  /** Bank fees from the FINE. Caller-supplied; nothing here models them. */
+  bankFees?: number;
+}
+
+/** One tax line, with enough of its own working to explain a zero. */
+export interface ImtCharge {
+  amount: number;
+  table: ImtTableId;
+  territory: ImtTerritory;
+  rate: number;
+  deduct: number;
+  /** True when the taxable value fell in the 0 % row of the young table. */
+  exempt: boolean;
+}
+
+export interface StampDutyTransferCharge {
+  amount: number;
+  /** Before the art. 7.º-A deduction. */
+  gross: number;
+  /** The deduction actually applied, capped by art. 7.º-A. */
+  youngDeduction: number;
+  /** The cap itself, so the UI can say why the deduction stopped. */
+  youngDeductionCap: number;
+}
+
+export interface StampDutyCreditCharge {
+  amount: number;
+  rate: number;
+  verba: "17.1.1" | "17.1.2" | "17.1.3";
+}
+
+export interface StampDutyInterestCharge {
+  amount: number;
+  exempt: boolean;
+  /** Why it is zero, when it is — the exemption is a rule, not an omission. */
+  reason: string;
+}
+
+export interface PurchaseCosts {
+  /** The max(price, vpt) that IMT and verba 1.1 actually fell on. */
+  taxableValue: number;
+  imt: ImtCharge;
+  stampDutyTransfer: StampDutyTransferCharge;
+  stampDutyCredit: StampDutyCreditCharge;
+  stampDutyInterest: StampDutyInterestCharge;
+  registration: {
+    amount: number;
+    /** Before the DL 48-D/2024 reduction. */
+    gross: number;
+    /** What that reduction took off, or zero. */
+    youngReduction: number;
+  };
+  bankFees: number;
+  /** Everything payable at the deed. Excludes the interest selo, which is monthly. */
+  upfrontTotal: number;
+  source: SourceRef[];
+  verified: boolean;
 }
 
 /** Euribor tenors Portuguese mortgages index to. */

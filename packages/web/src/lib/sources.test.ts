@@ -59,13 +59,24 @@ describe("splitCitation", () => {
 });
 
 describe("wageSources", () => {
-  it("always cites the withholding tables", () => {
+  it("always cites the withholding tables first", () => {
     const result = computeNetWageForDate(wage());
     const entries = wageSources(result, REFERENCE);
-    expect(entries).toHaveLength(1);
     expect(entries[0].key).toBe("withholding");
     expect(entries[0].url).toContain("http");
     expect(entries[0].verified).toBe(true);
+  });
+
+  it("always cites the wage reference, and marks it as context only", () => {
+    // It is shown beside the result, never used to compute it — and like the
+    // loan-side market statistics it carries no verified flag, because a
+    // quoted statistic is not cross-checked in the sense the badge means.
+    const entries = wageSources(computeNetWageForDate(wage()), REFERENCE);
+    const market = entries.find((e) => e.key === "wage-market");
+    expect(market).toBeDefined();
+    expect(market!.usedFor).toMatch(/não entra em nenhum cálculo/i);
+    expect(market!.verified).toBeUndefined();
+    expect(market!.url).toContain("ine.pt");
   });
 
   it("adds the meal allowance limits only when one was paid", () => {

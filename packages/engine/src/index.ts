@@ -94,6 +94,7 @@ export type {
   EuriborSnapshot,
   MortgageMarket,
   ConsumerCreditMarket,
+  WageMarket,
   Percentiles,
 } from "./types.js";
 
@@ -160,4 +161,6 @@ export {
   MORTGAGE_MARKET,
   CONSUMER_MARKET_2026_06,
   CONSUMER_MARKET,
+  WAGE_MARKET_2026_Q2,
+  WAGE_MARKET,
 } from "./data/index.js";

@@ -173,37 +173,36 @@ export function EffortLines({ summary }: { summary: LoanSummary }) {
         <dd className="num">{formatEuro(summary.contractPayment)}</dd>
       </div>
 
-      <div className="line is-deduction">
-        <dt>
-          Taxa de esforço real
-          <span className="line-note">
-            <span>
-              Prestação (mais os outros créditos) sobre o rendimento, sem
-              agravamento — o peso no seu orçamento.
-            </span>
-          </span>
-        </dt>
-        <dd className="num">{formatPercent(summary.effortRate)}</dd>
-      </div>
+      {/*
+        THE REGULATED RATIO CARRIES THE NAME, and this is the correction to a
+        first attempt that had it backwards.
 
+        "Taxa de esforço" is a term with a famous number attached to it — 45 %.
+        Whatever is printed under that label gets read against that ceiling.
+        Labelling the CONTRACT ratio "taxa de esforço real" therefore showed a
+        borrower who was pinned to the limit a figure of 36,1 % beside a
+        ceiling of 45 %, which reads as nine points of headroom that does not
+        exist. The number that owns the name has to be the number the rule is
+        written on.
+      */}
       <div className="line is-deduction">
         <dt>
-          Taxa de esforço do teste
+          Taxa de esforço
           <span className="line-note">
             <span>
               {summary.shocked ? (
                 <>
-                  É esta que não pode passar 45 %, e é por isso que pode ficar
-                  limitado com uma taxa de esforço real bem abaixo disso. O
-                  teste usa a prestação de{" "}
-                  {formatEuro(summary.stressedPayment)} — a que pagaria se a
-                  taxa subisse para {formatPercent(summary.stressedRate)} —
-                  e não a que vai pagar.
+                  A do Banco de Portugal, que não pode passar 45 %. Incide
+                  sobre a prestação agravada em{" "}
+                  {formatPoints(summary.shock)} —{" "}
+                  {formatEuro(summary.stressedPayment)} — e não sobre a que vai
+                  pagar.
                 </>
               ) : (
                 <>
-                  Sendo taxa fixa, não há indexante que possa subir: o teste
-                  usa a taxa do próprio contrato, por isso as duas coincidem.
+                  A do Banco de Portugal, que não pode passar 45 %. Sendo taxa
+                  fixa não há indexante que possa subir, por isso incide sobre
+                  a própria prestação do contrato.
                 </>
               )}
               {summary.incomeReduction > 0
@@ -215,8 +214,40 @@ export function EffortLines({ summary }: { summary: LoanSummary }) {
         </dt>
         <dd className="num">{formatPercent(summary.dstiRatio)}</dd>
       </div>
+
+      {/*
+        Shown only when it differs. With no shock and no past-70 reduction the
+        two ratios are the same number, and printing it twice under two labels
+        would recreate the confusion in the other direction.
+      */}
+      {summary.shocked || summary.incomeReduction > 0 ? (
+        <div className="line">
+          <dt>
+            Peso no seu orçamento
+            <span className="line-note">
+              <span>
+                A prestação que vai mesmo pagar (
+                {formatEuro(summary.contractPayment)}, mais os outros créditos)
+                sobre o seu rendimento. É menor do que a taxa de esforço de
+                propósito: o agravamento do teste existe justamente para lhe
+                deixar esta folga se as taxas subirem. Não é folga para pedir
+                mais — o limite aplica-se à outra.
+              </span>
+            </span>
+          </dt>
+          <dd className="num">{formatPercent(summary.effortRate)}</dd>
+        </div>
+      ) : null}
     </dl>
   );
+}
+
+/** Percentage points, as the Instrução states them: 0.015 -> "1,5 p.p.". */
+function formatPoints(fraction: number): string {
+  return `${(fraction * 100).toLocaleString("pt-PT", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })} p.p.`;
 }
 
 /** The itemised taxes, with each zero explained rather than left blank. */

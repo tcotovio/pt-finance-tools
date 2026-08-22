@@ -78,7 +78,25 @@ describe("buildLoanSummary — the binding constraint", () => {
   it("names income when the DSTI binds, and offers the income remedy", () => {
     const summary = summarize(input());
     expect(summary.binding.key).toBe("dsti");
-    expect(summary.binding.remedy).toMatch(/entrada maior não altera/i);
+    // A deposit is still the thing that does NOT move this limit, whichever
+    // wording says so — the variable-rate copy names the shock as well,
+    // because that is what makes the ceiling look arbitrary otherwise.
+    expect(summary.binding.remedy).toMatch(/entrada maior não (altera|muda)/i);
+    expect(summary.binding.remedy).toMatch(/mais rendimento/i);
+  });
+
+  it("explains the shock in the remedy, since that is what the 45 % sits on", () => {
+    const summary = summarize(input());
+    expect(summary.binding.remedy).toMatch(/agravada em 1,5 p\.p\./);
+    expect(summary.binding.remedy).toMatch(/45 %/);
+    // And offers the lever that actually removes the shock.
+    expect(summary.binding.remedy).toMatch(/taxa fixa/i);
+  });
+
+  it("drops the shock wording for a fixed rate, which has none", () => {
+    const summary = summarize(input({ rateType: "fixed" }));
+    expect(summary.shocked).toBe(false);
+    expect(summary.binding.remedy).not.toMatch(/agravada/i);
   });
 
   it("names the property when the LTV binds, and offers the deposit remedy", () => {

@@ -165,8 +165,14 @@ export function buildLoanSummary(
         : `A prestação não pode passar ${percentLabel(
             result.dsti.limit,
           )} do rendimento. Sendo taxa fixa, é testada à taxa do próprio contrato.`,
-      remedy:
-        "Uma entrada maior não altera este limite. O que o move: mais rendimento, menos encargos mensais, ou um prazo mais longo (se a idade ainda o permitir).",
+      // Names the shock explicitly, because this is the row that produces the
+      // "but my taxa de esforço is only 36 %" question: the ceiling is on the
+      // stressed instalment, and without saying so the limit looks arbitrary.
+      remedy: shocked
+        ? `O teste não usa a prestação que vai pagar, mas uma agravada em ${formatPoints(
+            result.dsti.shock,
+          )} — e é essa que está nos 45 %. Uma entrada maior não muda nada. O que muda: mais rendimento, menos encargos mensais, um prazo mais longo (se a idade permitir), ou taxa fixa, que não leva agravamento.`
+        : "Uma entrada maior não altera este limite. O que o move: mais rendimento, menos encargos mensais, ou um prazo mais longo (se a idade ainda o permitir).",
       reference: "bdp-1-2026",
     },
     {

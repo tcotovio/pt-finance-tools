@@ -1,0 +1,304 @@
+{
+  "_comment": "Bracket rows extracted mechanically from the official ofício circulado PDF (pdf2json), NOT hand-transcribed. This is the second, independent source that imt-2026.ts is diffed against by imt-2026.source.test.ts. Each row keeps the verbatim line it was read from, so a failure shows the official wording next to the dataset value.",
+  "instrument": "Ofício Circulado n.º 40129/2026, de 06-01 — IMT, tabelas práticas em vigor a partir de 01 de janeiro de 2026 (Autoridade Tributária e Aduaneira)",
+  "statute": "CIMT art. 17.º n.º 1, na redação da Lei n.º 73-A/2025, de 30 de dezembro (Orçamento do Estado para 2026)",
+  "sourceUrl": "https://info.portaldasfinancas.gov.pt/pt/atualidades/instrucoesadmin/Paginas/Oficio-circulado-40129-2026.aspx",
+  "extractedWith": "pdf2json@4.0.3",
+  "extractedOn": "2026-08-22",
+  "tables": {
+    "I": {
+      "territory": "continente",
+      "table": "own-permanent-residence",
+      "heading": "TABELA I (CONTINENTE – HABITAÇÃO PRÓPRIA E PERMANENTE) Valor sobre que incide o IMT Taxa Marginal",
+      "brackets": [
+        {
+          "row": "Até 106 346 0%",
+          "upTo": 106346,
+          "rate": 0,
+          "deduct": 0,
+          "single": false
+        },
+        {
+          "row": "De mais de 106 346 e até 145 470 2% 2 126,92",
+          "upTo": 145470,
+          "rate": 0.02,
+          "deduct": 2126.92,
+          "single": false
+        },
+        {
+          "row": "De mais de 145 470 e até 198 347 5% 6 491,02",
+          "upTo": 198347,
+          "rate": 0.05,
+          "deduct": 6491.02,
+          "single": false
+        },
+        {
+          "row": "De mais de 198 347 e até 330 539 7% 10 457,96",
+          "upTo": 330539,
+          "rate": 0.07,
+          "deduct": 10457.96,
+          "single": false
+        },
+        {
+          "row": "De mais de 330 539 e até 660 982 8% 13 763,35",
+          "upTo": 660982,
+          "rate": 0.08,
+          "deduct": 13763.35,
+          "single": false
+        },
+        {
+          "row": "De mais de 660 982 e até 1 150 853 Taxa única de 6%",
+          "upTo": 1150853,
+          "rate": 0.06,
+          "deduct": 0,
+          "single": true
+        },
+        {
+          "row": "Superior a 1 150 853 Taxa única de 7,5%",
+          "upTo": null,
+          "rate": 0.075,
+          "deduct": 0,
+          "single": true
+        }
+      ]
+    },
+    "II": {
+      "territory": "continente",
+      "table": "young-own-permanent-residence",
+      "heading": "TABELA II (CONTINENTE – HABITAÇÃO PRÓPRIA E PERMANENTE) Por jovens com idade igual ou inferior a 35 anos",
+      "brackets": [
+        {
+          "row": "Até 330 539 0% 0",
+          "upTo": 330539,
+          "rate": 0,
+          "deduct": 0,
+          "single": false
+        },
+        {
+          "row": "De mais de 330 539 até 660 982 8% 26 443,12",
+          "upTo": 660982,
+          "rate": 0.08,
+          "deduct": 26443.12,
+          "single": false
+        },
+        {
+          "row": "De mais de 660 982 e até 1 150 853 Taxa única de 6%",
+          "upTo": 1150853,
+          "rate": 0.06,
+          "deduct": 0,
+          "single": true
+        },
+        {
+          "row": "10.7Superior a 1 150 853 Taxa única de 7,5%",
+          "upTo": null,
+          "rate": 0.075,
+          "deduct": 0,
+          "single": true
+        }
+      ]
+    },
+    "III": {
+      "territory": "continente",
+      "table": "housing",
+      "heading": "TABELA III (CONTINENTE – HABITAÇÃO) Valor sobre que incide o IMT Taxa Marginal",
+      "brackets": [
+        {
+          "row": "Até 106 346 1%",
+          "upTo": 106346,
+          "rate": 0.01,
+          "deduct": 0,
+          "single": false
+        },
+        {
+          "row": "De mais de 106 346 e até 145 470 2% 1 063,46",
+          "upTo": 145470,
+          "rate": 0.02,
+          "deduct": 1063.46,
+          "single": false
+        },
+        {
+          "row": "De mais de 145 470 e até 198 347 5% 5 427,56",
+          "upTo": 198347,
+          "rate": 0.05,
+          "deduct": 5427.56,
+          "single": false
+        },
+        {
+          "row": "De mais de 198 347 e até 330 539 7% 9 394,50",
+          "upTo": 330539,
+          "rate": 0.07,
+          "deduct": 9394.5,
+          "single": false
+        },
+        {
+          "row": "De mais de 330 539 e até 633 931 8% 12 699,89",
+          "upTo": 633931,
+          "rate": 0.08,
+          "deduct": 12699.89,
+          "single": false
+        },
+        {
+          "row": "De mais de 633 931 e até 1 150 853 Taxa única de 6%",
+          "upTo": 1150853,
+          "rate": 0.06,
+          "deduct": 0,
+          "single": true
+        },
+        {
+          "row": "Superior a 1 150 853 Taxa única de 7,5%",
+          "upTo": null,
+          "rate": 0.075,
+          "deduct": 0,
+          "single": true
+        }
+      ]
+    },
+    "IV": {
+      "territory": "regioes-autonomas",
+      "table": "own-permanent-residence",
+      "heading": "TABELA IV (REGIÕES AUTÓNOMAS HABITAÇÃO PRÓPRIA E PERMANENTE) Valor sobre que incide o IMT Taxa Marginal",
+      "brackets": [
+        {
+          "row": "Até 132 933 0%",
+          "upTo": 132933,
+          "rate": 0,
+          "deduct": 0,
+          "single": false
+        },
+        {
+          "row": "De mais de 132 933 e até 181 838 2% 2 658,66",
+          "upTo": 181838,
+          "rate": 0.02,
+          "deduct": 2658.66,
+          "single": false
+        },
+        {
+          "row": "De mais de 181 838 e até 247 934 5% 8 113,80",
+          "upTo": 247934,
+          "rate": 0.05,
+          "deduct": 8113.8,
+          "single": false
+        },
+        {
+          "row": "De mais de 247 934 e até 413 174 7% 13 072,48",
+          "upTo": 413174,
+          "rate": 0.07,
+          "deduct": 13072.48,
+          "single": false
+        },
+        {
+          "row": "De mais de 413 174 e até 826 228 8% 17 204,22",
+          "upTo": 826228,
+          "rate": 0.08,
+          "deduct": 17204.22,
+          "single": false
+        },
+        {
+          "row": "De mais de 826 228 e até 1 438 566 Taxa única de 6%",
+          "upTo": 1438566,
+          "rate": 0.06,
+          "deduct": 0,
+          "single": true
+        },
+        {
+          "row": "Superior a 1 438 566 Taxa única de 7,5%",
+          "upTo": null,
+          "rate": 0.075,
+          "deduct": 0,
+          "single": true
+        }
+      ]
+    },
+    "V": {
+      "territory": "regioes-autonomas",
+      "table": "young-own-permanent-residence",
+      "heading": "TABELA V (REGIÕES AUTÓNOMAS HABITAÇÃO PRÓPRIA E PERMANENTE) Por jovens com idade igual ou inferior a 35 anos",
+      "brackets": [
+        {
+          "row": "Até 413 174 0% 0",
+          "upTo": 413174,
+          "rate": 0,
+          "deduct": 0,
+          "single": false
+        },
+        {
+          "row": "De mais de 413 174 e até 826 228 8% 33 053,92",
+          "upTo": 826228,
+          "rate": 0.08,
+          "deduct": 33053.92,
+          "single": false
+        },
+        {
+          "row": "De mais de 826 228 e até 1 438 566 Taxa única de 6%",
+          "upTo": 1438566,
+          "rate": 0.06,
+          "deduct": 0,
+          "single": true
+        },
+        {
+          "row": "Superior a 1 438 566 Taxa única de 7,5%",
+          "upTo": null,
+          "rate": 0.075,
+          "deduct": 0,
+          "single": true
+        }
+      ]
+    },
+    "VI": {
+      "territory": "regioes-autonomas",
+      "table": "housing",
+      "heading": "TABELA VI (REGIÕES AUTÓNOMAS – HABITAÇÃO) Valor sobre que incide o IMT Taxa Marginal",
+      "brackets": [
+        {
+          "row": "Até 132 933 1%",
+          "upTo": 132933,
+          "rate": 0.01,
+          "deduct": 0,
+          "single": false
+        },
+        {
+          "row": "De mais de 132 933 e até 181 838 2% 1 329,33",
+          "upTo": 181838,
+          "rate": 0.02,
+          "deduct": 1329.33,
+          "single": false
+        },
+        {
+          "row": "De mais de 181 838 e até 247 934 5% 6 784,47",
+          "upTo": 247934,
+          "rate": 0.05,
+          "deduct": 6784.47,
+          "single": false
+        },
+        {
+          "row": "De mais de 247 934 e até 413 174 7% 11 743,15",
+          "upTo": 413174,
+          "rate": 0.07,
+          "deduct": 11743.15,
+          "single": false
+        },
+        {
+          "row": "De mais de 413 174 e até 792 414 8% 15 874,89",
+          "upTo": 792414,
+          "rate": 0.08,
+          "deduct": 15874.89,
+          "single": false
+        },
+        {
+          "row": "De mais de 792 414 e até 1 438 566 Taxa única de 6%",
+          "upTo": 1438566,
+          "rate": 0.06,
+          "deduct": 0,
+          "single": true
+        },
+        {
+          "row": "Superior a 1 438 566 Taxa única de 7,5%",
+          "upTo": null,
+          "rate": 0.075,
+          "deduct": 0,
+          "single": true
+        }
+      ]
+    }
+  }
+}

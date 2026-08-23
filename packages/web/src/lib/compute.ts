@@ -9,10 +9,13 @@
 import {
   computeNetWageForDate,
   maxLoanForDate,
+  maxPropertyPriceForDate,
 } from "@pt-finance-tools/engine";
 import type {
   MaxLoanInput,
   MaxLoanResult,
+  MaxPriceInput,
+  MaxPriceResult,
   WageInput,
   WageResult,
 } from "@pt-finance-tools/engine";
@@ -48,12 +51,25 @@ export function computeMaxLoanSafely(input: MaxLoanInput): LoanOutcome {
   try {
     return { ok: true, result: maxLoanForDate(input) };
   } catch (error) {
-    return {
-      ok: false,
-      message:
-        error instanceof Error
-          ? error.message
-          : "Não foi possível calcular com estes dados.",
-    };
+    return { ok: false, message: messageFor(error) };
   }
+}
+
+export type MaxPriceOutcome =
+  | { ok: true; result: MaxPriceResult }
+  | { ok: false; message: string };
+
+/** The reverse direction, with the same failure handling. */
+export function computeMaxPriceSafely(input: MaxPriceInput): MaxPriceOutcome {
+  try {
+    return { ok: true, result: maxPropertyPriceForDate(input) };
+  } catch (error) {
+    return { ok: false, message: messageFor(error) };
+  }
+}
+
+function messageFor(error: unknown): string {
+  return error instanceof Error
+    ? error.message
+    : "Não foi possível calcular com estes dados.";
 }

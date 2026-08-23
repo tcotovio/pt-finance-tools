@@ -227,6 +227,43 @@ Art. 1.º n.º 4 also fixes what "the Euribor" means for this purpose: the **sim
 
 These are exactly the parameters that changed this month — which is why they live in dated config, not in code.
 
+### 7.2 The taxes are a separate problem from the credit
+
+Financing the house and buying it are two different calculations, and only the
+first is what the Banco de Portugal governs. The purchase itself carries IMT
+(CIMT art. 17.º), imposto do selo on the transaction and on the credit (TGIS
+verbas 1.1 and 17.1), and the registration emoluments — on a 250 000 € purchase
+roughly 11 000 €, which is the part a first-time buyer has least often budgeted
+for.
+
+Three consequences the engine encodes:
+
+- **Three dated datasets, not one.** The IMT brackets re-index every January
+  with the OE law; the selo rates have not moved since DL 48-A/2024 added art.
+  7.º-A in 2024; the Casa Pronta tariff is emolumental, on its own cycle. One
+  combined dataset would give two of the three a fictitious effective date.
+- **The valuations disagree on purpose.** Recomendação art. 4.º puts the LTV on
+  the *lower* of price and appraisal; CIMT art. 12.º puts the tax on the
+  *greater* of price and VPT. Same property, opposite directions, and the two
+  live in adjacent fields of the same input type.
+- **Some rules only make sense as exemptions with reasons attached.** The 4 %
+  selo on interest is not omitted from a mortgage — it is exempted by CIS art.
+  7.º n.º 1 al. l), and the result carries the reason so the UI can explain a
+  zero rather than print one.
+
+### 7.3 The reverse-reverse direction, and why it needed a search
+
+`maxLoan` inverts analytically because the annuity is linear in the principal.
+Solving for the *price* does not, and the reason is the tax table: IMT's top
+rows are taxas únicas charged on the whole value, so the cost function steps
+upward at 660 982 € and 1 150 853 €, the young table's advantage ends at a
+cliff, and crossing 450 000 € withdraws the state guarantee. Every one of those
+jumps is upward — so `cashNeeded(price)` is monotone and a search is sound —
+but they mean the equation `cashNeeded = savings` can have no solution at all.
+The solver therefore bisects the *predicate* `cashNeeded ≤ savings`, which is
+true-then-false whether or not a root exists, and composes `maxLoan` at each
+candidate rather than duplicating any of it.
+
 ---
 
 ## 8. Roadmap
@@ -284,6 +321,33 @@ These are exactly the parameters that changed this month — which is why they l
   - These terms finally exercise the **≤5 yr and 5–10 yr shock bands** that no mortgage ever reaches — until now those two bands were covered by Axis A only, since no mortgage simulator can exercise them
   - The default rate is **sourced, not invented**: the ECB's average annualised rate on new Portuguese consumer credit (8,81 %, June 2026). Unlike the mortgage spread this quantity is directly observable — consumer credit is agreed as a single fixed rate, so the published average is exactly what the form needs, with no derivation to go wrong
   - Axis A extended to the new ceilings, diffed against the same extracted PDF
+
+### Phase 2.2 — The cost of buying, and the other direction
+- [x] **Purchase taxes and costs** — the panel used to say "acresce o IMT, o imposto do selo e a escritura" and stop, which left the second-largest number in the transaction outside the tool. Now computed from **three separate dated datasets**, kept apart because they are three instruments on three revision cycles: `IMT_2026` (CIMT art. 17.º as re-indexed by the OE 2026, all six tables), `STAMP_DUTY_2024` (TGIS verbas 1.1 and 17, plus CIS art. 7.º-A) and `REGISTRATION_FEES_2024` (Casa Pronta, emolumental rather than fiscal). Bundling them would have stamped a fictitious effective date on two of the three and re-asserted `verified` over them on the strength of an IMT-only check
+  - **Three valuations, and two of them pull in opposite directions.** LTV takes the *lower* of price and appraisal (Recomendação art. 4.º); IMT and the verba 1.1 selo take the *greater* of price and VPT (CIMT art. 12.º). Getting this backwards understates the tax on exactly the older stock where the VPT most often exceeds the price, so both fields carry the warning in their doc comments
+  - **The taxa-única bands jump upward, and that is the statute rather than a bug.** The top IMT rows are average-rate bands charged on the whole value: at 660 982 € the Continente HPP table goes from 39 115,21 € to 39 658,92 €, so one euro more house costs 543,71 € more tax. Pinned by a test that anyone "fixing" it later would have to delete first
+- [x] **IMT Jovem, modelled as what it actually is.** Not merely a softer rate table: CIMT art. 9.º n.º 2 is a full exemption up to the top of the 1.º escalão, art. 17.º n.º 1 al. b) a reduced table above it, and **CIS art. 7.º-A a dedução à coleta of the verba 1.1 selo**, capped at 0,8 % × that same bracket (2 644,31 € in 2026). Omitting the art. 7.º-A deduction — the easy mistake, since the popular guides describe the whole thing as one exemption — would have invented about 2 400 € of tax on a 300 000 € purchase
+  - Both ceilings are read **by reference** off `IMT_2026` rather than copied, because that is how the statutes define them. They re-index every January without the selo or registration datasets changing
+  - **The benefit ends at a cliff, not a taper.** Above 660 982 € the young table and the general one are the same table, so the advantage is worth 13 223 € at that value and nothing a euro later
+  - **The registration relief is a REDUCTION, not the isenção it is universally called.** RERN art. 28.º n.º 37 does exempt the registos, but n.º 40 says that through the procedimento especial — which is what Casa Pronta is — the procedure's emoluments are instead reduced by 450 € where more than one facto is registered. A qualifying buyer with a mortgage pays 250 €, not zero. Found by reading DL 48-D/2024 itself; every secondary source consulted said "isento"
+- [x] **Imposto do selo on interest is zero here, and that is a derivation rather than an omission.** CIS art. 7.º n.º 1 al. l) exempts the juros of credit for habitação própria, so verba 17.3.1's 4 % never applies to the mortgage this tool computes. Carried in the dataset anyway, and charged for `purpose: "other"`, because the engine has to be able to say *why* a line is zero — and because the exemption also reaches a second own home, which the engine cannot tell from a rental, so the UI says so rather than assuming
+- [x] **"Custo total mínimo do crédito" — deliberately NOT labelled MTIC.** The review comment asked for the MTIC, and the honest version of it carries a different label. The MTIC is a regulated disclosure with a fixed composition (montante total do crédito + custo total do crédito), and the custo total includes the commissions and the life and multi-risk policies this app cannot know. A figure labelled MTIC that sits systematically *below* the bank's MTIC reads as the bank overcharging. So the number ships under a label it can defend, itemised, with the MTIC named only to say what the gap consists of. The method does match — the FINE assumes today's rate holds for the whole term, which is what `amortize` already does; only the scope does not
+- [x] **The reverse direction — `maxPropertyPrice`.** Savings in, price out, because "what is my ceiling?" was the question the tool could not be asked and the one most people arrive with. It **composes** `maxLoan` once per candidate price rather than restating it, so taxa mista, the past-70 haircut, the maturity cap and the shock bands all stay in one place
+  - **Bisect the predicate, not the root.** `cashNeeded(price)` is strictly increasing but *discontinuous*: the IMT taxa-única bands step up, the young table's cliff steps up, and crossing 450 000 € withdraws the state guarantee and drops the loan by 45 000 €. Every jump is upward — the flat bands are average-rate bands, so the marginal rate never falls in the way that would break monotonicity — but they do mean `cashNeeded = savings` can have no solution at all. Root-finding is the wrong tool; the monotone predicate `cashNeeded ≤ savings` is not. A property test sweeps every known edge and asserts the function never falls, because a downward step would make the search return a silently wrong answer rather than fail
+  - **No closed-form per-bracket solve**, though one is possible: it would copy the bracket table into the solver, against the "a new rule is a data change, not a code change" bet the whole engine rests on
+  - The answer is floored to the euro and then stepped down until genuinely affordable, which is what lands a notched case exactly on 450 000 € rather than a cent past the edge of a jump
+- [x] **Garantia pessoal do Estado (DL 44/2024 + Portaria 236-A/2024/1), modelled as a deviation rather than a carve-out.** Recomendação art. 5.º caps LTV at 90 % flat, with no proviso for a guaranteed loan — the extracted fixture text says so. Lending at 100 % is a departure that the institution justifies contract by contract. So `ltvLimit: 1.0` is **never** written into `BDP_2026`; it lives in its own dataset, `MaxLoanResult.ltv.source` says which of the two produced the ceiling, and the UI tells the user this exceeds what the Banco de Portugal recommends and is the bank's call
+  - **Eligibility is asserted, never derived**, and one condition makes that unavoidable: the income test is *rendimento coletável anual* against the 8.º escalão do IRS, and there is no honest mapping from the monthly income this form holds. The two conditions the engine *can* check — age ≤ 35 and the 450 000 € transaction ceiling — it enforces, overriding the assertion rather than trusting it
+  - **The first dataset with an end date.** The regime lapses in December 2026, which the newest-`effectiveFrom` lookup used everywhere else cannot express — it would go on returning an expired regime forever. That forced `effectiveOn` in `data/index.ts`, replacing five copied filter/sort/throw blocks with one that understands `effectiveTo`
+  - `verified: false`, and structurally so: Axis B cannot exist for a quantity that is a *departure* from the rule, since there is no independent implementation of it to reproduce. Any answer leaning on it is reported as unverified
+- [x] **Axis A for the IMT tables** — all 36 rows of all six tables re-diffed in CI against a mechanical `pdf2json` extraction of the official ofício circulado, with each row's numbers also pulled back out of the verbatim Portuguese line they were read from
+  - A parsing trap worth recording: the thousands separator is a space, so a loose `\d[\d ]*` reads "792 414 8%" as the single number 7 924 148 and the row silently stops being checked. The pattern has to know that a group following a space is exactly three digits
+- [ ] **Axis B for the IMT tables — not done, so `IMT_2026.verified` is `false` and the UI shows "Dados por verificar".** The candidate is the AT's own IMT simulator (`imoveis.portaldasfinancas.gov.pt/simuladorimt/`), the one public source returning both the IMT *and* the verba 1.1 selo and therefore the only one that would exercise the art. 7.º-A deduction. Note it is not a peer when it lands: AT is authoritative here, so a mismatch is a bug in this engine rather than a divergence to record
+- [x] **Result panel restructured — answer first, working behind disclosures.** The column had grown to headline → two ceiling bars → a full line chart → the market comparison → a table of lines → three caveats → sources, and the taxes made it longer still. Now the answer, the one sentence that explains it, the cash the buyer has to produce and every caveat stay open; the market comparison, the ceilings and the costs go behind three `<details>` built on the existing "O meu caso" pattern
+  - The market comparison was the specific complaint, and the diagnosis was concrete: fifth in the column, under a chart, headed by `h3.group-title` — the weakest heading token in the system, shared with form sub-group labels — and with **no `.market-comparison` rule in `App.css` at all**, so it had no card, border or spacing of its own. It now owns a disclosure whose summary *is* its heading
+  - `.notices` never collapses. §9's "a caveat behind a disclosure is not a caveat" is a rule rather than a judgement call, and the same goes for the conditional callouts about the particular answer on screen
+  - `ConsumerResultPanel` deliberately left flat: its own header explains it is short because there is no LTV and only one ceiling, and adding disclosure to a panel with nothing to hide is churn
+- [x] **One bug the tests missed and the browser caught.** In capacity mode the binding constraint was first attributed to the DSTI whenever the DSTI capped the loan — and the panel then told a borrower "uma entrada maior não altera este limite" while their loan was frozen by income and every extra euro of savings went straight into price. The forward direction's attribution does not transfer: there the loan is the answer, here the price is, and the price stops where the cash does whatever capped the loan. `MaxPriceResult` now reports `cash`, with `loanResult.bindingConstraint` underneath it, and the remedy names which lever actually moves
 
 ### Phase 3 — Long tail (opt-in scope)
 - [ ] Disability tables

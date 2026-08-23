@@ -3,16 +3,22 @@ import type {
   ConsumerLoanResult,
   MaxLoanInput,
   MaxLoanResult,
+  MaxPriceInput,
+  MaxPriceResult,
   WageInput,
   WageResult,
 } from "./types.js";
 import { computeNetWage } from "./wage/index.js";
-import { maxLoan, maxConsumerLoan } from "./loan/index.js";
+import { maxLoan, maxConsumerLoan, maxPropertyPrice } from "./loan/index.js";
 import {
+  getImtTables,
   getInterestRateShock,
   getIrsJovemRegime,
   getMacroprudentialParameters,
   getMealAllowanceLimits,
+  getRegistrationFees,
+  getStampDuty,
+  getStateGuarantee,
   getWithholdingDataset,
 } from "./data/index.js";
 
@@ -44,6 +50,26 @@ export function maxLoanForDate(input: MaxLoanInput): MaxLoanResult {
     input,
     getMacroprudentialParameters(input.assessmentDate),
     getInterestRateShock(input.assessmentDate),
+    getStateGuarantee(input.assessmentDate),
+  );
+}
+
+/**
+ * Solve for the most expensive property this borrower's income and savings
+ * reach together, resolving every dataset from the assessment date.
+ *
+ * The other direction from {@link maxLoanForDate}: there the price is given
+ * and the loan is the unknown; here the savings are given and the price is.
+ */
+export function maxPropertyPriceForDate(input: MaxPriceInput): MaxPriceResult {
+  return maxPropertyPrice(
+    input,
+    getMacroprudentialParameters(input.assessmentDate),
+    getInterestRateShock(input.assessmentDate),
+    getImtTables(input.assessmentDate),
+    getStampDuty(input.assessmentDate),
+    getRegistrationFees(input.assessmentDate),
+    getStateGuarantee(input.assessmentDate),
   );
 }
 
@@ -96,6 +122,23 @@ export type {
   ConsumerCreditMarket,
   WageMarket,
   Percentiles,
+  ImtBracket,
+  ImtCharge,
+  ImtTableId,
+  ImtTables,
+  ImtTerritory,
+  StampDuty,
+  StampDutyTransferCharge,
+  StampDutyCreditCharge,
+  StampDutyInterestCharge,
+  RegistrationFees,
+  StateGuarantee,
+  SourceRef,
+  PurchaseCostsInput,
+  PurchaseCosts,
+  PriceBindingConstraint,
+  MaxPriceInput,
+  MaxPriceResult,
 } from "./types.js";
 
 export {
@@ -141,6 +184,10 @@ export {
   isCurrentFor,
   euriborRate,
   contractRate,
+  purchaseCosts,
+  purchaseCostsForDate,
+  imtFor,
+  maxPropertyPrice,
 } from "./loan/index.js";
 
 export {
@@ -149,12 +196,21 @@ export {
   getInterestRateShock,
   getMealAllowanceLimits,
   getIrsJovemRegime,
+  getImtTables,
+  getStampDuty,
+  getRegistrationFees,
+  getStateGuarantee,
+  imtTerritory,
   CONTINENTE_2026,
   MADEIRA_2026,
   MEAL_ALLOWANCE_2026,
   IRS_JOVEM_2026,
   BDP_2026,
   INTEREST_RATE_SHOCK_2023,
+  IMT_2026,
+  STAMP_DUTY_2024,
+  REGISTRATION_FEES_2024,
+  STATE_GUARANTEE_2024,
   EURIBOR_2026_07,
   EURIBOR_FALLBACK,
   MORTGAGE_MARKET_2026_06,

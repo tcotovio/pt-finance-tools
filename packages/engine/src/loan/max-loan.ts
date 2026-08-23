@@ -22,6 +22,7 @@ import type {
   MacroprudentialParameters,
   MaxLoanInput,
   MaxLoanResult,
+  StateGuarantee,
 } from "../types.js";
 import { monthlyPayment, principalForPayment } from "./amortization.js";
 import { adjustedIncome, maturityCeiling, shockForTerm } from "./stress.js";
@@ -46,11 +47,31 @@ export function stressedDsti(
   return (newLoanStressedPayment + existing) / income;
 }
 
+/**
+ * Whether the garantia pessoal do Estado actually reaches this borrower.
+ *
+ * The caller's assertion is necessary but not sufficient: the two conditions
+ * that are visible here — the borrower's age and the transaction value — are
+ * enforced rather than taken on trust, so a 40-year-old who ticks the box does
+ * not walk away with a 100 % LTV.
+ */
+function guaranteeApplies(
+  input: MaxLoanInput,
+  propertyValue: number,
+  guarantee: StateGuarantee | undefined,
+): guarantee is StateGuarantee {
+  if (!input.stateGuarantee || !guarantee) return false;
+  if (input.purpose !== "own-permanent-residence") return false;
+  if (input.borrower.age > guarantee.maxAge) return false;
+  return propertyValue <= guarantee.maxTransactionValue;
+}
+
 /** The largest loan the Recomendação's limits allow, and which one binds. */
 export function maxLoan(
   input: MaxLoanInput,
   params: MacroprudentialParameters,
   shockTable: InterestRateShock,
+  guarantee?: StateGuarantee,
 ): MaxLoanResult {
   const { borrower, purpose, propertyPrice, annualRate, termYears } = input;
 
@@ -137,7 +158,15 @@ export function maxLoan(
     propertyPrice,
     input.appraisalValue ?? propertyPrice,
   );
-  const ltvLimit = params.ltvLimit[purpose];
+  // The guarantee raises the ceiling, but it is applied HERE rather than by
+  // adjusting `params`: mutating the BdP dataset would slip an unsourced
+  // number in behind a `verified: true` that is a claim about the
+  // Recomendação's own text, and would erase the fact that lending at 100 %
+  // is a deviation from that text rather than a proviso inside it.
+  const guaranteed = guaranteeApplies(input, propertyValue, guarantee);
+  const ltvLimit = guaranteed
+    ? Math.max(params.ltvLimit[purpose], guarantee.maxLtv)
+    : params.ltvLimit[purpose];
   const ltvMax = propertyValue * ltvLimit;
 
   const dstiMax = dstiCeiling;
@@ -172,14 +201,21 @@ export function maxLoan(
       limit: ltvLimit,
       propertyValue,
       maxLoan: ltvMax,
+      source: guaranteed ? "state-guarantee" : "recomendacao",
     },
     contractPayment: contractPaymentFor(limit),
     stressedPayment: stressedPaymentFor(limit),
     sources: {
       macroprudential: params.source,
       shock: shockTable.source,
+      ...(guaranteed ? { guarantee: guarantee.source } : {}),
     },
-    parametersVerified: params.verified && shockTable.verified,
+    // Falls to false the moment the guarantee is in play: that dataset has no
+    // Axis B and structurally cannot have one, so the answer is not verified.
+    parametersVerified:
+      params.verified &&
+      shockTable.verified &&
+      (!guaranteed || guarantee.verified),
   };
   }
 }

@@ -6,15 +6,21 @@ import type {
   EuriborTenor,
   LoanPurpose,
   LoanRateType,
+  Region,
 } from "@pt-finance-tools/engine";
 import type {
   LoanForm,
   LoanFormErrors,
   UpdateLoanForm,
 } from "../lib/loan-form.js";
-import { MORTGAGE_MARKET } from "@pt-finance-tools/engine";
+import {
+  IMT_2026,
+  MORTGAGE_MARKET,
+  STATE_GUARANTEE_2024,
+  imtTerritory,
+} from "@pt-finance-tools/engine";
 import type { EuriborState } from "../lib/euribor-feed.js";
-import { formatRate } from "../lib/format.js";
+import { formatEuroCompact, formatRate } from "../lib/format.js";
 import { LawReference } from "./LawReference.js";
 import {
   SegmentedField,
@@ -33,6 +39,12 @@ const RATE_TYPE_OPTIONS: readonly SelectOption[] = [
   { value: "variable", label: "Variável" },
   { value: "mixed", label: "Mista" },
   { value: "fixed", label: "Fixa" },
+];
+
+const REGION_OPTIONS: readonly SelectOption[] = [
+  { value: "continente", label: "Continente" },
+  { value: "madeira", label: "Madeira" },
+  { value: "acores", label: "Açores" },
 ];
 
 const TENOR_OPTIONS: readonly SelectOption[] = [
@@ -64,6 +76,13 @@ export function LoanAdvancedPanel({
   indexRate,
 }: LoanAdvancedPanelProps) {
   const market = MORTGAGE_MARKET;
+  // Read off the dataset rather than written into the copy, so the January the
+  // brackets re-index the hint re-indexes with them.
+  const youngCeiling =
+    IMT_2026.tables[imtTerritory(form.region)][
+      "young-own-permanent-residence"
+    ][0]?.upTo ?? 0;
+  const guaranteeCeiling = STATE_GUARANTEE_2024.maxTransactionValue;
   const spread = Number(form.spread.replace(",", ".")) || 0;
   const composedRate = indexRate + spread / 100;
 
@@ -72,7 +91,7 @@ export function LoanAdvancedPanel({
       <summary>
         <span className="advanced-title">O meu caso</span>
         <span className="advanced-sub">
-          Taxa e indexante, finalidade, outros créditos, avaliação
+          Taxa e indexante, finalidade, outros créditos, impostos e comissões
         </span>
       </summary>
 
@@ -220,15 +239,102 @@ export function LoanAdvancedPanel({
 
         <section className="field-group">
           <h3 className="group-title">O imóvel</h3>
+          <SelectField
+            id="loan-region"
+            label="Onde fica o imóvel"
+            value={form.region}
+            options={REGION_OPTIONS}
+            onChange={(value) => update("region", value as Region)}
+            hint="Os escalões do IMT são 25 % mais altos nas Regiões Autónomas, por isso o mesmo preço paga menos imposto na Madeira e nos Açores."
+          />
+          {form.mode === "price" ? (
+            <TextField
+              id="loan-appraisal"
+              label="Valor da avaliação"
+              suffix="€"
+              placeholder="Igual ao preço"
+              value={form.appraisalValue}
+              error={errors.appraisalValue}
+              hint="Se a avaliação do banco for inferior ao preço, é ela que manda no limite de financiamento — e a diferença sai do seu bolso."
+              onChange={(value) => update("appraisalValue", value)}
+            />
+          ) : null}
           <TextField
-            id="loan-appraisal"
-            label="Valor da avaliação"
+            id="loan-vpt"
+            label="Valor patrimonial tributário"
             suffix="€"
-            placeholder="Igual ao preço"
-            value={form.appraisalValue}
-            error={errors.appraisalValue}
-            hint="Se a avaliação do banco for inferior ao preço, é ela que manda no limite de financiamento — e a diferença sai do seu bolso."
-            onChange={(value) => update("appraisalValue", value)}
+            placeholder="Não é superior ao preço"
+            value={form.vpt}
+            error={errors.vpt}
+            hint={
+              <>
+                <span>
+                  Só interessa se for <em>superior</em> ao preço: o IMT e o
+                  selo da compra incidem sobre o maior dos dois. Repare que é o
+                  contrário do limite de financiamento, que toma o menor entre
+                  o preço e a avaliação.
+                </span>
+                <LawReference id="cimt-12" />
+              </>
+            }
+            onChange={(value) => update("vpt", value)}
+          />
+        </section>
+
+        <section className="field-group">
+          <h3 className="group-title">Impostos e encargos</h3>
+          <ToggleField
+            id="loan-young"
+            label="Primeira casa, até aos 35 anos"
+            checked={form.youngFirstHome}
+            onChange={(checked) => update("youngFirstHome", checked)}
+            hint={
+              <>
+                <span>
+                  Isenta o IMT e o imposto do selo até {formatEuroCompact(
+                    youngCeiling,
+                  )}
+                  , e reduz os emolumentos do registo. Marque se{" "}
+                  <strong>todas</strong> estas forem verdade: tem 35 anos ou
+                  menos, é a sua primeira casa, é para habitação própria e
+                  permanente, não foi proprietário de outra habitação nos
+                  últimos três anos, e não é dependente para efeitos de IRS. O
+                  banco e a Autoridade Tributária confirmam — a simulação
+                  acredita em si.
+                </span>
+                <LawReference id="cimt-9" />
+              </>
+            }
+          />
+          <ToggleField
+            id="loan-guarantee"
+            label="Garantia do Estado (financiamento a 100 %)"
+            checked={form.stateGuarantee}
+            onChange={(checked) => update("stateGuarantee", checked)}
+            hint={
+              <>
+                <span>
+                  Com a fiança do Estado o banco <em>pode</em> financiar a
+                  totalidade da compra, sem entrada. Exige ter entre 18 e 35
+                  anos, ser a primeira habitação própria e permanente,
+                  rendimento coletável até ao 8.º escalão do IRS, e um imóvel
+                  até {formatEuroCompact(guaranteeCeiling)}. Não é um direito:
+                  ultrapassa os 90 % que o Banco de Portugal recomenda, e cada
+                  banco decide caso a caso.
+                </span>
+                <LawReference id="dl-44-2024" />
+              </>
+            }
+          />
+          <TextField
+            id="loan-bank-fees"
+            label="Comissões do banco"
+            suffix="€"
+            placeholder="0,00"
+            value={form.bankFees}
+            error={errors.bankFees}
+            hint="Avaliação, dossier, formalização. Nenhuma lei as fixa, por isso a simulação não as inventa: ficam a zero até as escrever aqui. A FINE que o banco lhe entregar indica-as."
+            onChange={(value) => update("bankFees", value)}
           />
         </section>
       </div>

@@ -1295,3 +1295,169 @@ main:focus {
   margin: 8px 0 0;
   font-size: 0.9375rem;
 }
+
+/* --- result disclosures ------------------------------------------------ */
+
+/*
+  The result column used to be one unbroken run of blocks. Once the purchase
+  taxes went in it was too long to scan, and the market comparison — the most
+  useful block in it — was buried fifth with the same heading token as a form
+  sub-group label.
+
+  These reuse `.advanced`'s shape rather than inventing a second disclosure
+  language: same border, same sunken fill, same chevron. What must NEVER move
+  in here is `.notices`; a caveat behind a disclosure is not a caveat.
+*/
+.result-section {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}
+
+.result-section summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 44px 14px 16px;
+  cursor: pointer;
+  position: relative;
+  list-style: none;
+  border-radius: var(--radius-sm);
+}
+
+.result-section summary::-webkit-details-marker {
+  display: none;
+}
+
+.result-section summary::after {
+  content: "";
+  position: absolute;
+  right: 18px;
+  top: 22px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  transform: rotate(45deg);
+  transition: transform 140ms ease;
+}
+
+.result-section[open] summary::after {
+  top: 25px;
+  transform: rotate(-135deg);
+}
+
+/*
+  The section's own total, on the closed summary line.
+
+  Three money sections split by when you pay only work if their totals are
+  legible without opening anything — otherwise the split trades one wall of
+  numbers for three closed doors. The figure aligns right, against the title,
+  and stops short of the chevron.
+*/
+.result-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  /* On a narrow screen the figure drops to its own line rather than
+     squeezing the title into a one-word-per-line column. */
+  flex-wrap: wrap;
+}
+
+.result-section-value {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text);
+  /* An amount broken across lines stops being one number. */
+  white-space: nowrap;
+  /* Keeps it against the right edge even once it has wrapped, where
+     `space-between` alone would leave it flush left as the only item. The
+     summary's 44px right padding is what holds it clear of the chevron. */
+  margin-left: auto;
+}
+
+.result-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 16px 18px;
+}
+
+/*
+  Inside a disclosure the section already has a heading in its summary, so the
+  nested one would be a second, weaker title for the same thing.
+*/
+.result-section-body .market-comparison > .group-title {
+  display: none;
+}
+
+.result-section-body .group-title {
+  margin-top: 4px;
+}
+
+/* --- what the buyer has to produce ------------------------------------- */
+
+/*
+  The old panel showed the deposit alone and mentioned the taxes in prose.
+  On a 250 000 € purchase those are about 8 000 €, so the number the reader
+  took away was a third of a year's saving short of the real requirement.
+*/
+.cash-summary {
+  border: 1px solid var(--accent-border);
+  background: var(--accent-soft);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+}
+
+.cash-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cash-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.cash-total {
+  font-size: 1.375rem;
+  font-weight: 650;
+}
+
+.cash-parts {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.cash-parts li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cash-note {
+  opacity: 0.8;
+}
+
+/* --- market comparison -------------------------------------------------- */
+
+/*
+  Had no rule of its own at all, which is how it ended up looking like part of
+  whatever preceded it. It now lives inside a `.result-section`, and this just
+  keeps its internals spaced.
+*/
+.market-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}

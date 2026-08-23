@@ -84,7 +84,7 @@ export function ConsumerCalculator() {
           placeholder="1 500,00"
           value={form.income}
           error={errors.income}
-          hint="Líquido. Com 14 meses, use o anual a dividir por 12."
+          hint="Líquido. Use o rendimento anual a dividir por 12, tenha 14 meses ou passe recibos verdes."
           onChange={(value) => update("income", value)}
         />
 

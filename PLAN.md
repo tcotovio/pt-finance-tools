@@ -27,6 +27,7 @@ and the UI.
 | Delivery | **PWA** (responsive + installable) | One codebase for web + mobile; native (Expo) deferred, cheap to add later. |
 | Build order | **Wage-first** | Harder, more differentiating, and less "already solved" than the loan side. |
 | Wage depth | **Withholding-only** | Monthly take-home (retenção na fonte). *Not* the full annual IRS settlement. |
+| Employment type | **Categoria A first**, categoria B as its own tool | Recibos verdes share almost nothing with the salary engine — different retention, different contribution base, different periodicity. A third calculator, not a checkbox. See §11. |
 | IRS Jovem | **In MVP**, at source | Operates at the monthly level, so it fits inside the withholding boundary as a modifier. |
 | Loan side | **Consolidate + extend**, later phase | Mortgage and consumer credit, both with the reverse direction. Built from the statutes rather than from the pre-existing sims, which were never supplied. |
 | Annual IRS settlement | **Out of scope** (for now) | Revisit only as a separate, clearly-labelled "annual estimate" mode. |
@@ -82,8 +83,11 @@ liquido  = bruto − retencao − seg_social            // seg_social = 11% (emp
 - Marital status; one vs two income earners (titulares); sole-earner status
 - Number of dependents
 - Region: **Continente / Madeira / Açores** (different tables)
-- Disability (holder and/or dependents) — *deferred to Phase 3*
+- Disability (holder and/or dependents) — *deferred to Phase 4*
 - Pensioner vs worker; non-resident — *deferred*
+
+Everything above is **categoria A** — trabalho dependente. Recibos verdes
+(categoria B) are a different engine, not a case of this one; see §11.
 
 ### Non-salary components
 - Isenção de horário de trabalho (IHT, CT art. 265.º): ordinary remuneration — taxed and contributed on like base salary. Modelled as its own input purely so the result can itemize it
@@ -349,7 +353,25 @@ candidate rather than duplicating any of it.
   - `ConsumerResultPanel` deliberately left flat: its own header explains it is short because there is no LTV and only one ceiling, and adding disclosure to a panel with nothing to hide is churn
 - [x] **One bug the tests missed and the browser caught.** In capacity mode the binding constraint was first attributed to the DSTI whenever the DSTI capped the loan — and the panel then told a borrower "uma entrada maior não altera este limite" while their loan was frozen by income and every extra euro of savings went straight into price. The forward direction's attribution does not transfer: there the loan is the answer, here the price is, and the price stops where the cash does whatever capped the loan. `MaxPriceResult` now reports `cash`, with `loanResult.bindingConstraint` underneath it, and the remedy names which lever actually moves
 
-### Phase 3 — Long tail (opt-in scope)
+### Phase 3 — Recibos verdes (categoria B)
+- [x] **Say the scope out loud, before building anything.** The omission was
+  silent, which is the worst state for an app whose whole posture is naming what
+  it does not know. The wage form's own field now says "trabalho dependente —
+  não serve para recibos verdes", and the always-open `.notices` block says why:
+  the tables, the 11 % and the subsídios are all categoria A
+- [x] **The loan side already answers independents correctly — only the wording
+  was wrong.** DSTI reads `borrower.monthlyIncome` and the Recomendação draws no
+  distinction by employment type, so the arithmetic needed nothing. But both
+  income hints said "com 14 meses, use o anual a dividir por 12", which quietly
+  addresses only salaried users; they now say *annual ÷ 12 whatever the source*,
+  which is what art. 4.º n.º 5 al. a) actually prescribes. `LoanNotices` also
+  records the part that is **credit policy, not regulation** — two to three years
+  of declared income, and a haircut of the bank's own choosing
+- [ ] **The calculator itself** — the model, the datasets and the traps are
+  written up in §11 rather than here, because scoping it correctly is most of
+  the work
+
+### Phase 4 — Long tail (opt-in scope)
 - [ ] Disability tables
 - [x] **Madeira** — Despacho n.º 19/2026 (JORAM II Série n.º 13, Supl. 4) transcribed and selectable. Its despacho carries the same alínea h) (−1pp for 3+ dependents) and the same IRS Jovem ÷14 rule as the Continente's, so no logic changed; only the rates differ (exemption to 980 €, lower rates throughout). Axis A passes; **Axis B has no source** — no public simulator found covering Madeira — so the dataset ships `verified: false` and the UI shows "Dados por verificar"
 - [ ] **Açores — blocked on the source format.** Despacho n.º 1179/2026 (DR II Série n.º 23) publishes its tables as **images**, not text: the table pages carry only the captions as text runs, and the PDF holds 11 image objects. The `pdf2json` route used for the Continente and Madeira cannot extract a single bracket. Options, none free: OCR the images (needs an independent second source anyway, since OCR of numeric tables is exactly where transcription errors hide), transcribe visually from a rendered page and cross-check against another publisher's transcription, or wait for a machine-readable republication
@@ -382,10 +404,93 @@ candidate rather than duplicating any of it.
 
 ## 10. Open decisions
 
-1. Whether an annual-settlement mode ever enters scope (currently: no).
+1. Whether an annual-settlement mode ever enters scope (currently: no) — note §11 pulls on this from a new direction.
+2. Whether the categoria B tool ships as "quanto sobra deste recibo" (monthly, defensible) or waits for the annual side (useful, but a scope change). See §11.
 
 **Resolved:**
 - Default spread — not derivable, so: labelled placeholder (1,0 %) plus the live ECB average as context. See Phase 2.
 - Static hosting target — GitHub Pages, deployed from `master` by `.github/workflows/deploy.yml`.
 - IRS withholding-table sourcing — no public API exists, so tables are manually transcribed from the official PDF and cross-checked against an independent source (see §5).
 - Stack — npm workspaces (not pnpm), React + Vite + `vite-plugin-pwa` + Vitest (see §3).
+- Recibos verdes — **in scope, as a third calculator**, not as a flag on `WageInput`. See §11.
+
+---
+
+## 11. Recibos verdes (categoria B) — scoping
+
+The wage engine is categoria A end to end and always has been: `TaxpayerCategory`
+selects a withholding *table*, `segsocial.ts` pins 11 % / 23,75 % as the general
+regime for *dependent* workers, and subsídio de alimentação, duodécimos, IHT and
+trabalho suplementar are all creatures of a contrato de trabalho. Someone on
+recibos verdes typing their monthly invoice into "Vencimento" gets a confidently
+wrong number, which is why Phase 3 made the boundary visible before anything
+else.
+
+### 11.1 Why it is a second engine, not a modifier
+
+IRS Jovem could be a modifier because it changes one term of an arithmetic the
+engine already performs. Categoria B changes every term:
+
+| | Categoria A (built) | Categoria B (to build) |
+|---|---|---|
+| IRS retention | marginal-rate tables by category + dependents, R-dependent parcela | flat rate on the invoice value (CIRS art. 101.º), chosen by *activity type*, with an outright **dispensa** below an annual threshold (art. 101.º-B) |
+| Contribution rate | 11 % employee / 23,75 % employer | ~21,4 % trabalhador independente (25,2 % ENI), on the worker alone |
+| Contribution base | the month's remuneration | a **rendimento relevante**: a percentage of turnover, not turnover |
+| Periodicity | monthly, on what was earned | **quarterly, on the previous quarter** — the contribution owed this month is a function of income already past |
+| Subsídios, alimentação, duodécimos | central to the model | do not exist |
+| IVA | irrelevant | frequently the largest line on the invoice, and never the worker's money |
+
+Nothing but the IRS Jovem schedule survives the move. Folding this into
+`WageInput` would give the engine a shape where half the fields are meaningless
+depending on the value of another field — precisely the thing the current design
+avoids by keeping `MacroprudentialParameters` and `StateGuarantee` apart.
+
+### 11.2 The two structural problems
+
+**The contribution base is lagged, and a monthly snapshot cannot express it.**
+The Código Contributivo puts the monthly base at a third of the *previous
+quarter's* relevant income, so the honest answer to "what do I pay this month"
+depends on three months the form does not hold. Two ways out, and the choice is
+a product decision rather than a technical one: take a quarter's income as the
+input and derive the month, or take a month and state "assuming steady income"
+as an explicit, visible assumption the way `stateGuarantee` states its asserted
+conditions. The first is more correct; the second is the one people can fill in.
+
+**Withholding-only is a much weaker promise here.** For categoria A, retenção
+approximates the final tax closely enough that §2's scope decision costs the
+user little. Under the regime simplificado it does not: the coefficient of CIRS
+art. 31.º decides the taxable share, so a flat retention rate bears almost no
+relation to what is owed — and the annual settlement is out of scope by §2. A
+categoria B tool that stops at retenção is honest but thin.
+
+The framing that survives this is **not "net wage" but "what is left of this
+invoice this month"**: invoice − IVA − retenção − contribuição. That is a
+monthly question with a monthly answer, it stays inside the withholding
+boundary, and it is the number people actually want when they issue a recibo.
+It should be labelled as such and never as a salary equivalent.
+
+### 11.3 What becomes data
+
+Same discipline as everything else — dated datasets, Axis A against the official
+text, Axis B against an independent implementation:
+
+- **Retention rates** — CIRS art. 101.º n.º 1, keyed by activity type
+  (atividades profissionais da tabela do art. 151.º vs the residual category vs
+  propriedade intelectual), plus the art. 101.º-B dispensa threshold, which
+  moves.
+- **Contribution parameters** — Código Contributivo: the rate, the coefficients
+  turning turnover into rendimento relevante (services vs sale of goods), the
+  12 × IAS ceiling, the floor, the first-year exemption, and the entidade
+  contratante's own contribution where one client dominates the worker's income.
+- **IAS** — already in the bundle for IRS Jovem, and it does more work here (the
+  contribution ceiling is a multiple of it).
+- **The art. 31.º coefficients** — needed only if the annual side ever lands, so
+  not part of the first cut.
+
+**Every figure in this section is unverified.** The rates, thresholds and
+coefficients above are from memory and secondary knowledge, not from the
+statutes — they are here to size the work, not to be implemented. Axis A against
+the CIRS and the Código Contributivo comes first, and nothing ships `verified:
+true` before Axis B finds an independent implementation to reproduce (the
+Segurança Social Direta simulator is the obvious candidate, and unlike the wage
+side it is authoritative rather than a peer, so a mismatch would be a bug here).

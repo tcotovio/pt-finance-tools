@@ -110,6 +110,13 @@ function ResultBody({
 
       <div className="notices">
         <p>
+          <strong>Só cobre trabalho dependente (categoria A).</strong> As
+          tabelas de retenção, os 11 % de Segurança Social e os subsídios são os
+          de quem tem contrato de trabalho. Quem passa recibos verdes
+          (categoria B) tem retenção a uma taxa fixa e contribuições sobre outra
+          base — e este simulador não faz essa conta.
+        </p>
+        <p>
           <strong>A retenção não é o imposto final.</strong> É um adiantamento
           por conta do IRS; o acerto só é feito na declaração anual e pode dar
           reembolso ou imposto a pagar.

@@ -489,7 +489,9 @@ export function LoanNotices({ summary }: { summary: LoanSummary }) {
         Cada instituição aplica ainda os seus próprios critérios, e pode
         recusar um crédito que caiba nestes limites. Até 10 % do que cada banco
         empresta por semestre pode também ultrapassar a taxa de esforço de
-        45 %.
+        45 %. A quem passa recibos verdes os bancos costumam exigir dois a três
+        anos de rendimento declarado, e considerar menos do que o aqui
+        indicado — nada disso está nas recomendações, é política de crédito.
       </p>
       <p>
         <strong>Simulação, não é aconselhamento.</strong> Os valores reais

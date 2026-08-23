@@ -1347,6 +1347,36 @@ main:focus {
   transform: rotate(-135deg);
 }
 
+/*
+  The section's own total, on the closed summary line.
+
+  Three money sections split by when you pay only work if their totals are
+  legible without opening anything — otherwise the split trades one wall of
+  numbers for three closed doors. The figure aligns right, against the title,
+  and stops short of the chevron.
+*/
+.result-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  /* On a narrow screen the figure drops to its own line rather than
+     squeezing the title into a one-word-per-line column. */
+  flex-wrap: wrap;
+}
+
+.result-section-value {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text);
+  /* An amount broken across lines stops being one number. */
+  white-space: nowrap;
+  /* Keeps it against the right edge even once it has wrapped, where
+     `space-between` alone would leave it flush left as the only item. The
+     summary's 44px right padding is what holds it clear of the chevron. */
+  margin-left: auto;
+}
+
 .result-section-body {
   display: flex;
   flex-direction: column;

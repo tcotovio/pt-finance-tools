@@ -12,6 +12,7 @@ import type { EuriborSnapshot, MaxPriceResult } from "@pt-finance-tools/engine";
 import type { MaxPriceOutcome } from "../lib/compute.js";
 import { buildPriceSummary } from "../lib/loan-result.js";
 import { formatEuro } from "../lib/format.js";
+import { AmortizationSplit } from "./AmortizationSplit.js";
 import { MarketComparison } from "./MarketComparison.js";
 import { SourceList } from "./SourceList.js";
 import { loanSources } from "../lib/sources.js";
@@ -156,15 +157,33 @@ function PriceResultBody({
       </ResultSection>
 
       <ResultSection
-        title="Custos, juros e total do crédito"
-        summary="IMT, imposto do selo, escritura, e o que paga ao longo do contrato"
+        title="Todos os meses"
+        summary="A prestação, e as duas taxas de esforço"
+        value={`${formatEuro(summary.contractPayment)}/mês`}
       >
         <EffortLines summary={summary} />
-        <h4 className="group-title">Na escritura</h4>
-        <PurchaseCostLines summary={summary} />
-        <h4 className="group-title">Ao longo do contrato</h4>
-        <TotalCreditLines summary={summary} />
       </ResultSection>
+
+      {summary.costs ? (
+        <ResultSection
+          title="Na escritura"
+          summary="IMT, imposto do selo, escritura e registos"
+          value={formatEuro(summary.costs.upfrontTotal)}
+        >
+          <PurchaseCostLines summary={summary} />
+        </ResultSection>
+      ) : null}
+
+      {summary.totalCredit ? (
+        <ResultSection
+          title="Ao longo do contrato"
+          summary="Quanto do que paga é capital, e quanto são juros"
+          value={formatEuro(summary.totalCredit.total)}
+        >
+          <AmortizationSplit summary={summary} />
+          <TotalCreditLines summary={summary} />
+        </ResultSection>
+      ) : null}
 
       <LoanNotices summary={summary} />
 

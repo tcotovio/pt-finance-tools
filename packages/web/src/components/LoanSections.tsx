@@ -7,8 +7,16 @@
 // under a chart, wearing the same heading style as a form sub-group label.
 //
 // So the answer and everything that qualifies it stay open, and the working
-// goes behind three disclosures built on the existing "O meu caso" pattern.
-// The exception is deliberate and is a rule of this project rather than a
+// goes behind disclosures built on the existing "O meu caso" pattern.
+//
+// The money sections are split by WHEN you pay — todos os meses, na escritura,
+// ao longo do contrato — rather than gathered under one "custos e juros"
+// heading. Those are three different questions, they were already three groups
+// behind two sub-headings inside one block, and a single disclosure holding
+// fifteen annotated rows is a wall whatever it is called. Each carries its own
+// total on the closed summary line, so the split costs no information.
+//
+// One exception is deliberate, and is a rule of this project rather than a
 // judgement call: the `.notices` block never collapses. A caveat behind a
 // disclosure is not a caveat.
 
@@ -17,20 +25,35 @@ import { formatEuro, formatPercent } from "../lib/format.js";
 import type { LoanSummary } from "../lib/loan-result.js";
 import { LawReference } from "./LawReference.js";
 
-/** A collapsed block of working, styled on the `.advanced` disclosure. */
+/**
+ * A collapsed block of working, styled on the `.advanced` disclosure.
+ *
+ * `value` puts the section's own headline figure on the closed summary line.
+ * That is what lets the three money sections read as a ledger rather than as
+ * three closed doors: the totals are legible without opening anything, and
+ * opening one is a decision about *which* breakdown you want rather than a
+ * blind click.
+ */
 export function ResultSection({
   title,
   summary,
+  value,
   children,
 }: {
   title: string;
   summary: string;
+  value?: string;
   children: ReactNode;
 }) {
   return (
     <details className="result-section">
       <summary>
-        <span className="advanced-title">{title}</span>
+        <span className="result-section-head">
+          <span className="advanced-title">{title}</span>
+          {value ? (
+            <span className="result-section-value num">{value}</span>
+          ) : null}
+        </span>
         <span className="advanced-sub">{summary}</span>
       </summary>
       <div className="result-section-body">{children}</div>

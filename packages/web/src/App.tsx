@@ -3,14 +3,22 @@ import "./App.css";
 import { WageCalculator } from "./components/WageCalculator.js";
 import { LoanCalculator } from "./components/LoanCalculator.js";
 import { ConsumerCalculator } from "./components/ConsumerCalculator.js";
+import { SelfEmployedCalculator } from "./components/SelfEmployedCalculator.js";
 
-type Tool = "wage" | "loan" | "consumer";
+type Tool = "wage" | "selfemployed" | "loan" | "consumer";
 
 const TOOLS = {
   wage: {
     tab: "Salário líquido",
     title: "Salário líquido 2026",
     lede: "Quanto recebe ao fim do mês, com as tabelas de retenção na fonte de 2026 e as regras do subsídio de alimentação, dos duodécimos e do IRS Jovem.",
+  },
+  selfemployed: {
+    tab: "Recibos verdes",
+    // Not "salário líquido de recibos verdes": there is no salary, and the
+    // question a freelancer actually asks is about one month's invoicing.
+    title: "Recibos verdes",
+    lede: "Quanto lhe fica de cada mês faturado, depois da retenção na fonte e da Segurança Social. A contribuição incide sobre o trimestre anterior, e é isso que torna a conta diferente da de um salário.",
   },
   loan: {
     tab: "Crédito habitação",
@@ -69,6 +77,8 @@ export default function App() {
       >
         {tool === "wage" ? (
           <WageCalculator />
+        ) : tool === "selfemployed" ? (
+          <SelfEmployedCalculator />
         ) : tool === "loan" ? (
           <LoanCalculator />
         ) : (

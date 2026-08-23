@@ -139,7 +139,31 @@ export type {
   PriceBindingConstraint,
   MaxPriceInput,
   MaxPriceResult,
+  IasValue,
+  RetentionCategory,
+  SelfEmployedActivity,
+  CategoryBRetention,
+  VatExemption,
+  SelfEmployedContributions,
+  SelfEmployedInput,
+  SelfEmployedResult,
 } from "./types.js";
+
+export {
+  selfEmployedNet,
+  contributionAmount,
+  contributionBase,
+  periodIncome,
+  relevantIncome,
+  retentionOnInvoice,
+} from "./selfemployed/index.js";
+export type {
+  ContributionAmount,
+  ContributionBase,
+  PeriodIncome,
+  RetentionOptions,
+  RetentionResult,
+} from "./selfemployed/index.js";
 
 export {
   computeNetWage,
@@ -219,4 +243,12 @@ export {
   CONSUMER_MARKET,
   WAGE_MARKET_2026_Q2,
   WAGE_MARKET,
+  getIas,
+  getCategoryBRetention,
+  getVatExemption,
+  getSelfEmployedContributions,
+  IAS_2026,
+  CIRS_RETENTION_2026,
+  CIVA_EXEMPTION_2026,
+  SELF_EMPLOYED_CONTRIBUTIONS_2018,
 } from "./data/index.js";

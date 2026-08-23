@@ -2,7 +2,8 @@
 // Each one owns its label/hint/error wiring so every field is described
 // correctly to assistive technology without the callers repeating it.
 
-import type { ReactNode } from "react";
+import { useLayoutEffect, useRef, type ReactNode } from "react";
+import { deleteAcrossSeparator, groupAmount } from "../lib/number-input.js";
 
 interface FieldShellProps {
   id: string;
@@ -48,6 +49,16 @@ interface TextFieldProps {
   error?: string;
   large?: boolean;
   inputMode?: "decimal" | "numeric";
+  /**
+   * Group the thousands as the user types.
+   *
+   * Defaults on for euro fields, and deliberately so: "every amount groups its
+   * thousands" is a rule of this form rather than a per-field decision, and
+   * hanging it off the marker that already says a field is money means the
+   * next one gets it without anyone remembering to ask. Pass it explicitly
+   * only to override that.
+   */
+  grouped?: boolean;
 }
 
 export function TextField({
@@ -61,22 +72,89 @@ export function TextField({
   error,
   large,
   inputMode = "decimal",
+  grouped,
 }: TextFieldProps) {
+  const groups = grouped ?? suffix === "€";
+  const inputRef = useRef<HTMLInputElement>(null);
+  const caretRef = useRef<number | null>(null);
+
+  // The caret has to be put back after React has written the new value, or
+  // the browser drops it at the end of the field on every keystroke — which
+  // makes typing into the middle of a number impossible.
+  useLayoutEffect(() => {
+    const caret = caretRef.current;
+    caretRef.current = null;
+    if (caret !== null) inputRef.current?.setSelectionRange(caret, caret);
+  });
+
+  // Grouping the incoming value too, so a default or a restored form arrives
+  // formatted rather than waiting for the first keystroke. It is idempotent.
+  const shown = groups ? groupAmount(value, 0).value : value;
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    if (!groups) {
+      onChange(input.value);
+      return;
+    }
+
+    const next = groupAmount(
+      input.value,
+      input.selectionStart ?? input.value.length,
+    );
+
+    if (next.value === value) {
+      // React skips the re-render when the grouped text already matches what
+      // is in state, which would leave the field showing the ungrouped text
+      // the user just typed. Writing it back here keeps the two together.
+      input.value = next.value;
+      input.setSelectionRange(next.caret, next.caret);
+      return;
+    }
+
+    caretRef.current = next.caret;
+    onChange(next.value);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!groups) return;
+    if (event.key !== "Backspace" && event.key !== "Delete") return;
+
+    const input = event.currentTarget;
+    const { selectionStart, selectionEnd } = input;
+    // A real selection is deleted correctly by the browser; only a collapsed
+    // caret sitting against a separator needs help.
+    if (selectionStart === null || selectionStart !== selectionEnd) return;
+
+    const next = deleteAcrossSeparator(
+      input.value,
+      selectionStart,
+      event.key === "Backspace" ? "backward" : "forward",
+    );
+    if (!next) return;
+
+    event.preventDefault();
+    caretRef.current = next.caret;
+    onChange(next.value);
+  };
+
   return (
     <FieldShell id={id} label={label} hint={hint} error={error}>
       {(describedBy) => (
         <div className={`input-shell${large ? " is-large" : ""}`}>
           <input
             id={id}
+            ref={inputRef}
             className="num"
             type="text"
             inputMode={inputMode}
             autoComplete="off"
-            value={value}
+            value={shown}
             placeholder={placeholder}
             aria-describedby={describedBy}
             aria-invalid={error ? true : undefined}
-            onChange={(event) => onChange(event.target.value)}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
           />
           {suffix ? (
             <span className="input-suffix" aria-hidden="true">

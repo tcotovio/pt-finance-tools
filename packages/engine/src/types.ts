@@ -334,6 +334,262 @@ export interface WageResult {
 }
 
 // ---------------------------------------------------------------------------
+// Trabalhadores independentes — categoria B (Phase 3)
+// ---------------------------------------------------------------------------
+
+/**
+ * The Indexante dos Apoios Sociais for a year.
+ *
+ * Its own dataset because it is its own instrument: a portaria fixes it each
+ * December and unrelated regimes then read it — the IRS Jovem cap at 55 × IAS,
+ * the self-employed contribution ceiling at 12 × IAS, the accumulation
+ * threshold at 4 × IAS.
+ */
+export interface IasValue {
+  year: number;
+  effectiveFrom: string;
+  effectiveTo?: string;
+  /** The value in euros. */
+  value: number;
+  source: string;
+  verified: boolean;
+}
+
+/**
+ * What kind of categoria B income an invoice carries, which selects its
+ * retention rate under CIRS art. 101.º n.º 1.
+ *
+ * Independent of {@link SelfEmployedActivity}: a doctor invoicing a hospital
+ * is `"professional"` for retention (al. b) *and* `"services"` for the
+ * contribution coefficient. The two axes are set by different statutes and a
+ * type that merged them would be unable to express the ordinary case.
+ */
+export type RetentionCategory =
+  /** Al. b) — atividades profissionais da tabela do art. 151.º. */
+  | "professional"
+  /** Al. c) — the residual categoria B: services outside that tabela. */
+  | "other-services"
+  /** Al. a) — propriedade intelectual ou industrial. */
+  | "intellectual-property";
+
+/**
+ * What the activity IS, which selects the coefficient turning turnover into
+ * rendimento relevante for Segurança Social.
+ *
+ * `"hospitality"` is not a rounding of `"services"`: hotelaria, restauração e
+ * bebidas is a prestação de serviços that the Código Contributivo gives the
+ * *goods* coefficient to, so folding the two together overstates a
+ * restaurant's contribution 3,5-fold.
+ */
+export type SelfEmployedActivity = "services" | "goods" | "hospitality";
+
+/** Retenção na fonte parameters for categoria B — CIRS arts. 101.º/101.º-B. */
+export interface CategoryBRetention {
+  effectiveFrom: string;
+  effectiveTo?: string;
+  /** Flat rates by category, art. 101.º n.º 1. No brackets, no deductions. */
+  rates: Record<RetentionCategory, number>;
+  /** Art. 101.º-B n.º 1 al. d): no retention below this many euros. */
+  minimumRetention: number;
+  /**
+   * Whether the annual dispensa threshold of art. 101.º-B n.º 1 al. a) is the
+   * CIVA art. 53.º one. True throughout this dataset's life, and carried as a
+   * flag rather than a copied figure because the CIRS states it *by
+   * reference* — so the number has exactly one home, in {@link VatExemption}.
+   */
+  dispensaFollowsVatThreshold: boolean;
+  source: string;
+  verified: boolean;
+}
+
+/**
+ * The regime especial de isenção — CIVA art. 53.º.
+ *
+ * One threshold with two consequences: whether IVA is charged, and (through
+ * the reference in CIRS art. 101.º-B) whether invoices suffer retention.
+ */
+export interface VatExemption {
+  effectiveFrom: string;
+  effectiveTo?: string;
+  /** Previous year's turnover above which the exemption is lost. */
+  turnoverThreshold: number;
+  /** Taxa normal charged once it is. Continente; the RA rates are lower. */
+  standardRate: number;
+  source: string;
+  verified: boolean;
+}
+
+/** Segurança Social parameters for trabalhadores independentes. */
+export interface SelfEmployedContributions {
+  effectiveFrom: string;
+  effectiveTo?: string;
+  /** Taxa contributiva for trabalhadores independentes (0.214). */
+  rate: number;
+  /** Taxa for empresários em nome individual and EIRL holders (0.252). */
+  soleTraderRate: number;
+  /** Turnover → rendimento relevante, by what the activity is. */
+  coefficient: Record<SelfEmployedActivity, number>;
+  /** Months a declared period's relevant income is spread over (3). */
+  monthsPerPeriod: number;
+  /** Contribution base ceiling, as a multiple of IAS (12). */
+  ceilingMultiplier: number;
+  /**
+   * Minimum monthly **contribution** in euros (20) — not a minimum base. The
+   * difference is a factor of about five.
+   */
+  minimumContribution: number;
+  /** Accumulation with employment: only income above this × IAS contributes. */
+  accumulationThresholdMultiplier: number;
+  /** Months after a *first* activity starts before contributions begin (12). */
+  firstActivityDeferralMonths: number;
+  source: string;
+  verified: boolean;
+}
+
+/**
+ * Inputs to the categoria B monthly calculation.
+ *
+ * Deliberately has no IRS Jovem field. The regime reaches categoria B income,
+ * but not at source: CIRS art. 99.º-F's machinery is the categoria A
+ * withholding tables, and a young independent claims art. 12.º-B in the annual
+ * Modelo 3 instead — so the relief arrives as a refund at settlement, outside
+ * this engine's withholding scope. Adding the input would have implied a
+ * monthly benefit that does not exist.
+ */
+export interface SelfEmployedInput {
+  /**
+   * What is invoiced per month before IVA, in euros.
+   *
+   * Used to stand in for a whole quarter when {@link quarter} is absent —
+   * which is exact whenever income is steady, since a third of three equal
+   * months is the month itself. When it is not steady, pass the quarter.
+   */
+  monthlyInvoicing: number;
+  /**
+   * The three months of the declared period, when they differ.
+   *
+   * The statutory input: the contribution owed this month is a function of the
+   * *previous* quarter, fixed for three months. Supplying it makes the answer
+   * exact rather than conditional.
+   */
+  quarter?: readonly [number, number, number];
+  activity: SelfEmployedActivity;
+  retentionCategory: RetentionCategory;
+  /**
+   * Charging IVA, i.e. outside the art. 53.º exemption.
+   *
+   * Asserted rather than derived from turnover: the exemption turns on the
+   * *previous* calendar year's volume de negócios, which a monthly form does
+   * not hold, and it can also be waived by option.
+   */
+  chargesVat?: boolean;
+  /**
+   * The worker asserts retention is dispensed under art. 101.º-B n.º 1 al. a),
+   * i.e. they expect to earn less this year than the CIVA threshold.
+   *
+   * Never derived, for the same reason as {@link chargesVat}, and because the
+   * statute keys on what the holder *expects* to earn — a forecast no engine
+   * can check.
+   */
+  retentionDispensed?: boolean;
+  /**
+   * The client is not obliged to withhold — a private individual, or any payer
+   * without contabilidade organizada (art. 101.º n.º 1 opens on "as entidades
+   * que disponham ou devam dispor de contabilidade organizada").
+   *
+   * Worth its own field because for a B2C freelancer it zeroes the retention
+   * line for a reason that has nothing to do with the dispensa.
+   */
+  clientDoesNotWithhold?: boolean;
+  /** Contributing at the ENI / EIRL rate rather than the ordinary one. */
+  soleTrader?: boolean;
+  /**
+   * Also holds a salaried job, so only relevant income above 4 × IAS
+   * contributes. Asserted: the exemption additionally requires that job to pay
+   * more than 1 × IAS, which this form does not ask.
+   */
+  accumulatesEmployment?: boolean;
+  /**
+   * Within the first 12 months of a *first* activity, so no contribution is
+   * yet owed. Asserted — a reinício does not qualify, and the engine cannot
+   * tell one from the other.
+   */
+  firstActivityDeferral?: boolean;
+  /** ISO `YYYY-MM-DD` — selects the effective datasets. */
+  referenceDate: string;
+}
+
+/** Itemized categoria B result, in the order the money actually leaves. */
+export interface SelfEmployedResult {
+  /** Invoiced this month before IVA — the rendimento ilíquido. */
+  invoiced: number;
+  /**
+   * IVA charged on top, when not exempt. Money that passes through the
+   * worker's account and is owed to the State, so it is shown and then
+   * removed rather than folded into either side.
+   */
+  vat: {
+    /** Charged this month; zero under the art. 53.º exemption. */
+    amount: number;
+    rate: number;
+    exempt: boolean;
+    /** Total the client actually pays: `invoiced + amount`. */
+    invoiceTotal: number;
+  };
+  /** Retenção na fonte withheld from the invoice. */
+  retention: {
+    amount: number;
+    rate: number;
+    category: RetentionCategory;
+    /** True when nothing was withheld, whatever the reason. */
+    dispensed: boolean;
+    /**
+     * Why it is zero, when it is — the three routes are legally distinct and
+     * a user needs to know which one they are on. Absent when tax was withheld.
+     */
+    dispensaReason?: "annual-threshold" | "client" | "below-minimum";
+  };
+  /** Segurança Social, and enough of its working to explain the figure. */
+  contribution: {
+    amount: number;
+    rate: number;
+    /** Turnover over the declared period the base was derived from. */
+    periodInvoicing: number;
+    /** After the activity's coefficient. */
+    relevantIncome: number;
+    /** Monthly base: relevant income ÷ 3, then the limits below. */
+    base: number;
+    coefficient: number;
+    /** True when 12 × IAS capped the base. */
+    cappedByCeiling: boolean;
+    /** True when the 20 € floor set the contribution instead. */
+    atMinimum: boolean;
+    /** The part removed by the 4 × IAS accumulation rule, or zero. */
+    accumulationRelief: number;
+    /** True when no contribution is owed yet — first activity. */
+    deferred: boolean;
+    /**
+     * Whether the quarter was given or assumed steady from the monthly figure.
+     * The single most important caveat on the number, so it travels with it.
+     */
+    quarterAssumed: boolean;
+  };
+  /** `invoiced − retention − contribution`. Excludes IVA, which was never theirs. */
+  net: number;
+  /**
+   * The share of the invoice the worker keeps, as a fraction of `invoiced`.
+   * Reported because it is the figure people compare against a salary, and
+   * computing it from a net and a gross invites using the wrong gross.
+   */
+  effectiveRate: number;
+  sources: SourceRef[];
+  /** Whether every dataset the answer leaned on is cross-checked. */
+  verified: boolean;
+  /** Retention is an advance on the annual IRS, exactly as for categoria A. */
+  isWithholdingEstimate: true;
+}
+
+// ---------------------------------------------------------------------------
 // Loan (Phase 2)
 // ---------------------------------------------------------------------------
 

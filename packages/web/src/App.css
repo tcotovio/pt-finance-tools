@@ -413,6 +413,17 @@
   color: var(--accent);
 }
 
+/*
+  A headline that can go negative — only the recibos verdes panel can, when the
+  contribution owed on last quarter outruns this month's invoice. In the accent
+  green a bad month reads as a good one, which is the opposite of what the
+  number says. Same token the deduction lines use, so the two agree on what red
+  means in this app.
+*/
+.result-net.is-negative {
+  color: var(--negative);
+}
+
 .result-sub {
   font-size: 0.9375rem;
   color: var(--text-muted);

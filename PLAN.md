@@ -367,9 +367,21 @@ candidate rather than duplicating any of it.
   which is what art. 4.º n.º 5 al. a) actually prescribes. `LoanNotices` also
   records the part that is **credit policy, not regulation** — two to three years
   of declared income, and a haircut of the bank's own choosing
-- [ ] **The calculator itself** — the model, the datasets and the traps are
-  written up in §11 rather than here, because scoping it correctly is most of
-  the work
+- [x] **The calculator itself** — a third tool, "Recibos verdes", answering
+  *what is left of this invoice this month* rather than pretending to be a net
+  wage. Four dated datasets, an engine module composed from a per-invoice half
+  (retention) and a per-period half (contributions), and a form whose surface is
+  two fields. The rules, the corrections the statutes forced and the gaps are in
+  §11
+  - **Form shape resolved** (§10 open decision 2): monthly on the surface, the
+    three quarter months behind "O meu caso". Steady income makes the two
+    mathematically identical — a third of three equal months is the month — so
+    the default is exact for most users rather than merely close, and a test
+    pins that property because the whole form shape rests on it
+  - **The ISS's four worked examples reproduce to the cent**, accumulation
+    remanescente and 12 × IAS cap included. Not full Axis B, and §11.4 says why
+- [ ] **Axis B against Segurança Social Direta** — the datasets stay
+  `verified: false` until it lands
 
 ### Phase 4 — Long tail (opt-in scope)
 - [ ] Disability tables
@@ -404,15 +416,15 @@ candidate rather than duplicating any of it.
 
 ## 10. Open decisions
 
-1. Whether an annual-settlement mode ever enters scope (currently: no) — note §11 pulls on this from a new direction.
-2. Whether the categoria B tool ships as "quanto sobra deste recibo" (monthly, defensible) or waits for the annual side (useful, but a scope change). See §11.
+1. Whether an annual-settlement mode ever enters scope (currently: no) — note §11 pulls on this from a new direction, since the categoria B retention is a much weaker proxy for the final tax than the categoria A one.
 
 **Resolved:**
 - Default spread — not derivable, so: labelled placeholder (1,0 %) plus the live ECB average as context. See Phase 2.
 - Static hosting target — GitHub Pages, deployed from `master` by `.github/workflows/deploy.yml`.
 - IRS withholding-table sourcing — no public API exists, so tables are manually transcribed from the official PDF and cross-checked against an independent source (see §5).
 - Stack — npm workspaces (not pnpm), React + Vite + `vite-plugin-pwa` + Vitest (see §3).
-- Recibos verdes — **in scope, as a third calculator**, not as a flag on `WageInput`. See §11.
+- Recibos verdes — **in scope, as a third calculator**, not as a flag on `WageInput`. Built; see §11.
+- Categoria B form shape — monthly on the surface, the quarter behind "O meu caso". The two coincide exactly for steady income, so the simple default is also the correct one in the common case. See §11.2.
 
 ---
 
@@ -431,10 +443,10 @@ else.
 IRS Jovem could be a modifier because it changes one term of an arithmetic the
 engine already performs. Categoria B changes every term:
 
-| | Categoria A (built) | Categoria B (to build) |
+| | Categoria A | Categoria B |
 |---|---|---|
 | IRS retention | marginal-rate tables by category + dependents, R-dependent parcela | flat rate on the invoice value (CIRS art. 101.º), chosen by *activity type*, with an outright **dispensa** below an annual threshold (art. 101.º-B) |
-| Contribution rate | 11 % employee / 23,75 % employer | ~21,4 % trabalhador independente (25,2 % ENI), on the worker alone |
+| Contribution rate | 11 % employee / 23,75 % employer | 21,4 % trabalhador independente (25,2 % ENI/EIRL), on the worker alone |
 | Contribution base | the month's remuneration | a **rendimento relevante**: a percentage of turnover, not turnover |
 | Periodicity | monthly, on what was earned | **quarterly, on the previous quarter** — the contribution owed this month is a function of income already past |
 | Subsídios, alimentação, duodécimos | central to the model | do not exist |
@@ -469,28 +481,76 @@ monthly question with a monthly answer, it stays inside the withholding
 boundary, and it is the number people actually want when they issue a recibo.
 It should be labelled as such and never as a salary equivalent.
 
-### 11.3 What becomes data
+### 11.3 The datasets, and what reading the statutes changed
 
-Same discipline as everything else — dated datasets, Axis A against the official
-text, Axis B against an independent implementation:
+Four dated datasets, because these are four instruments on four cycles:
+`CIRS_RETENTION_2026` (arts. 101.º/101.º-B), `CIVA_EXEMPTION_2026` (art. 53.º),
+`SELF_EMPLOYED_CONTRIBUTIONS_2018` (Código Contributivo) and `IAS_2026`.
 
-- **Retention rates** — CIRS art. 101.º n.º 1, keyed by activity type
-  (atividades profissionais da tabela do art. 151.º vs the residual category vs
-  propriedade intelectual), plus the art. 101.º-B dispensa threshold, which
-  moves.
-- **Contribution parameters** — Código Contributivo: the rate, the coefficients
-  turning turnover into rendimento relevante (services vs sale of goods), the
-  12 × IAS ceiling, the floor, the first-year exemption, and the entidade
-  contratante's own contribution where one client dominates the worker's income.
-- **IAS** — already in the bundle for IRS Jovem, and it does more work here (the
-  contribution ceiling is a multiple of it).
-- **The art. 31.º coefficients** — needed only if the annual side ever lands, so
-  not part of the first cut.
+Four things the sources corrected, each of which had been written down here
+from memory and each of which was wrong:
 
-**Every figure in this section is unverified.** The rates, thresholds and
-coefficients above are from memory and secondary knowledge, not from the
-statutes — they are here to size the work, not to be implemented. Axis A against
-the CIRS and the Código Contributivo comes first, and nothing ships `verified:
-true` before Axis B finds an independent implementation to reproduce (the
-Segurança Social Direta simulator is the obvious candidate, and unlike the wage
-side it is authoritative rather than a peer, so a mismatch would be a bug here).
+- **The professional rate is 23 %, not 25 %.** The OE 2024 lowered it. Every
+  secondary source consulted while scoping still said 25 %, and 25 % *is* still
+  in art. 101.º — as the **categoria F** rate of al. e). A wrong figure that
+  survives a spot-check because the number appears in the right statute is the
+  hardest kind to catch, so `retention.test.ts` pins it against exactly that
+  confusion.
+- **The coefficient split is three-way, not two.** 70 % services · 20 % goods ·
+  **20 % hotelaria, restauração e bebidas**. Hospitality is a prestação de
+  serviços that takes the goods coefficient, so the intuitive services/goods
+  split charges a restaurant 3,5 times what it owes.
+- **The dispensa threshold is a reference, not a number.** Art. 101.º-B n.º 1
+  al. a) points at the CIVA art. 53.º ceiling rather than restating it, so the
+  15 000 € lives in the CIVA dataset and the CIRS one carries a flag. There is
+  also a newer al. d) — no retention below 25 € of tax, per DL 49/2025 — which
+  is per *invoice*, so it bites at a different invoice value for each rate.
+- **The 20 € floor is on the contribution, not the base.** Reading it as a base
+  floor understates it about fivefold, and the ISS's own worked example settles
+  it.
+
+Two rules that would not have been guessed: propriedade intelectual is
+*excluded* from rendimento relevante unless the worker opts in, and a worker
+who also holds a salaried job contributes only on the part above 4 × IAS.
+
+**IRS Jovem has no input here, and that is a finding rather than an omission.**
+The regime reaches categoria B income, but not at source — art. 99.º-F's
+machinery is the categoria A withholding tables, and a young independent claims
+art. 12.º-B in the annual Modelo 3. The relief arrives as a refund at
+settlement, which is outside the withholding boundary this engine keeps.
+
+### 11.4 What `verified` says, and what is still missing
+
+Everything ships `verified: false` except `IAS_2026`, and the panel shows
+"Dados por verificar" accordingly.
+
+**Axis A** is done for all four: every parameter is recorded beside the verbatim
+sentence it was read from, from AT's own publication of the CIRS and CIVA and
+from the ISS Guia Prático n.º 1009.
+
+**Axis B is the honest gap.** What exists instead is stronger than a parameter
+diff and weaker than a real cross-check: the guia prático carries **four worked
+examples** that apply the rules end to end and state the euro answer, and the
+engine reproduces all four to the cent — including the accumulation remanescente
+and the 12 × IAS cap. They catch order-of-operations errors that a parameter
+diff cannot. But they share a document with the parameters they exercise, so a
+rule the guide itself states wrongly would be reproduced wrongly on both sides.
+The candidate for real Axis B is **Segurança Social Direta's own simulator**,
+and like AT's IMT simulator it is not a peer: the ISS administers this regime,
+so a mismatch is a bug here rather than a divergence to record.
+
+Also deliberately not built yet:
+
+- **Propriedade intelectual** — the retention rate is in the engine and tested,
+  but the UI does not offer it, because the contribution side needs a third
+  state (excluded / opted-in) that `SelfEmployedActivity` cannot express.
+  Offering it would produce a confidently wrong contribution.
+- **Contabilidade organizada** — a different base entirely (duodécimo do lucro
+  tributável, floored at 1,5 × IAS, fixed in October for the following year).
+- **The entidade contratante's own contribution** — it is paid by the client and
+  never touches the worker's take-home, so it belongs to an "employer cost" view
+  rather than this one.
+- **The ±25 % declaration option**, quarterly IVA, and deductible expenses.
+- **The regiões autónomas IVA rates** — a non-exempt worker outside the
+  Continente is charged 23 % here rather than 22 %/16 %. It does not move the
+  take-home, only the invoice total, but it is wrong and the dataset says so.

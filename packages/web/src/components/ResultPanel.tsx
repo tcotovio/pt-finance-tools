@@ -114,7 +114,7 @@ function ResultBody({
           tabelas de retenção, os 11 % de Segurança Social e os subsídios são os
           de quem tem contrato de trabalho. Quem passa recibos verdes
           (categoria B) tem retenção a uma taxa fixa e contribuições sobre outra
-          base — e este simulador não faz essa conta.
+          base — essa conta está no separador <strong>Recibos verdes</strong>.
         </p>
         <p>
           <strong>A retenção não é o imposto final.</strong> É um adiantamento

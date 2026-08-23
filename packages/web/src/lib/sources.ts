@@ -20,6 +20,7 @@ import {
   type EuriborSnapshot,
   type MaxLoanResult,
   type PurchaseCosts,
+  type SelfEmployedResult,
   type WageResult,
 } from "@pt-finance-tools/engine";
 import { irsJovemRegimeFor, mealLimitsFor } from "./reference.js";
@@ -246,4 +247,55 @@ export function consumerSources(
       ...splitCitation(CONSUMER_MARKET.source),
     },
   ];
+}
+
+/**
+ * Sources behind a recibos verdes result.
+ *
+ * Four instruments where the categoria A calculator has one table, and that is
+ * the point rather than an accident: the retention, the IVA threshold, the
+ * contribution rules and the IAS the multiples are taken of are four separate
+ * laws on four separate cycles. The result carries its own `SourceRef` list, so
+ * this maps them to labels rather than re-deriving which datasets were used.
+ */
+export function selfEmployedSources(result: SelfEmployedResult): SourceEntry[] {
+  const meta: Record<string, { label: string; usedFor: string }> = {
+    "cirs-101": {
+      label: "Retenção na fonte — categoria B",
+      usedFor:
+        result.retention.dispensed
+          ? "A taxa que se aplicaria, e a regra que dispensa a retenção neste caso."
+          : "A taxa retida sobre o valor faturado.",
+    },
+    "civa-53": {
+      label: "Isenção de IVA — artigo 53.º",
+      usedFor: result.vat.exempt
+        ? "O limite abaixo do qual não cobra IVA. É também o limite a que a dispensa de retenção se refere."
+        : "A taxa de IVA cobrada ao cliente.",
+    },
+    "cc-independentes": {
+      label: "Contribuições — trabalhadores independentes",
+      usedFor:
+        "O coeficiente sobre o faturado, a base de incidência mensal e a taxa contributiva.",
+    },
+    ias: {
+      label: "Indexante dos Apoios Sociais",
+      usedFor: result.contribution.cappedByCeiling
+        ? "O limite máximo da base de incidência, 12 × IAS, que travou o cálculo."
+        : "Os limites da base de incidência: o máximo de 12 × IAS e o patamar de 4 × IAS na acumulação.",
+    },
+  };
+
+  return result.sources.flatMap((ref) => {
+    const label = meta[ref.key];
+    if (!label) return [];
+    return [
+      {
+        key: ref.key,
+        ...label,
+        verified: ref.verified,
+        ...splitCitation(ref.citation),
+      },
+    ];
+  });
 }

@@ -1,0 +1,50 @@
+{
+  "_comment": "Worked examples transcribed verbatim from the ISS Guia Prático n.º 1009 (Novo Regime dos Trabalhadores Independentes), mechanically extracted from the official PDF via pdf2json. These are the INSTITUTION'S OWN arithmetic, end to end: it applies the coefficient, the 1/3, the accumulation remanescente, the ceiling and the floor and states the euro answer. Reproducing them tests that the engine APPLIES the rules the way the ISS does, not merely that the parameters were copied correctly.\n\nWhat this is NOT: a fully independent implementation. The examples share a document with the parameters they exercise, so a rule the guide itself states wrongly would be reproduced wrongly on both sides. That is why SELF_EMPLOYED_CONTRIBUTIONS_2018 stays verified: false until Segurança Social Direta's own simulator is reproduced.\n\nNote every example is written against the 2025 IAS of 522,50 EUR, so the tests pass that value explicitly rather than the bundled 2026 one. The pure functions take IAS as a parameter precisely so a source written for another year can still be reproduced at its own.",
+  "ias": 522.5,
+  "rate": 0.214,
+  "examples": [
+    {
+      "name": "filipe",
+      "what": "Ordinary services, no special rule in play.",
+      "verbatim": "O Filipe teve num determinado período declarativo rendimentos de prestação de serviços no valor de 6.000,00€. Assim, o seu rendimento relevante será 70% de 6.000,00€, ou seja, 4.200,00€. Logo, a base de incidência contributiva mensal corresponderá a 4.200,00€:3 (meses) = 1.400,00€, sobre a qual se aplicará a respetiva taxa contributiva. Em resumo, o Filipe pagará por mês a contribuição de 299,60€ (ou seja, 1.400,00€ x 21,4%).",
+      "periodInvoicing": 6000,
+      "activity": "services",
+      "expectedRelevantIncome": 4200,
+      "expectedBase": 1400,
+      "expectedContribution": 299.6
+    },
+    {
+      "name": "marta",
+      "what": "No income at all — the 20 EUR floor, which is on the contribution.",
+      "verbatim": "Num determinado período declarativo, a Marta não obteve quaisquer rendimentos. Assim, independentemente do cálculo do seu rendimento revelante e da sua base de incidência contributiva mensal, a Marta pagará 20,00€ por mês no trimestre seguinte ao período declarado.",
+      "periodInvoicing": 0,
+      "activity": "services",
+      "expectedRelevantIncome": 0,
+      "expectedBase": 0,
+      "expectedContribution": 20
+    },
+    {
+      "name": "paulo",
+      "what": "Accumulating with a salaried job: only the part above 4 x IAS contributes.",
+      "verbatim": "O Paulo é Trabalhador por Conta de Outrem, recebendo mais do que 1 vez o valor do IAS (522,50€, valor em 2025), e simultaneamente Trabalhador Independente. Auferiu em janeiro 10.000,00€, fevereiro 10.000,00€ e março 4.000,00€, num total de 24.000,00€ no trimestre. Assim, o seu rendimento relevante será 70% de 24.000,00€, o qual corresponde a 16.800,00€: 3 (meses) = 5.600,00€ (sendo superior a 4 vezes o valor do IAS, 2.090,00€ valor em 2025). Logo, a base de incidência contributiva mensal corresponderá à diferença entre o rendimento declarado e 4 vezes o valor do IAS (remanescente)= 5.600,00€ - 2.090,00€ =3.510,00€. Em resumo, o Paulo pagará por mês a contribuição de 751,14€ (ou seja, 3.510,00€ x 21,4%).",
+      "quarter": [10000, 10000, 4000],
+      "periodInvoicing": 24000,
+      "activity": "services",
+      "accumulatesEmployment": true,
+      "expectedRelevantIncome": 16800,
+      "expectedBase": 3510,
+      "expectedContribution": 751.14
+    },
+    {
+      "name": "joao",
+      "what": "High earner: the base is capped at 12 x IAS.",
+      "verbatim": "O João no período declarativo auferiu em abril 20.000,00€, maio 20.000,00€ e junho 20.000,00€, num total de 60.000,00€ no trimestre. Assim, o seu rendimento relevante será de 70% de 60.000,00€, o qual corresponde a 42.000,00€: 3 (meses) = 14.000,00€. Neste caso, ao invés do valor apurado como rendimento relevante (14.000,00€), a base de incidência contributiva do João vai ter como limite máximo o valor de 6.270,00€ (ou seja, 12 vezes o valor do IAS), sobre a qual se aplicará a respetiva taxa contributiva. Em resumo, o João pagará por mês a contribuição de 1.341,78€ (ou seja, 6.270,00€ x 21,4%).",
+      "quarter": [20000, 20000, 20000],
+      "periodInvoicing": 60000,
+      "activity": "services",
+      "expectedRelevantIncome": 42000,
+      "expectedBase": 6270,
+      "expectedContribution": 1341.78
+    }
+  ]
+}

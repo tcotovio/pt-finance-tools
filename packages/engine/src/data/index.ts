@@ -1,6 +1,8 @@
 // Registry of versioned datasets + date-aware lookup.
 
 import type {
+  CategoryBRetention,
+  IasValue,
   ImtTables,
   ImtTerritory,
   InterestRateShock,
@@ -9,8 +11,10 @@ import type {
   MealAllowanceLimits,
   Region,
   RegistrationFees,
+  SelfEmployedContributions,
   StampDuty,
   StateGuarantee,
+  VatExemption,
   WithholdingDataset,
 } from "../types.js";
 import { CONTINENTE_2026 } from "./continente-2026.js";
@@ -27,6 +31,10 @@ import { EURIBOR_2026_07 } from "./euribor-2026-07.js";
 import { MORTGAGE_MARKET_2026_06 } from "./mortgage-market-2026-06.js";
 import { CONSUMER_MARKET_2026_06 } from "./consumer-market-2026-06.js";
 import { WAGE_MARKET_2026_Q2 } from "./wage-market-2026-q2.js";
+import { IAS_2026 } from "./ias-2026.js";
+import { CIRS_RETENTION_2026 } from "./cirs-retention-2026.js";
+import { CIVA_EXEMPTION_2026 } from "./civa-exemption-2026.js";
+import { SELF_EMPLOYED_CONTRIBUTIONS_2018 } from "./selfemployed-contributions-2018.js";
 
 /**
  * The dating contract every computed dataset satisfies.
@@ -232,6 +240,56 @@ export const CONSUMER_MARKET = CONSUMER_MARKET_2026_06;
 /** The wage reference in use — context beside the user's own salary. */
 export const WAGE_MARKET = WAGE_MARKET_2026_Q2;
 
+/** IAS values by year, newest first. */
+const IAS_VALUES: readonly IasValue[] = [IAS_2026];
+
+/** The IAS in effect on `date`. Throws if none. */
+export function getIas(date: string): IasValue {
+  return required(effectiveOn(IAS_VALUES, date), "IAS value", date);
+}
+
+/** Categoria B retention parameters, newest first. */
+const B_RETENTIONS: readonly CategoryBRetention[] = [CIRS_RETENTION_2026];
+
+/** The categoria B retention parameters in effect on `date`. Throws if none. */
+export function getCategoryBRetention(date: string): CategoryBRetention {
+  return required(
+    effectiveOn(B_RETENTIONS, date),
+    "categoria B retention parameters",
+    date,
+  );
+}
+
+/** CIVA art. 53.º exemption thresholds, newest first. */
+const VAT_EXEMPTIONS: readonly VatExemption[] = [CIVA_EXEMPTION_2026];
+
+/** The IVA exemption threshold in effect on `date`. Throws if none. */
+export function getVatExemption(date: string): VatExemption {
+  return required(effectiveOn(VAT_EXEMPTIONS, date), "IVA exemption", date);
+}
+
+/**
+ * Self-employed contribution parameters, newest first.
+ *
+ * Only one, and it is dated 2019 rather than 2026 on purpose: none of these
+ * parameters re-indexes annually. What moves each January is the IAS the
+ * multiples are taken of, which is a separate lookup above.
+ */
+const SE_CONTRIBUTIONS: readonly SelfEmployedContributions[] = [
+  SELF_EMPLOYED_CONTRIBUTIONS_2018,
+];
+
+/** The self-employed contribution parameters in effect on `date`. Throws if none. */
+export function getSelfEmployedContributions(
+  date: string,
+): SelfEmployedContributions {
+  return required(
+    effectiveOn(SE_CONTRIBUTIONS, date),
+    "self-employed contribution parameters",
+    date,
+  );
+}
+
 export {
   CONTINENTE_2026,
   MADEIRA_2026,
@@ -247,4 +305,8 @@ export {
   MORTGAGE_MARKET_2026_06,
   CONSUMER_MARKET_2026_06,
   WAGE_MARKET_2026_Q2,
+  IAS_2026,
+  CIRS_RETENTION_2026,
+  CIVA_EXEMPTION_2026,
+  SELF_EMPLOYED_CONTRIBUTIONS_2018,
 };

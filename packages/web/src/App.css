@@ -208,6 +208,7 @@
 
 .segment {
   flex: 1;
+  display: flex;
   position: relative;
   cursor: pointer;
 }
@@ -223,7 +224,12 @@
 }
 
 .segment span {
-  display: block;
+  /* Fills the label so a one-line choice still paints the height a
+     two-line neighbour forces on the row. */
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   padding: 7px 8px;
   border-radius: calc(var(--radius-sm) - 5px);

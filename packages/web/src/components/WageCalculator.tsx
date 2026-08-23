@@ -64,7 +64,7 @@ export function WageCalculator() {
           placeholder="1 500,00"
           value={form.gross}
           error={errors.gross}
-          hint="Bruto, antes de descontos e sem subsídio de alimentação."
+          hint="Bruto, antes de descontos e sem subsídio de alimentação. Trabalho dependente — não serve para recibos verdes."
           onChange={(value) => update("gross", value)}
         />
 

@@ -144,7 +144,7 @@ export function LoanCalculator() {
           placeholder="2 000,00"
           value={form.income}
           error={errors.income}
-          hint="Líquido, somando quem vai ao crédito. Com 14 meses, use o anual a dividir por 12 — é o que o Banco de Portugal manda usar."
+          hint="Líquido, somando quem vai ao crédito. Use sempre o rendimento anual a dividir por 12 — é o que o Banco de Portugal manda usar, tenha 14 meses ou passe recibos verdes."
           onChange={(value) => update("income", value)}
         />
 

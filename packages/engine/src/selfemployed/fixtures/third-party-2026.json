@@ -1,0 +1,87 @@
+{
+  "_comment": "Axis B for the categoria B engine: end-to-end scenarios from THREE independent public implementations of the 2026 rules, captured 2026-08-24. Unlike fixtures/iss-guia-1009.json — which is the administering institution's own document, and so shares a source with the parameters it exercises — these are other people's code, so they test that this engine APPLIES the rules the way a working simulator does rather than merely that the numbers were transcribed.\n\nProvenance is weaker than the wage and loan sides' and it is worth saying so: Doutor Finanças and Crédivel are an established personal-finance publisher and a licensed credit intermediary, where these three are smaller calculator sites. What makes them usable is that they are mutually independent and agree to the cent with each other, with the ISS's worked examples and with this engine — three implementations converging on the same figures is evidence a single one would not be.\n\nWHAT THEY REACH: the 23 % professional rate, the 70 % services coefficient, the 1/3 monthly base, the first-year deferral of the contribution, and IVA as a pass-through at 23 %.\n\nWHAT THEY DO NOT REACH, so these stay Axis A only: the 11,5 % and 16,5 % retention rates, the goods and hospitality coefficients, the 25 EUR minimum retention of art. 101.º-B n.º 1 al. d), the annual dispensa, the 12 x IAS ceiling, the 20 EUR floor, the 4 x IAS accumulation rule, and both Regioes Autonomas IVA rates. The ISS fixture covers the ceiling, the floor and the accumulation; the rest are covered by nothing but the statute.",
+  "sources": [
+    {
+      "id": "simuladorneto",
+      "name": "SimuladorNeto.pt",
+      "url": "https://simuladorneto.pt/blog/recibos-verdes-quanto-pagar-impostos-2026",
+      "states": "Retencao 23 %, Seguranca Social 21,4 % sobre 70 % do faturado, IAS 2026 de 537,13 EUR."
+    },
+    {
+      "id": "calculariva",
+      "name": "CalcularIVA.pt",
+      "url": "https://calculariva.pt/simulador-recibos-verdes/",
+      "states": "Retencao 23 %, Seguranca Social 21,4 % sobre base de 70 %, IVA 23 % no Continente."
+    },
+    {
+      "id": "calculapt",
+      "name": "CalculaPT",
+      "url": "https://www.calculapt.pt/recibos-verdes",
+      "states": "23 % para a tabela do art. 151.º, 11,5 % para outros rendimentos, 20 % para o art. 58.º-A do EBF; rendimento relevante 70 % e taxa 21,4 %."
+    }
+  ],
+  "scenarios": [
+    {
+      "source": "simuladorneto",
+      "note": "1 000 EUR/mes, profissao da tabela, mais de um ano de atividade",
+      "monthlyInvoicing": 1000,
+      "retention": 230,
+      "contribution": 149.8,
+      "net": 620.2
+    },
+    {
+      "source": "simuladorneto",
+      "note": "2 000 EUR/mes — o mesmo caso do exemplo Filipe do guia do ISS, por outra via",
+      "monthlyInvoicing": 2000,
+      "retention": 460,
+      "contribution": 299.6,
+      "net": 1240.4
+    },
+    {
+      "source": "simuladorneto",
+      "note": "3 000 EUR/mes, com IVA a 23 % cobrado e entregue",
+      "monthlyInvoicing": 3000,
+      "chargesVat": true,
+      "vat": 690,
+      "retention": 690,
+      "contribution": 449.4,
+      "net": 1860.6
+    },
+    {
+      "source": "simuladorneto",
+      "note": "5 000 EUR/mes, com IVA — ainda abaixo do tecto de 12 x IAS",
+      "monthlyInvoicing": 5000,
+      "chargesVat": true,
+      "vat": 1150,
+      "retention": 1150,
+      "contribution": 749,
+      "net": 3101
+    },
+    {
+      "source": "simuladorneto",
+      "note": "Primeiro ano de atividade: retencao na mesma, contribuicao ainda nao devida",
+      "monthlyInvoicing": 2000,
+      "firstActivityDeferral": true,
+      "retention": 460,
+      "contribution": 0,
+      "net": 1540
+    },
+    {
+      "source": "calculariva",
+      "note": "1 000 EUR/mes, sem IVA — confirma o primeiro cenario por uma implementacao diferente",
+      "monthlyInvoicing": 1000,
+      "retention": 230,
+      "contribution": 149.8,
+      "net": 620.2
+    },
+    {
+      "source": "calculapt",
+      "note": "20 000 EUR num trimestre. A unica fonte externa que raciocina sobre o periodo inteiro em vez do mes, e por isso a unica que exercita o 1/3 de forma visivel: 2 996 EUR e a contribuicao do TRIMESTRE, tres vezes 998,67 EUR.",
+      "quarter": [6666.67, 6666.67, 6666.66],
+      "monthlyInvoicing": 6666.67,
+      "quarterlyRetention": 4600,
+      "quarterlyContribution": 2996,
+      "quarterlyNet": 12404
+    }
+  ]
+}

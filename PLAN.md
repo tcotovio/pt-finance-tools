@@ -380,8 +380,20 @@ candidate rather than duplicating any of it.
     pins that property because the whole form shape rests on it
   - **The ISS's four worked examples reproduce to the cent**, accumulation
     remanescente and 12 × IAS cap included. Not full Axis B, and §11.4 says why
-- [ ] **Axis B against Segurança Social Direta** — the datasets stay
-  `verified: false` until it lands
+- [x] **Axis B** — three independent public simulators reproduced to the cent
+  across six scenarios, alongside the ISS's own four worked examples.
+  `CIRS_RETENTION_2026` and `SELF_EMPLOYED_CONTRIBUTIONS_2018` are now
+  `verified: true`; `CIVA_EXEMPTION_2026` is not, and the answer's flag is
+  conditional on whether it entered the arithmetic. §11.4 lists what Axis B
+  reached and what it did not
+  - **Segurança Social Direta is not reachable** — it sits behind a NISS login,
+    so it cannot be driven. A permanent constraint, not a pending task
+- [x] **Regiões Autónomas IVA rates** — the flat 23 % was simply wrong outside
+  the Continente. Now 23 / 22 / 16 by region (CIVA art. 18.º n.ºs 1 and 3), with
+  the region asked only when IVA is actually charged. It moves the invoice total
+  and never the take-home, and a test pins that so the control cannot be read as
+  a tax break
+- [x] **Propriedade intelectual** — see §11.5
 
 ### Phase 4 — Long tail (opt-in scope)
 - [ ] Disability tables
@@ -519,38 +531,79 @@ machinery is the categoria A withholding tables, and a young independent claims
 art. 12.º-B in the annual Modelo 3. The relief arrives as a refund at
 settlement, which is outside the withholding boundary this engine keeps.
 
-### 11.4 What `verified` says, and what is still missing
+### 11.4 What `verified` says, and what it still cannot
 
-Everything ships `verified: false` except `IAS_2026`, and the panel shows
-"Dados por verificar" accordingly.
+`CIRS_RETENTION_2026`, `SELF_EMPLOYED_CONTRIBUTIONS_2018` and `IAS_2026` are
+`verified: true`. `CIVA_EXEMPTION_2026` is not, and the answer's own flag is
+**conditional on whether that dataset entered the arithmetic** — under the
+art. 53.º exemption no rate from it is applied, so it neither passes nor fails,
+the same standing the market statistics already have on the loan side. Charge
+IVA and the badge honestly drops to "Dados por verificar".
 
-**Axis A** is done for all four: every parameter is recorded beside the verbatim
-sentence it was read from, from AT's own publication of the CIRS and CIVA and
-from the ISS Guia Prático n.º 1009.
+**Axis A** covers all four: every parameter sits beside the verbatim sentence it
+was read from, from AT's own publication of the CIRS and CIVA and from the ISS
+Guia Prático n.º 1009.
 
-**Axis B is the honest gap.** What exists instead is stronger than a parameter
-diff and weaker than a real cross-check: the guia prático carries **four worked
-examples** that apply the rules end to end and state the euro answer, and the
-engine reproduces all four to the cent — including the accumulation remanescente
-and the 12 × IAS cap. They catch order-of-operations errors that a parameter
-diff cannot. But they share a document with the parameters they exercise, so a
-rule the guide itself states wrongly would be reproduced wrongly on both sides.
-The candidate for real Axis B is **Segurança Social Direta's own simulator**,
-and like AT's IMT simulator it is not a peer: the ISS administers this regime,
-so a mismatch is a bug here rather than a divergence to record.
+**Axis B took two layers, because neither alone would carry it:**
 
-Also deliberately not built yet:
+- The ISS's **four worked examples**, reproduced to the cent. They are the only
+  source that exercises the 12 × IAS ceiling, the 20 € floor and the 4 × IAS
+  accumulation remanescente, and they settled the order — the ceiling applies
+  *after* the remanescente is subtracted. But they share a document with the
+  parameters they exercise, so they cannot be the whole of it.
+- **Three independent public simulators**, agreeing to the cent with this engine
+  and with each other across six scenarios: the 23 % rate, the 21,4 % rate, the
+  70 % coefficient, the 1/3 monthly base, the first-year deferral, and IVA as a
+  pass-through. One of them reasons about the whole quarter rather than the
+  month, which is what makes the 1/3 visibly exercised rather than assumed.
+  - **Provenance is weaker than the wage and loan sides', and that is recorded
+    rather than glossed.** Doutor Finanças and Crédivel are an established
+    publisher and a licensed intermediary; these are smaller calculator sites.
+    What makes them usable is mutual independence — three implementations
+    converging on the same figures is evidence a single one would not be.
+  - **Segurança Social Direta was the obvious candidate and is not reachable**:
+    it is behind a NISS login, so it cannot be driven. That is a permanent
+    constraint, not a to-do.
 
-- **Propriedade intelectual** — the retention rate is in the engine and tested,
-  but the UI does not offer it, because the contribution side needs a third
-  state (excluded / opted-in) that `SelfEmployedActivity` cannot express.
-  Offering it would produce a confidently wrong contribution.
+**What Axis B does not reach**, and so rests on the statute alone: the 11,5 %
+and 16,5 % retention rates, the 25 € minimum of art. 101.º-B n.º 1 al. d), the
+annual dispensa, the goods and hospitality coefficients, and both Regiões
+Autónomas IVA rates. Every external source models the professional rate on
+Continente services and nothing else. The three-way coefficient split is pinned
+by a test against the two-way misreading, but a test of our own reading is not
+independent confirmation of it.
+
+Still deliberately not built:
+
 - **Contabilidade organizada** — a different base entirely (duodécimo do lucro
   tributável, floored at 1,5 × IAS, fixed in October for the following year).
-- **The entidade contratante's own contribution** — it is paid by the client and
-  never touches the worker's take-home, so it belongs to an "employer cost" view
-  rather than this one.
+- **The entidade contratante's own contribution** — paid by the client, never
+  touches the worker's take-home, so it belongs to an "employer cost" view.
 - **The ±25 % declaration option**, quarterly IVA, and deductible expenses.
-- **The regiões autónomas IVA rates** — a non-exempt worker outside the
-  Continente is charged 23 % here rather than 22 %/16 %. It does not move the
-  take-home, only the invoice total, but it is wrong and the dataset says so.
+
+### 11.5 Propriedade intelectual, and why it is not a fourth coefficient
+
+Now offered, and modelled as what the Código Contributivo makes it: income
+**outside** rendimento relevante, with an opt-in that restores the ordinary
+treatment. The guia prático lists it among the income "não considerados para
+efeitos de determinação do rendimento relevante" and then, a paragraph later,
+among the income that "podem ser considerados [...] caso o Trabalhador
+Independente opte pela sua consideração".
+
+So the engine skips the base rather than applying a coefficient of zero. The two
+are arithmetically identical and conceptually opposite, and the difference
+becomes visible the moment the worker opts in — at which point the coefficient
+is the ordinary 70 %, not a rate of its own. The dataset therefore records 0,7
+and the exclusion lives in `relevantIncome`, so nobody later reads the dataset
+as "the law says 0 %".
+
+Two consequences worth stating:
+
+- **The 20 € floor still applies.** Excluded income leaves an open activity with
+  no relevant income, which is the "inexistência de rendimentos" case, so the
+  month owes the minimum rather than nothing. The panel says which of the two
+  produced the figure.
+- **Opting in costs money, and the UI says so plainly** — the income then counts
+  towards the contributory career and the benefits resting on it. A calculator
+  that only ever showed the cheaper answer would be hiding a choice rather than
+  reporting one.

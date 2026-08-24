@@ -270,8 +270,8 @@ export function selfEmployedSources(result: SelfEmployedResult): SourceEntry[] {
     "civa-53": {
       label: "Isenção de IVA — artigo 53.º",
       usedFor: result.vat.exempt
-        ? "O limite abaixo do qual não cobra IVA. É também o limite a que a dispensa de retenção se refere."
-        : "A taxa de IVA cobrada ao cliente.",
+        ? "Citado para explicar a ausência de IVA. Não entrou em nenhuma conta: o limite é uma referência, não um valor aplicado."
+        : "A taxa de IVA cobrada ao cliente, pela região.",
     },
     "cc-independentes": {
       label: "Contribuições — trabalhadores independentes",
@@ -293,7 +293,17 @@ export function selfEmployedSources(result: SelfEmployedResult): SourceEntry[] {
       {
         key: ref.key,
         ...label,
-        verified: ref.verified,
+        /*
+          Under the IVA exemption the CIVA dataset is cited but never computed
+          from, so its cross-check status does not bear on this answer — the
+          same standing as a market statistic, which the badge already knows to
+          skip. Reporting `false` here would have put "Dados por verificar" on
+          an answer whose every figure came from a verified dataset, and the
+          badge disagreeing with the engine's own `verified` is worse than
+          either value alone.
+        */
+        verified:
+          ref.key === "civa-53" && result.vat.exempt ? undefined : ref.verified,
         ...splitCitation(ref.citation),
       },
     ];

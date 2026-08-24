@@ -10,26 +10,20 @@
 // would make the common case harder to fill in than the rare one.
 
 import type {
+  Region,
   RetentionCategory,
   SelfEmployedActivity,
   SelfEmployedInput,
 } from "@pt-finance-tools/engine";
 import { parseAmount } from "./format.js";
 
-/**
- * What the form asks, and what each answer means to each statute.
- *
- * Propriedade intelectual is deliberately NOT offered yet. Its retention rate
- * is in the engine, but the Código Contributivo *excludes* that income from
- * rendimento relevante unless the worker opts in — a third state the activity
- * type has no way to express — so offering it would produce a contribution
- * that is confidently wrong. See PLAN.md §11.
- */
+/** What the form asks, and what each answer means to each statute. */
 export type ActivityPreset =
   | "professional-services"
   | "other-services"
   | "goods"
-  | "hospitality";
+  | "hospitality"
+  | "intellectual-property";
 
 interface PresetMeaning {
   label: string;
@@ -63,6 +57,12 @@ export const ACTIVITY_PRESETS: Record<ActivityPreset, PresetMeaning> = {
     retentionCategory: "other-services",
     hint: "É prestação de serviços, mas a Segurança Social aplica-lhe o coeficiente dos bens: 20 %.",
   },
+  "intellectual-property": {
+    label: "Propriedade intelectual ou industrial",
+    activity: "intellectual-property",
+    retentionCategory: "intellectual-property",
+    hint: "Direitos de autor e afins. Retenção de 16,5 %, e por omissão fica fora da base da Segurança Social — pode optar por incluí-la em «O meu caso».",
+  },
 };
 
 export interface SelfEmployedForm {
@@ -73,7 +73,11 @@ export interface SelfEmployedForm {
   quarter1: string;
   quarter2: string;
   quarter3: string;
+  /** Only meaningful for the propriedade intelectual preset. */
+  includeIntellectualProperty: boolean;
   chargesVat: boolean;
+  /** Only reaches the answer when `chargesVat` is on — it picks the taxa normal. */
+  region: Region;
   retentionDispensed: boolean;
   clientDoesNotWithhold: boolean;
   soleTrader: boolean;
@@ -94,7 +98,9 @@ export const DEFAULT_SELF_EMPLOYED_FORM: SelfEmployedForm = {
   // for this tool actually are — under 15 000 € of turnover. It is the same
   // threshold that governs the retention dispensa, so the two toggles below
   // move together in reality even though the form keeps them separate.
+  includeIntellectualProperty: false,
   chargesVat: false,
+  region: "continente",
   retentionDispensed: false,
   clientDoesNotWithhold: false,
   soleTrader: false,
@@ -186,7 +192,19 @@ export function toSelfEmployedInput(
 
   const quarter = quarterOf(form);
   if (quarter) input.quarter = quarter;
-  if (form.chargesVat) input.chargesVat = true;
+  // Same rule as the region: only sent where it means something. The opt-in
+  // exists solely for propriedade intelectual, and carrying it on a services
+  // input would suggest the engine consults it there.
+  if (preset.activity === "intellectual-property" && form.includeIntellectualProperty) {
+    input.includeIntellectualProperty = true;
+  }
+  // Both together, or neither. Sending the region on its own would be
+  // harmless but misleading in the input the tests read: under the exemption
+  // there is no taxa normal to select, so there is nothing for it to mean.
+  if (form.chargesVat) {
+    input.chargesVat = true;
+    if (form.region !== "continente") input.region = form.region;
+  }
   if (form.retentionDispensed) input.retentionDispensed = true;
   if (form.clientDoesNotWithhold) input.clientDoesNotWithhold = true;
   if (form.soleTrader) input.soleTrader = true;

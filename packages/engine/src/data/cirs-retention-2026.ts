@@ -61,9 +61,21 @@ export const CIRS_RETENTION_2026: CategoryBRetention = {
   source:
     "CIRS arts. 101.º e 101.º-B — https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/codigos_tributarios/cirs_rep/Pages/irs101.aspx " +
     "· al. b) na redação da Lei n.º 82/2023 (OE 2024) · al. d) do art. 101.º-B aditada pelo DL n.º 49/2025",
-  // Axis A only: the rates were read from AT's own publication of the code and
-  // each is recorded beside the verbatim alínea it came from. Axis B has not
-  // been done — no independent implementation has been reproduced — so this
-  // ships unverified and the UI says so.
-  verified: false,
+  // Verified on both axes (2026-08-24):
+  //
+  // Axis A — each rate is recorded beside the verbatim alínea it came from, in
+  // AT's own publication of the code.
+  //
+  // Axis B — three independent public simulators reproduce the 23 % rate to
+  // the cent across six scenarios, including one where the retention is due
+  // while the contribution is not (first year of activity), which is what
+  // proves the two are computed separately rather than from a shared base.
+  //
+  // WHAT AXIS B DID NOT REACH: the 11,5 % and 16,5 % rates, the 25 € minimum
+  // of art. 101.º-B n.º 1 al. d), and the annual dispensa. Every external
+  // source found models the professional rate and nothing else — CalculaPT
+  // states 11,5 % and 20 % in prose without computing either. Those three
+  // rules are Axis A alone, and the 23 % correction is exactly the reminder
+  // that a rate stated in prose can be a rate nobody has checked.
+  verified: true,
 };

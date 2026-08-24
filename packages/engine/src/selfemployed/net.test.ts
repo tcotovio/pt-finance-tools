@@ -138,7 +138,7 @@ describe("selfEmployedNet", () => {
     });
   });
 
-  it("reports every dataset it leaned on, and that they are unverified", () => {
+  it("reports every dataset it leaned on", () => {
     const r = selfEmployedNet(BASE);
     expect(r.sources.map((s) => s.key)).toEqual([
       "cirs-101",
@@ -146,10 +146,115 @@ describe("selfEmployedNet", () => {
       "cc-independentes",
       "ias",
     ]);
-    // Three of the four still lack Axis B, so the composed answer is not a
-    // verified answer and must not present itself as one.
-    expect(r.verified).toBe(false);
     expect(r.isWithholdingEstimate).toBe(true);
+  });
+
+  describe("verified", () => {
+    it("is true under the IVA exemption, where no CIVA figure is applied", () => {
+      expect(selfEmployedNet(BASE).verified).toBe(true);
+    });
+
+    // Turning IVA on brings an unverified rate into the arithmetic, and the
+    // badge has to follow the numbers rather than the tool. The CIVA dataset
+    // is listed as a source either way — only its weight on the composed
+    // answer is conditional.
+    it("goes false once IVA is charged, because that rate is unverified", () => {
+      expect(selfEmployedNet({ ...BASE, chargesVat: true }).verified).toBe(
+        false,
+      );
+      expect(
+        selfEmployedNet({ ...BASE, chargesVat: true }).sources.map((s) => s.key),
+      ).toContain("civa-53");
+    });
+  });
+
+  describe("propriedade intelectual", () => {
+    const IP: SelfEmployedInput = {
+      ...BASE,
+      activity: "intellectual-property",
+      retentionCategory: "intellectual-property",
+    };
+
+    it("withholds 16,5 % and leaves the income outside the base", () => {
+      const r = selfEmployedNet(IP);
+      expect(r.retention.amount).toBeCloseTo(330, 2); // 16,5 % of 2 000
+      expect(r.contribution.relevantIncome).toBe(0);
+      expect(r.contribution.excludedFromBase).toBe(true);
+      // Excluded income still leaves an open activity, and an open activity
+      // with no relevant income is the "inexistência de rendimentos" case —
+      // so the 20 € floor is what remains, not nothing.
+      expect(r.contribution.amount).toBe(20);
+    });
+
+    it("reports the coefficient actually applied, so the panel reconciles", () => {
+      // Printing the table's 70 % beside a base of zero would show a sum that
+      // does not add up.
+      expect(selfEmployedNet(IP).contribution.coefficient).toBe(0);
+    });
+
+    it("contributes like ordinary services once opted in", () => {
+      const optedIn = selfEmployedNet({
+        ...IP,
+        includeIntellectualProperty: true,
+      });
+      expect(optedIn.contribution.excludedFromBase).toBe(false);
+      expect(optedIn.contribution.base).toBeCloseTo(1400, 2);
+      expect(optedIn.contribution.amount).toBeCloseTo(299.6, 2);
+      // The retention is unchanged: the opt-in is a Segurança Social choice
+      // and has nothing to do with the CIRS rate.
+      expect(optedIn.retention.amount).toBeCloseTo(330, 2);
+    });
+
+    it("costs money to opt in, which is the point of asking", () => {
+      expect(
+        selfEmployedNet({ ...IP, includeIntellectualProperty: true }).net,
+      ).toBeLessThan(selfEmployedNet(IP).net);
+    });
+
+    it("ignores the opt-in on a services input", () => {
+      const r = selfEmployedNet({ ...BASE, includeIntellectualProperty: true });
+      expect(r.contribution.amount).toBeCloseTo(299.6, 2);
+      expect(r.contribution.excludedFromBase).toBe(false);
+    });
+  });
+
+  describe("IVA by region", () => {
+    it("charges the Continente taxa normal by default", () => {
+      const r = selfEmployedNet({ ...BASE, chargesVat: true });
+      expect(r.vat.rate).toBe(0.23);
+      expect(r.vat.amount).toBeCloseTo(460, 2);
+    });
+
+    // The bug this shipped with: a flat 23 % everywhere. The Regiões
+    // Autónomas set their own taxas normais under CIVA art. 18.º n.º 3.
+    it("charges 22 % in Madeira and 16 % nos Açores", () => {
+      const madeira = selfEmployedNet({
+        ...BASE,
+        chargesVat: true,
+        region: "madeira",
+      });
+      expect(madeira.vat.rate).toBe(0.22);
+      expect(madeira.vat.invoiceTotal).toBeCloseTo(2440, 2);
+
+      const acores = selfEmployedNet({
+        ...BASE,
+        chargesVat: true,
+        region: "acores",
+      });
+      expect(acores.vat.rate).toBe(0.16);
+      expect(acores.vat.invoiceTotal).toBeCloseTo(2320, 2);
+    });
+
+    // IVA is the State's money wherever it is collected, so the region moves
+    // the invoice total and nothing else. Pinned because the take-home is the
+    // headline, and a region control that appeared to change it would be read
+    // as a tax break.
+    it("leaves the take-home untouched wherever the work is done", () => {
+      const net = (region: "continente" | "madeira" | "acores") =>
+        selfEmployedNet({ ...BASE, chargesVat: true, region }).net;
+      expect(net("madeira")).toBeCloseTo(net("continente"), 2);
+      expect(net("acores")).toBeCloseTo(net("continente"), 2);
+    });
   });
 
   it("rejects a negative or non-finite invoice rather than computing on it", () => {

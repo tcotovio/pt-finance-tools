@@ -85,6 +85,30 @@ describe("relevantIncome", () => {
       2,
     );
   });
+
+  describe("propriedade intelectual", () => {
+    it("is outside the base by default", () => {
+      expect(relevantIncome(6000, "intellectual-property", PARAMS)).toBe(0);
+    });
+
+    // Opting in restores the ORDINARY treatment rather than applying a rate of
+    // its own — which is why the dataset records 70 % here and the exclusion
+    // lives in the engine. If the opt-in produced anything other than the
+    // services answer, one of the two has drifted.
+    it("takes the ordinary services coefficient once opted in", () => {
+      expect(relevantIncome(6000, "intellectual-property", PARAMS, true))
+        .toBeCloseTo(relevantIncome(6000, "services", PARAMS), 2);
+    });
+
+    it("ignores the opt-in for every other activity", () => {
+      for (const activity of ["services", "goods", "hospitality"] as const) {
+        expect(relevantIncome(6000, activity, PARAMS, true)).toBeCloseTo(
+          relevantIncome(6000, activity, PARAMS),
+          2,
+        );
+      }
+    });
+  });
 });
 
 describe("contributionBase", () => {

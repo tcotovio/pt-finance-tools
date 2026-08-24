@@ -40,12 +40,21 @@ export function periodIncome(
 /**
  * Rendimento relevante: turnover after the coefficient for what the activity
  * is. Note hospitality takes the goods coefficient despite being a service.
+ *
+ * Propriedade intelectual is the one activity that can be outside the base
+ * altogether. It is skipped here rather than given a zero coefficient, because
+ * the two are only arithmetically the same: excluded income is not income
+ * counted at nothing, and the difference shows the moment the worker opts in.
  */
 export function relevantIncome(
   periodTotal: number,
   activity: SelfEmployedActivity,
   params: SelfEmployedContributions,
+  includeIntellectualProperty = false,
 ): number {
+  if (activity === "intellectual-property" && !includeIntellectualProperty) {
+    return 0;
+  }
   return periodTotal * params.coefficient[activity];
 }
 

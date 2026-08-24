@@ -2,11 +2,18 @@ import { describe, expect, it } from "vitest";
 import {
   computeNetWageForDate,
   maxLoanForDate,
+  selfEmployedNet,
   EURIBOR_FALLBACK,
   type MaxLoanInput,
+  type SelfEmployedInput,
   type WageInput,
 } from "@pt-finance-tools/engine";
-import { loanSources, splitCitation, wageSources } from "./sources.js";
+import {
+  loanSources,
+  selfEmployedSources,
+  splitCitation,
+  wageSources,
+} from "./sources.js";
 
 const REFERENCE = "2026-08-19";
 const wage = (extra: Partial<WageInput> = {}): WageInput => ({
@@ -154,5 +161,52 @@ describe("loanSources", () => {
   it("reports the limits as verified, now that both axes pass", () => {
     expect(entries[0].verified).toBe(true);
     expect(entries[1].verified).toBe(true);
+  });
+});
+
+describe("selfEmployedSources", () => {
+  const result = (extra: Partial<SelfEmployedInput> = {}) =>
+    selfEmployedNet({
+      monthlyInvoicing: 2000,
+      activity: "services",
+      retentionCategory: "professional",
+      referenceDate: REFERENCE,
+      ...extra,
+    });
+
+  it("lists the four instruments the answer rests on", () => {
+    expect(selfEmployedSources(result()).map((e) => e.key)).toEqual([
+      "cirs-101",
+      "civa-53",
+      "cc-independentes",
+      "ias",
+    ]);
+  });
+
+  it("reports the retention and contribution datasets as verified", () => {
+    const entries = selfEmployedSources(result());
+    expect(entries.find((e) => e.key === "cirs-101")?.verified).toBe(true);
+    expect(entries.find((e) => e.key === "cc-independentes")?.verified).toBe(
+      true,
+    );
+  });
+
+  // The badge is computed from these entries, so it has to agree with the
+  // engine's own `verified`. Under the exemption no CIVA figure is applied,
+  // and an entry that is cited but never computed from neither passes nor
+  // fails — the same standing the market statistics already have.
+  it("excludes the IVA dataset from the badge while the exemption applies", () => {
+    const entries = selfEmployedSources(result());
+    const civa = entries.find((e) => e.key === "civa-53");
+    expect(civa?.verified).toBeUndefined();
+    expect(civa?.usedFor).toMatch(/não entrou em nenhuma conta/i);
+    expect(result().verified).toBe(true);
+  });
+
+  it("counts it once IVA is actually charged, and flags it unverified", () => {
+    const withVat = result({ chargesVat: true });
+    const civa = selfEmployedSources(withVat).find((e) => e.key === "civa-53");
+    expect(civa?.verified).toBe(false);
+    expect(withVat.verified).toBe(false);
   });
 });

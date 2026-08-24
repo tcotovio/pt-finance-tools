@@ -153,6 +153,37 @@ describe("toSelfEmployedInput", () => {
     expect(input?.quarter).toBeUndefined();
   });
 
+  describe("region", () => {
+    // The region only means anything alongside IVA — it selects the taxa
+    // normal. Sending it while exempt would put a field in the input that
+    // nothing reads, which is how a later reader concludes it does something.
+    it("is omitted entirely while the IVA exemption applies", () => {
+      const input = toSelfEmployedInput(
+        form({ invoicing: "2000", region: "madeira" }),
+        DATE,
+      );
+      expect(input?.region).toBeUndefined();
+      expect(input?.chargesVat).toBeUndefined();
+    });
+
+    it("is sent once IVA is charged", () => {
+      const input = toSelfEmployedInput(
+        form({ invoicing: "2000", chargesVat: true, region: "acores" }),
+        DATE,
+      );
+      expect(input).toMatchObject({ chargesVat: true, region: "acores" });
+    });
+
+    it("is left implicit for the Continente, which is the engine's default", () => {
+      const input = toSelfEmployedInput(
+        form({ invoicing: "2000", chargesVat: true, region: "continente" }),
+        DATE,
+      );
+      expect(input?.chargesVat).toBe(true);
+      expect(input?.region).toBeUndefined();
+    });
+  });
+
   it("carries each situation toggle through", () => {
     const input = toSelfEmployedInput(
       form({

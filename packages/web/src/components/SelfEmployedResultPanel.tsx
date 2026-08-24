@@ -158,9 +158,11 @@ function SelfEmployedResultBody({ result }: { result: SelfEmployedResult }) {
               <span>
                 {contribution.deferred
                   ? "Ainda não é devida: no primeiro ano de atividade a obrigação só começa no 12.º mês."
-                  : contribution.atMinimum
-                    ? "O mínimo de 20 € por mês, que é devido mesmo sem faturação."
-                    : `${formatRate(contribution.rate)} sobre ${formatEuro(
+                  : contribution.excludedFromBase
+                    ? "A propriedade intelectual está fora da base contributiva, por isso resta o mínimo de 20 € por mês."
+                    : contribution.atMinimum
+                      ? "O mínimo de 20 € por mês, que é devido mesmo sem faturação."
+                      : `${formatRate(contribution.rate)} sobre ${formatEuro(
                         contribution.base,
                       )} — ${formatRate(
                         contribution.coefficient,
@@ -218,7 +220,14 @@ function SelfEmployedResultBody({ result }: { result: SelfEmployedResult }) {
         guess as a calculation.
       */}
       <div className="notices">
-        {contribution.quarterAssumed ? (
+        {/*
+          The assumption only matters when the quarter actually drives the
+          contribution. Where it does not — the first-year deferral, or income
+          outside the base — the caveat would be describing a dependency that
+          is not there, and a caveat that does not apply teaches the reader to
+          skip the ones that do.
+        */}
+        {contribution.deferred || contribution.excludedFromBase ? null : contribution.quarterAssumed ? (
           <p>
             <strong>A Segurança Social aqui assume faturação estável.</strong> A
             contribuição real deste mês é calculada sobre o trimestre anterior,

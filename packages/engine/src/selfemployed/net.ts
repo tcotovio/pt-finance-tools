@@ -48,7 +48,8 @@ export function selfEmployedNet(
 
   // --- IVA: charged on top, and never the worker's money. ------------------
   const chargesVat = input.chargesVat === true;
-  const vatAmount = chargesVat ? invoiced * vatParams.standardRate : 0;
+  const vatRate = vatParams.standardRate[input.region ?? "continente"];
+  const vatAmount = chargesVat ? invoiced * vatRate : 0;
 
   // --- Retention: per invoice, on the value before IVA. --------------------
   // Art. 101.º puts it on the "rendimentos ilíquidos", and IVA is not income:
@@ -70,6 +71,7 @@ export function selfEmployedNet(
     period.total,
     input.activity,
     contributionParams,
+    input.includeIntellectualProperty,
   );
   const { base, cappedByCeiling, accumulationRelief } = contributionBase(
     relevant,
@@ -77,6 +79,9 @@ export function selfEmployedNet(
     contributionParams,
     input.accumulatesEmployment,
   );
+  const excludedFromBase =
+    input.activity === "intellectual-property" &&
+    input.includeIntellectualProperty !== true;
   const deferred = input.firstActivityDeferral === true;
   const contribution = deferred
     ? { amount: 0, rate: contributionParams.rate, atMinimum: false }
@@ -91,7 +96,7 @@ export function selfEmployedNet(
     invoiced,
     vat: {
       amount: vatAmount,
-      rate: vatParams.standardRate,
+      rate: vatRate,
       exempt: !chargesVat,
       invoiceTotal: invoiced + vatAmount,
     },
@@ -102,9 +107,15 @@ export function selfEmployedNet(
       periodInvoicing: period.total,
       relevantIncome: relevant,
       base,
-      coefficient: contributionParams.coefficient[input.activity],
+      // The coefficient that was actually applied, so the panel's arithmetic
+      // reconciles: reporting the table's 70 % beside a base of zero would
+      // print a sum that does not add up.
+      coefficient: excludedFromBase
+        ? 0
+        : contributionParams.coefficient[input.activity],
       cappedByCeiling,
       atMinimum: contribution.atMinimum,
+      excludedFromBase,
       accumulationRelief,
       deferred,
       quarterAssumed: !period.given,
@@ -115,16 +126,37 @@ export function selfEmployedNet(
     // effective rate has no denominator, not a rate of zero.
     effectiveRate: invoiced > 0 ? net / invoiced : 0,
     sources: selfEmployedSources(referenceDate),
+    /*
+      Only the datasets that actually entered the arithmetic.
+
+      The IVA dataset is the reason this is conditional rather than a flat AND
+      of all four. Under the art. 53.º exemption — the common case here, and
+      the form's default — no rate from it is applied to anything: the invoice
+      total is the invoiced amount, and the exemption reached the answer as the
+      caller's assertion rather than as a number from a table. Letting its
+      unverified flag pull the whole result down would put "Dados por
+      verificar" on an answer whose every figure came from a cross-checked
+      dataset, which is the badge lying in the cautious direction. It still
+      lies. The same reasoning is why the loan side lists the state guarantee
+      only when it moved the ceiling.
+    */
     verified:
       retentionParams.verified &&
-      vatParams.verified &&
       contributionParams.verified &&
-      ias.verified,
+      ias.verified &&
+      (!chargesVat || vatParams.verified),
     isWithholdingEstimate: true,
   };
 }
 
-/** Provenance of every dataset the answer leaned on. */
+/**
+ * Provenance of every dataset the answer leaned on.
+ *
+ * The CIVA entry is listed either way — the panel cites art. 53.º on screen to
+ * explain why there is no IVA line, so a reader following that citation must
+ * find it here. Whether it counts towards {@link SelfEmployedResult.verified}
+ * is a separate question, answered at the call site.
+ */
 function selfEmployedSources(referenceDate: string): SourceRef[] {
   const retention = getCategoryBRetention(referenceDate);
   const vat = getVatExemption(referenceDate);
@@ -137,6 +169,9 @@ function selfEmployedSources(referenceDate: string): SourceRef[] {
       citation: retention.source,
       verified: retention.verified,
     },
+    // Reported at its own flag either way, which is simply the truth about the
+    // dataset. Whether it drags the composed answer down is the separate
+    // question decided at the call site.
     { key: "civa-53", citation: vat.source, verified: vat.verified },
     {
       key: "cc-independentes",

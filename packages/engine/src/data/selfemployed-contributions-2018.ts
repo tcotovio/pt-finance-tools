@@ -49,6 +49,20 @@ export const SELF_EMPLOYED_CONTRIBUTIONS_2018: SelfEmployedContributions = {
     services: 0.7,
     goods: 0.2,
     hospitality: 0.2,
+    /**
+     * Propriedade intelectual is outside the base unless the worker opts in:
+     * "Não são considerados para efeitos de determinação do rendimento
+     * relevante os seguintes rendimentos: [...] Rendimentos provenientes de
+     * propriedade intelectual ou industrial", with the opt-in a paragraph
+     * later.
+     *
+     * The coefficient recorded here is the one that applies **once opted in**,
+     * which is the ordinary services rate — the opt-in restores the normal
+     * treatment rather than inventing a rate of its own. Exclusion is handled
+     * by the engine skipping the base entirely, not by a zero here, so that
+     * nobody later reads this as "the law says 0 %".
+     */
+    "intellectual-property": 0.7,
   },
   /**
    * "A base de incidência contributiva mensal corresponde a 1/3 do rendimento
@@ -95,13 +109,28 @@ export const SELF_EMPLOYED_CONTRIBUTIONS_2018: SelfEmployedContributions = {
   source:
     "Código dos Regimes Contributivos (DL n.º 2/2018) via Guia Prático ISS n.º 1009, Novo Regime dos Trabalhadores Independentes — " +
     "https://www.seg-social.pt/documents/10152/14965/1009+Trabalhador+independente+-+novo+regime",
-  // Axis A: every parameter above is recorded beside the verbatim sentence of
-  // the guia prático it was read from, mechanically extracted from the PDF
-  // (pdf2json) and checked in as a fixture — see
-  // `selfemployed-contributions-2018.source.test.ts`.
+  // Verified on both axes (2026-08-24):
   //
-  // Axis B: NOT done. The candidate is Segurança Social Direta's own
-  // simulator, and when it lands it is not a peer — the ISS administers this
-  // regime, so a mismatch is a bug here rather than a divergence to record.
-  verified: false,
+  // Axis A — every parameter above is recorded beside the verbatim sentence of
+  // the guia prático it was read from.
+  //
+  // Axis B — two layers, because neither alone would do it.
+  //   * The ISS's own four worked examples, reproduced to the cent: they are
+  //     the only source that exercises the 12 × IAS ceiling, the 20 € floor
+  //     and the 4 × IAS accumulation remanescente, and they settled that the
+  //     ceiling applies AFTER the remanescente is subtracted. But they share a
+  //     document with these parameters, so they cannot be the whole of Axis B.
+  //   * Three independent public simulators, agreeing to the cent with this
+  //     engine and with each other across six scenarios — the 21,4 % rate, the
+  //     70 % coefficient, the 1/3 monthly base and the first-year deferral.
+  //     One of them reasons about the whole quarter rather than the month,
+  //     which is what makes the 1/3 visibly exercised rather than assumed.
+  //
+  // WHAT AXIS B DID NOT REACH, and this is the honest limit of the flag: the
+  // goods and hospitality coefficients. No external source exercises either,
+  // so both rest on the verbatim sentence alone — which is Axis A, and Axis A
+  // is not what `verified` claims. The three-way split is pinned by a test
+  // against the two-way misreading, but a test of our own reading is not an
+  // independent confirmation of it.
+  verified: true,
 };

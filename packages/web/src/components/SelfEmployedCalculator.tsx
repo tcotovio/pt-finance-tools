@@ -6,7 +6,7 @@
 // statutory switch rather than a preference.
 
 import { useMemo, useState } from "react";
-import type { SelfEmployedResult } from "@pt-finance-tools/engine";
+import type { Region, SelfEmployedResult } from "@pt-finance-tools/engine";
 import { selfEmployedNet } from "@pt-finance-tools/engine";
 import {
   ACTIVITY_PRESETS,
@@ -33,6 +33,12 @@ export type SelfEmployedOutcome =
 const PRESET_OPTIONS: readonly SelectOption[] = (
   Object.keys(ACTIVITY_PRESETS) as ActivityPreset[]
 ).map((key) => ({ value: key, label: ACTIVITY_PRESETS[key].label }));
+
+const REGION_OPTIONS: readonly SelectOption[] = [
+  { value: "continente", label: "Continente" },
+  { value: "madeira", label: "Madeira" },
+  { value: "acores", label: "Açores" },
+];
 
 export function SelfEmployedCalculator() {
   const referenceDate = useMemo(() => todayIso(), []);
@@ -164,6 +170,17 @@ export function SelfEmployedCalculator() {
 
             <section className="field-group">
               <h3 className="group-title">A Segurança Social</h3>
+              {form.preset === "intellectual-property" ? (
+                <ToggleField
+                  id="se-include-ip"
+                  label="Incluir os direitos na base contributiva"
+                  checked={form.includeIntellectualProperty}
+                  onChange={(checked) =>
+                    update("includeIntellectualProperty", checked)
+                  }
+                  hint="Por omissão a propriedade intelectual fica fora da base. Pode optar por incluí-la: paga mais, mas o rendimento passa a contar para a carreira contributiva e para as prestações que dela dependem."
+                />
+              ) : null}
               <ToggleField
                 id="se-first-year"
                 label="Primeiro ano de atividade"
@@ -196,6 +213,21 @@ export function SelfEmployedCalculator() {
                 onChange={(checked) => update("chargesVat", checked)}
                 hint="Fora da isenção do artigo 53.º, ou seja, com mais de 15 000 € de faturação no ano anterior. Não muda o que fica para si — muda o que o cliente paga."
               />
+              {/*
+                Only shown once IVA is on: under the exemption there is no
+                taxa normal to pick, and a region control that changed nothing
+                would be a question with no consequence.
+              */}
+              {form.chargesVat ? (
+                <SelectField
+                  id="se-region"
+                  label="Região"
+                  value={form.region}
+                  options={REGION_OPTIONS}
+                  hint="A taxa normal difere: 23 % no Continente, 22 % na Madeira, 16 % nos Açores (art. 18.º do CIVA)."
+                  onChange={(value) => update("region", value as Region)}
+                />
+              ) : null}
             </section>
           </div>
         </details>

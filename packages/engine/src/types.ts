@@ -381,7 +381,24 @@ export type RetentionCategory =
  * *goods* coefficient to, so folding the two together overstates a
  * restaurant's contribution 3,5-fold.
  */
-export type SelfEmployedActivity = "services" | "goods" | "hospitality";
+export type SelfEmployedActivity =
+  | "services"
+  | "goods"
+  | "hospitality"
+  /**
+   * Propriedade intelectual ou industrial, which is **excluded** from
+   * rendimento relevante altogether: the guia prático lists it among the
+   * income "não considerados para efeitos de determinação do rendimento
+   * relevante", and separately among the income that "podem ser considerados
+   * [...] caso o Trabalhador Independente opte pela sua consideração".
+   *
+   * So it is not a fourth coefficient but the absence of one, with an opt-in
+   * that restores the ordinary treatment — see
+   * {@link SelfEmployedInput.includeIntellectualProperty}. Modelling it as a
+   * coefficient of zero would be arithmetically right and conceptually wrong:
+   * the income is outside the base, not inside it at nothing.
+   */
+  | "intellectual-property";
 
 /** Retenção na fonte parameters for categoria B — CIRS arts. 101.º/101.º-B. */
 export interface CategoryBRetention {
@@ -413,8 +430,12 @@ export interface VatExemption {
   effectiveTo?: string;
   /** Previous year's turnover above which the exemption is lost. */
   turnoverThreshold: number;
-  /** Taxa normal charged once it is. Continente; the RA rates are lower. */
-  standardRate: number;
+  /**
+   * Taxa normal charged once it is, by region — CIVA art. 18.º n.ºs 1 and 3.
+   * The Regiões Autónomas set their own under the Lei das Finanças das Regiões
+   * Autónomas, so this is not one rate with exceptions but three rates.
+   */
+  standardRate: Record<Region, number>;
   source: string;
   verified: boolean;
 }
@@ -474,6 +495,16 @@ export interface SelfEmployedInput {
    */
   quarter?: readonly [number, number, number];
   activity: SelfEmployedActivity;
+  /**
+   * The worker has opted to count propriedade intelectual income towards
+   * rendimento relevante. Ignored for every other activity.
+   *
+   * Opting in *raises* the contribution, and does so on purpose: the income
+   * then counts towards the contributory career and the benefits that rest on
+   * it. A calculator that only ever showed the cheaper answer would be hiding
+   * a choice rather than reporting one.
+   */
+  includeIntellectualProperty?: boolean;
   retentionCategory: RetentionCategory;
   /**
    * Charging IVA, i.e. outside the art. 53.º exemption.
@@ -483,6 +514,12 @@ export interface SelfEmployedInput {
    * not hold, and it can also be waived by option.
    */
   chargesVat?: boolean;
+  /**
+   * Where the services are supplied, which selects the taxa normal of IVA.
+   * Defaults to `"continente"`. Affects nothing at all under the art. 53.º
+   * exemption — and even without it, only the invoice total.
+   */
+  region?: Region;
   /**
    * The worker asserts retention is dispensed under art. 101.º-B n.º 1 al. a),
    * i.e. they expect to earn less this year than the CIVA threshold.
@@ -564,6 +601,13 @@ export interface SelfEmployedResult {
     cappedByCeiling: boolean;
     /** True when the 20 € floor set the contribution instead. */
     atMinimum: boolean;
+    /**
+     * True when the income is outside rendimento relevante altogether —
+     * propriedade intelectual without the opt-in. Distinct from a zero
+     * contribution for any other reason, because the remedy is a choice the
+     * worker has rather than a threshold they are under.
+     */
+    excludedFromBase: boolean;
     /** The part removed by the 4 × IAS accumulation rule, or zero. */
     accumulationRelief: number;
     /** True when no contribution is owed yet — first activity. */

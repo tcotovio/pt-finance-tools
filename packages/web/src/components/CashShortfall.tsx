@@ -8,6 +8,11 @@
 // value. So the floor is gone, and what remains is the amount that actually
 // unlocks the loan, itemised.
 //
+// Charges the state waives are listed too, reading "isento" rather than simply
+// vanishing. A missing row explains nothing; a row that names the charge and
+// says what it would have cost shows the reader the support is real and worth
+// thousands — 6 500 EUR of IMT and selo on the worked case.
+//
 // The itemisation matters more than it looks. Evaluated at a nominal price the
 // charges come to a few hundred euros of notary; evaluated at the price the
 // loan actually buys, the deposit dominates — 27 000 EUR of the 29 000 in the
@@ -52,9 +57,21 @@ export function CashShortfall({ result, savings, input }: CashShortfallProps) {
       </h3>
       <dl className="lines">
         {target.lines.map((line) => (
-          <div className="line is-deduction" key={line.key}>
-            <dt>{line.label}</dt>
-            <dd className="num">{formatEuro(line.amount)}</dd>
+          <div
+            className={`line ${line.reliefLabel ? "is-relief" : "is-deduction"}`}
+            key={line.key}
+          >
+            <dt>
+              {line.label}
+              {line.saved !== undefined ? (
+                <span className="line-note">
+                  <span>Sem este apoio pagaria {formatEuro(line.saved)}.</span>
+                </span>
+              ) : null}
+            </dt>
+            <dd className={line.reliefLabel ? "relief-mark" : "num"}>
+              {line.reliefLabel ?? formatEuro(line.amount)}
+            </dd>
           </div>
         ))}
         <div className="line is-total">

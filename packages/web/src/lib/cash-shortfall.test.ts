@@ -180,3 +180,60 @@ describe("the target explains itself", () => {
     expect(target.lines[0].amount).toBeGreaterThan(target.savingsNeeded * 0.7);
   });
 });
+
+describe("state support is shown, not silently absorbed", () => {
+  it("marks an exempt IMT and says what it would have cost", () => {
+    // Without this the charge simply vanishes from the list, and the reader
+    // has no way to tell an exemption from an oversight.
+    const young = { ...base, youngFirstHome: true };
+    const target = buildCapacityTarget(young, maxPropertyPriceForDate(young), 0)!;
+    const imt = target.lines.find((l) => l.key === "imt-exempt");
+    expect(imt).toBeDefined();
+    expect(imt!.amount).toBe(0);
+    expect(imt!.reliefLabel).toBe("Isento");
+    expect(imt!.saved).toBeGreaterThan(1000);
+  });
+
+  it("credits the state guarantee with the deposit it removes", () => {
+    const target = buildCapacityTarget(
+      guaranteed,
+      maxPropertyPriceForDate(guaranteed),
+      0,
+    )!;
+    const deposit = target.lines.find((l) => l.key === "deposit-guaranteed");
+    expect(deposit).toBeDefined();
+    // Worth the deposit the LTV ceiling would otherwise demand — a published
+    // limit, so this is exact rather than an estimate.
+    expect(deposit!.saved).toBeCloseTo(target.price * 0.1, -2);
+  });
+
+  it("shows no relief rows when no support was claimed", () => {
+    const plain = { ...base, youngFirstHome: false, stateGuarantee: false };
+    const target = buildCapacityTarget(plain, maxPropertyPriceForDate(plain), 0)!;
+    expect(target.lines.every((l) => l.reliefLabel === undefined)).toBe(true);
+  });
+
+  it("keeps the reliefs out of the total", () => {
+    // They are zeroes: the charged lines alone must still add up.
+    const target = buildCapacityTarget(
+      guaranteed,
+      maxPropertyPriceForDate(guaranteed),
+      0,
+    )!;
+    const charged = target.lines
+      .filter((l) => l.reliefLabel === undefined)
+      .reduce((sum, l) => sum + l.amount, 0);
+    expect(charged).toBeCloseTo(target.savingsNeeded, -1);
+  });
+
+  it("puts the support beneath the charges, where the zeroes belong", () => {
+    const target = buildCapacityTarget(
+      guaranteed,
+      maxPropertyPriceForDate(guaranteed),
+      0,
+    )!;
+    const firstRelief = target.lines.findIndex((l) => l.reliefLabel);
+    const lastCharge = target.lines.map((l) => !l.reliefLabel).lastIndexOf(true);
+    expect(firstRelief).toBeGreaterThan(lastCharge);
+  });
+});

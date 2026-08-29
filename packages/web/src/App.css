@@ -1507,3 +1507,17 @@ main:focus {
 .line dd.num.is-negative {
   color: var(--negative);
 }
+
+/* A charge the state waives. It is not a number in the column — writing 0,00 €
+   would read as "free" rather than "exempt" — so it takes a word, in the
+   accent, with what it saved spelled out beside the label. */
+.line.is-relief dt {
+  color: var(--text-muted);
+}
+
+.relief-mark {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-align: right;
+}

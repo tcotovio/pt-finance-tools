@@ -9,7 +9,9 @@
 // filtering below is a judgement call with a wrong version that looks right.
 
 import {
+  getMacroprudentialParameters,
   maxPropertyPriceForDate,
+  purchaseCostsForDate,
   type MaxPriceInput,
   type MaxPriceResult,
 } from "@pt-finance-tools/engine";
@@ -18,6 +20,15 @@ export interface ShortfallLine {
   key: string;
   label: string;
   amount: number;
+  /**
+   * Set when the charge is zero BECAUSE the state stepped in, rather than
+   * absent. A missing row says nothing; a row reading "isento" explains why
+   * the total is lower than the reader expects — and `saved` says by how much,
+   * which for the young exemptions runs to thousands.
+   */
+  reliefLabel?: string;
+  /** What the relief is worth, when it can be computed exactly. */
+  saved?: number;
 }
 
 export interface Shortfall {
@@ -152,7 +163,41 @@ export function buildCapacityTarget(
   // charges at a nominal price — as the floor does — would show a few hundred
   // euros of notary and hide the deposit, which is the overwhelming part of
   // the answer and the only one most people can act on.
-  const lines = [
+  // What the same purchase would have cost without the young-buyer rules, so
+  // an exempt charge can say what it saved instead of merely vanishing.
+  let withoutRelief: ReturnType<typeof purchaseCostsForDate> | null = null;
+  if (input.youngFirstHome) {
+    try {
+      withoutRelief = purchaseCostsForDate({
+        price: at.maxPrice,
+        loanAmount: at.loan,
+        purpose: input.purpose,
+        region: input.region,
+        termYears: input.termYears,
+        annualRate: input.annualRate,
+        assessmentDate: input.assessmentDate,
+        youngFirstHome: false,
+      });
+    } catch {
+      withoutRelief = null;
+    }
+  }
+
+  // The guarantee's worth is exactly the deposit the LTV ceiling would
+  // otherwise demand — a published limit, not an estimate.
+  let depositWithoutGuarantee = 0;
+  if (input.stateGuarantee) {
+    try {
+      const ltv = getMacroprudentialParameters(input.assessmentDate).ltvLimit[
+        input.purpose
+      ];
+      depositWithoutGuarantee = at.maxPrice * (1 - ltv);
+    } catch {
+      depositWithoutGuarantee = 0;
+    }
+  }
+
+  const charged = [
     { key: "deposit", label: "Entrada", amount: at.deposit },
     { key: "imt", label: "IMT", amount: at.costs.imt.amount },
     {
@@ -174,6 +219,42 @@ export function buildCapacityTarget(
   ]
     .filter((line) => line.amount >= MIN_VISIBLE)
     .sort((a, b) => b.amount - a.amount);
+
+  // Reliefs come after the charges: they are zeroes, and a zero belongs below
+  // the numbers that actually add up to the total.
+  const reliefs: ShortfallLine[] = [];
+  if (at.costs.imt.amount < MIN_VISIBLE && (withoutRelief?.imt.amount ?? 0) >= MIN_VISIBLE) {
+    reliefs.push({
+      key: "imt-exempt",
+      label: "IMT",
+      amount: 0,
+      reliefLabel: "Isento",
+      saved: withoutRelief!.imt.amount,
+    });
+  }
+  if (
+    at.costs.stampDutyTransfer.amount < MIN_VISIBLE &&
+    (withoutRelief?.stampDutyTransfer.amount ?? 0) >= MIN_VISIBLE
+  ) {
+    reliefs.push({
+      key: "stamp-exempt",
+      label: "Imposto do selo da compra",
+      amount: 0,
+      reliefLabel: "Isento",
+      saved: withoutRelief!.stampDutyTransfer.amount,
+    });
+  }
+  if (at.deposit < MIN_VISIBLE && depositWithoutGuarantee >= MIN_VISIBLE) {
+    reliefs.push({
+      key: "deposit-guaranteed",
+      label: "Entrada",
+      amount: 0,
+      reliefLabel: "Coberta pela garantia do Estado",
+      saved: depositWithoutGuarantee,
+    });
+  }
+
+  const lines = [...charged, ...reliefs];
 
   return {
     loan,

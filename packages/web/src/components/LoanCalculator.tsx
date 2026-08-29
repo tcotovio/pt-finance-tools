@@ -223,6 +223,7 @@ export function LoanCalculator() {
           monthlyIncome={parseAmount(form.income) ?? 0}
           existingMonthlyDebt={parseAmount(form.existingDebt) ?? 0}
           savings={parseAmount(form.savings) ?? 0}
+          priceInput={priceInput}
         />
       )}
     </div>

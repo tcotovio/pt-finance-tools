@@ -8,7 +8,11 @@
 // Kept out of the component and tested, like the rest of `lib/`, because the
 // filtering below is a judgement call with a wrong version that looks right.
 
-import type { MaxPriceResult } from "@pt-finance-tools/engine";
+import {
+  maxPropertyPriceForDate,
+  type MaxPriceInput,
+  type MaxPriceResult,
+} from "@pt-finance-tools/engine";
 
 export interface ShortfallLine {
   key: string;
@@ -73,4 +77,71 @@ export function buildShortfall(
     exemptYoung:
       costs.imt.exempt || costs.stampDutyTransfer.youngDeduction > 0,
   };
+}
+
+export interface OutlookStep {
+  /** Total savings at this step, not the increment. */
+  savings: number;
+  /** The most expensive house reachable with them. */
+  price: number;
+  /** True once income, not cash, is what caps the answer. */
+  incomeCapped: boolean;
+}
+
+export interface ShortfallOutlook {
+  /** What the income alone supports, whatever the savings. */
+  incomeLoanCeiling: number;
+  /** A few rungs above the floor, so the reader can see what cash buys. */
+  steps: OutlookStep[];
+}
+
+/** Savings above the floor to sample, in euros. */
+const STEPS = [500, 1000, 2500];
+
+/**
+ * Rungs are rounded up to a round figure. The floor carries cents, so the raw
+ * sum reads as "com 1 251,00 EUR de parte" — a precision nobody has about
+ * their own savings, and one that makes an illustrative rung look computed.
+ */
+const ROUND_TO = 50;
+
+/**
+ * What the missing money would actually unlock.
+ *
+ * The obvious version of this — "here is what you could buy if you had the
+ * amount you are missing" — is a trap, and the numbers say so plainly: with
+ * exactly the shortfall covered the reachable price is a few hundred euros,
+ * because the floor pays for a NOMINAL purchase and every euro of real price
+ * wants more cash on top. Answering the obvious question would mean printing
+ * a number that is a rounding error beside what the income supports. So the rungs are the floor PLUS a few round amounts, and the ceiling
+ * the income already supports is reported alongside, because that is usually
+ * the reassuring part: the buyer is not short of borrowing power, only of the
+ * few thousand euros the deed and the taxes want in cash.
+ */
+export function buildOutlook(
+  input: MaxPriceInput,
+  result: MaxPriceResult,
+): ShortfallOutlook {
+  const floor = result.cashNeeded;
+  const incomeLoanCeiling = result.loanResult.dsti.maxLoan;
+
+  const steps: OutlookStep[] = [];
+  for (const extra of STEPS) {
+    const savings = Math.ceil((floor + extra) / ROUND_TO) * ROUND_TO;
+    try {
+      const at = maxPropertyPriceForDate({ ...input, savings });
+      if (at.maxPrice > 0) {
+        steps.push({
+          savings,
+          price: at.maxPrice,
+          // Within a euro of the income ceiling: cash has stopped binding.
+          incomeCapped: at.loan >= incomeLoanCeiling - 1,
+        });
+      }
+    } catch {
+      // A savings level the parameters cannot serve is simply not shown.
+    }
+  }
+
+  return { incomeLoanCeiling, steps };
 }

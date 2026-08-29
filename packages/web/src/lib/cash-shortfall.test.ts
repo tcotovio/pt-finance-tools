@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { maxPropertyPriceForDate } from "@pt-finance-tools/engine";
 import type { MaxPriceInput } from "@pt-finance-tools/engine";
-import { buildShortfall } from "./cash-shortfall.js";
+import { buildOutlook, buildShortfall } from "./cash-shortfall.js";
 
 const base: MaxPriceInput = {
   borrower: { monthlyIncome: 2000, age: 30 },
@@ -75,5 +75,59 @@ describe("buildShortfall", () => {
   it("reports no young exemption when the buyer did not claim it", () => {
     const plain = maxPropertyPriceForDate({ ...base, stateGuarantee: true });
     expect(buildShortfall(plain, 0).exemptYoung).toBe(false);
+  });
+});
+
+describe("buildOutlook", () => {
+  const result = maxPropertyPriceForDate(guaranteed);
+
+  it("reports the loan the income alone supports", () => {
+    // The reassuring half: the buyer is not short of borrowing power. It is
+    // independent of savings, so it holds even when nothing is affordable.
+    const outlook = buildOutlook(guaranteed, result);
+    expect(outlook.incomeLoanCeiling).toBeGreaterThan(100_000);
+  });
+
+  it("starts the rungs ABOVE the shortfall, never at it", () => {
+    // The trap this exists to avoid: covering exactly the shortfall buys
+    // essentially nothing. The floor pays for a NOMINAL purchase, and every
+    // euro of real price wants more cash on top — so the reachable price
+    // there is a rounding error beside what the income could support, and
+    // answering "what would the missing money buy?" with it would be a
+    // non-answer.
+    const outlook = buildOutlook(guaranteed, result);
+    const atExactly = maxPropertyPriceForDate({
+      ...guaranteed,
+      savings: Math.ceil(result.cashNeeded),
+    });
+    expect(atExactly.maxPrice).toBeLessThan(outlook.incomeLoanCeiling / 100);
+    for (const step of outlook.steps) {
+      expect(step.savings).toBeGreaterThan(result.cashNeeded);
+      expect(step.price).toBeGreaterThan(0);
+    }
+  });
+
+  it("rounds the rungs to figures a person would recognise", () => {
+    for (const step of buildOutlook(guaranteed, result).steps) {
+      expect(step.savings % 50).toBe(0);
+    }
+  });
+
+  it("climbs: more savings, more house", () => {
+    const steps = buildOutlook(guaranteed, result).steps;
+    for (let i = 1; i < steps.length; i++) {
+      expect(steps[i].savings).toBeGreaterThan(steps[i - 1].savings);
+      expect(steps[i].price).toBeGreaterThanOrEqual(steps[i - 1].price);
+    }
+  });
+
+  it("says when cash stops being the constraint", () => {
+    // Past that rung more savings buy almost nothing, and the honest thing is
+    // to stop implying they would.
+    const steps = buildOutlook(guaranteed, result).steps;
+    const capped = steps.filter((s) => s.incomeCapped);
+    expect(capped.length).toBeGreaterThan(0);
+    expect(steps[steps.length - 1].incomeCapped).toBe(true);
+    expect(steps[0].incomeCapped).toBe(false);
   });
 });

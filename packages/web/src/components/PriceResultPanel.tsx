@@ -8,7 +8,11 @@
 // often the one that actually binds and which the forward direction had no
 // way to express.
 
-import type { EuriborSnapshot, MaxPriceResult } from "@pt-finance-tools/engine";
+import type {
+  EuriborSnapshot,
+  MaxPriceInput,
+  MaxPriceResult,
+} from "@pt-finance-tools/engine";
 import type { MaxPriceOutcome } from "../lib/compute.js";
 import { buildPriceSummary } from "../lib/loan-result.js";
 import { formatEuro } from "../lib/format.js";
@@ -36,6 +40,8 @@ interface PriceResultPanelProps {
   existingMonthlyDebt: number;
   /** What the buyer has of their own — needed to quantify a shortfall. */
   savings: number;
+  /** The engine input, resampled to show what more savings would buy. */
+  priceInput: MaxPriceInput | null;
 }
 
 export function PriceResultPanel({
@@ -45,6 +51,7 @@ export function PriceResultPanel({
   monthlyIncome,
   existingMonthlyDebt,
   savings,
+  priceInput,
 }: PriceResultPanelProps) {
   return (
     <section className="panel result" aria-live="polite">
@@ -62,6 +69,7 @@ export function PriceResultPanel({
           monthlyIncome={monthlyIncome}
           existingMonthlyDebt={existingMonthlyDebt}
           savings={savings}
+          priceInput={priceInput}
         />
       ) : (
         <p className="result-error" role="alert">
@@ -79,9 +87,11 @@ function PriceResultBody({
   monthlyIncome,
   existingMonthlyDebt,
   savings,
+  priceInput,
 }: {
   result: MaxPriceResult;
   savings: number;
+  priceInput: MaxPriceInput | null;
   assessmentDate: string;
   euribor: EuriborSnapshot;
   monthlyIncome: number;
@@ -95,7 +105,7 @@ function PriceResultBody({
     // the panel says how far short they are and what the money is for.
     return (
       <>
-        <CashShortfall result={result} savings={savings} />
+        <CashShortfall result={result} savings={savings} input={priceInput} />
         <LoanNotices summary={summary} />
       </>
     );

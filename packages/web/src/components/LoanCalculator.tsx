@@ -222,6 +222,7 @@ export function LoanCalculator() {
           euribor={euribor.snapshot}
           monthlyIncome={parseAmount(form.income) ?? 0}
           existingMonthlyDebt={parseAmount(form.existingDebt) ?? 0}
+          savings={parseAmount(form.savings) ?? 0}
         />
       )}
     </div>

@@ -13,6 +13,7 @@ import type { MaxPriceOutcome } from "../lib/compute.js";
 import { buildPriceSummary } from "../lib/loan-result.js";
 import { formatEuro } from "../lib/format.js";
 import { AmortizationSplit } from "./AmortizationSplit.js";
+import { CashShortfall } from "./CashShortfall.js";
 import { MarketComparison } from "./MarketComparison.js";
 import { SourceList } from "./SourceList.js";
 import { loanSources } from "../lib/sources.js";
@@ -33,6 +34,8 @@ interface PriceResultPanelProps {
   euribor: EuriborSnapshot;
   monthlyIncome: number;
   existingMonthlyDebt: number;
+  /** What the buyer has of their own — needed to quantify a shortfall. */
+  savings: number;
 }
 
 export function PriceResultPanel({
@@ -41,6 +44,7 @@ export function PriceResultPanel({
   euribor,
   monthlyIncome,
   existingMonthlyDebt,
+  savings,
 }: PriceResultPanelProps) {
   return (
     <section className="panel result" aria-live="polite">
@@ -57,6 +61,7 @@ export function PriceResultPanel({
           euribor={euribor}
           monthlyIncome={monthlyIncome}
           existingMonthlyDebt={existingMonthlyDebt}
+          savings={savings}
         />
       ) : (
         <p className="result-error" role="alert">
@@ -73,8 +78,10 @@ function PriceResultBody({
   euribor,
   monthlyIncome,
   existingMonthlyDebt,
+  savings,
 }: {
   result: MaxPriceResult;
+  savings: number;
   assessmentDate: string;
   euribor: EuriborSnapshot;
   monthlyIncome: number;
@@ -83,12 +90,12 @@ function PriceResultBody({
   const summary = buildPriceSummary(result, monthlyIncome, existingMonthlyDebt);
 
   if (summary.maxPrice <= 0) {
+    // "Not possible" on its own tells the reader nothing they can act on. The
+    // engine already knows the cash the purchase needs and what they have, so
+    // the panel says how far short they are and what the money is for.
     return (
       <>
-        <p className="result-empty">
-          Com este valor de parte não chega para os impostos e a escritura, que
-          se pagam mesmo quando o banco financia tudo o resto.
-        </p>
+        <CashShortfall result={result} savings={savings} />
         <LoanNotices summary={summary} />
       </>
     );

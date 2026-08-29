@@ -819,26 +819,49 @@
   margin: 0 0 18px;
 }
 
+/* Mobile-first: the row WRAPS. Four tools need about 620px on one line, which
+   no phone has — as an inline-flex pill it simply ran off the side of the
+   screen and dragged the page into a horizontal scroll. Wrapped, the tabs
+   share the width two per row; the pill radius is dropped because a
+   multi-row capsule reads as a mistake rather than a control. */
 .tool-tabs {
-  display: inline-flex;
+  display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   padding: 4px;
   background: var(--surface-sunken);
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius);
 }
 
 .tool-tab {
   appearance: none;
   border: 0;
   border-radius: 999px;
-  padding: 8px 18px;
+  /* Grow to share the row, so wrapped tabs line up instead of ragging. */
+  flex: 1 1 auto;
+  text-align: center;
+  padding: 8px 14px;
   font: inherit;
   font-size: 0.9375rem;
   font-weight: 600;
   color: var(--text-muted);
   background: transparent;
   cursor: pointer;
+}
+
+/* Wide enough for one row: back to the compact capsule it was designed as. */
+@media (min-width: 900px) {
+  .tool-tabs {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    border-radius: 999px;
+  }
+
+  .tool-tab {
+    flex: 0 0 auto;
+    padding: 8px 18px;
+  }
 }
 
 .tool-tab:hover {

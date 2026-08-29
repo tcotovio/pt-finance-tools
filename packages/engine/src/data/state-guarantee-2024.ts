@@ -51,14 +51,25 @@ export const STATE_GUARANTEE_2024: StateGuarantee = {
     "27 de setembro (garantia pessoal do Estado na aquisição de primeira " +
     "habitação própria e permanente por jovens)",
   /**
-   * Not verifiable by this project's two axes, and structurally so.
+   * `false` on Axis A alone, and it is the only axis this dataset can ever
+   * have. Axis B cannot exist: the quantity modelled is a departure from the
+   * Recomendação, so there is no independent implementation of "the rule" to
+   * reproduce — only banks' individual credit decisions, which are not a
+   * source. So when the Axis A fixture lands this becomes `"not-applicable"`,
+   * NOT `true`: there will be nothing outstanding, and nothing further to do.
    *
-   * Axis A would diff a transcription against the instrument, which is worth
-   * doing and is not yet done. Axis B cannot exist at all: the quantity being
-   * modelled is a departure from the Recomendação, so there is no independent
-   * implementation of "the rule" to reproduce — only banks' individual credit
-   * decisions, which are not a source. A result that leans on this dataset is
-   * therefore always shown as unverified, which is the correct reading.
+   * Until then a result leaning on this dataset shows as unverified, which is
+   * the correct reading — the numbers below have not been diffed against the
+   * instrument, only read from it by hand.
+   *
+   * AMENDMENT CHECKED: Decreto-Lei n.º 24/2025, de 19 de março, amends DL
+   * 44/2024 to extend the guarantee to sociedades financeiras alongside credit
+   * institutions. It widens who may lend and touches none of the parameters
+   * here — age, transaction ceiling, share, term. Recorded because the search
+   * that finds this regime surfaces it prominently, and the next reader should
+   * not have to re-establish that it is irrelevant to these fields. Noted from
+   * the summary of the instrument, not from a diff of its text: it is part of
+   * what the Axis A fixture should cover, not a substitute for it.
    */
   verified: false,
 };

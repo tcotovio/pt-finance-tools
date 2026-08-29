@@ -147,7 +147,10 @@ export type {
   SelfEmployedContributions,
   SelfEmployedInput,
   SelfEmployedResult,
+  Verification,
 } from "./types.js";
+
+export { allCrossChecked, isOutstanding } from "./verification.js";
 
 export {
   selfEmployedNet,

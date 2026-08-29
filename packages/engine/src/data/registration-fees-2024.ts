@@ -56,11 +56,19 @@ export const REGISTRATION_FEES_2024: RegistrationFees = {
     "até aos 35 anos nos termos do Decreto-Lei n.º 48-D/2024, de 31 de julho " +
     "(https://justica.gov.pt/Servicos/Casa-Pronta)",
   /**
+   * Not applicable rather than `false`, and the change is not cosmetic.
+   *
    * A single published tariff has no second implementation to be checked
-   * against, so Axis B does not exist here and this will not become `true`.
-   * Said plainly rather than left as an unexplained `false`: the number is a
-   * price list, not a computation, and the honest claim is "this is what the
-   * service says it charges", which the citation already makes.
+   * against: the number is a price list, not a computation, and the honest
+   * claim is "this is what the service says it charges", which the citation
+   * already makes. Agreement with a price list is not corroboration of it.
+   *
+   * It was `false` for years, which said "we have not got round to this" about
+   * something nobody could ever get round to — and because `purchaseCosts`
+   * ANDed it into the answer's flag, it held every costed result at
+   * "Dados por verificar" permanently, no matter how thoroughly the IMT and
+   * selo datasets were checked. That made the badge uninformative on the one
+   * tool where the stakes are highest.
    */
-  verified: false,
+  verified: "not-applicable",
 };

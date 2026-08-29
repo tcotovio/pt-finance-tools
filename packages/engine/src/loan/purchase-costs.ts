@@ -43,6 +43,7 @@ import {
   imtTerritory,
 } from "../data/index.js";
 import { amortize } from "./amortization.js";
+import { allCrossChecked } from "../verification.js";
 
 /**
  * Round a charge to the cent, upward.
@@ -272,7 +273,9 @@ export function purchaseCosts(
         bankFees,
     ),
     source,
-    verified: tables.verified && stamp.verified && fees.verified,
+    // Not a plain `&&` chain: the Casa Pronta tariff carries "not-applicable",
+    // and ANDing that in held every costed answer at unverified forever.
+    verified: allCrossChecked([tables.verified, stamp.verified, fees.verified]),
   };
 }
 

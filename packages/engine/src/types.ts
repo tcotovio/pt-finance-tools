@@ -1019,7 +1019,8 @@ export interface RegistrationFees {
     multipleActs: number;
   };
   source: string;
-  verified: boolean;
+  /** A published tariff, so {@link Verification} has no second axis to offer. */
+  verified: Verification;
 }
 
 /**
@@ -1044,8 +1045,35 @@ export interface StateGuarantee {
   maxLtv: number;
   guaranteeYears: number;
   source: string;
-  verified: boolean;
+  /**
+   * `false` on Axis A alone: the transcription has not been diffed against the
+   * instrument. Axis B is impossible here — see the dataset — so once Axis A
+   * lands this becomes `"not-applicable"`, not `true`.
+   */
+  verified: Verification;
 }
+
+/**
+ * A dataset's cross-check status.
+ *
+ * THREE states, not two, because `false` was doing two incompatible jobs and
+ * the difference matters to the reader:
+ *
+ *   * `true`  — transcribed from the official source AND confirmed against an
+ *     independent implementation. Both axes, per PLAN.md §6.
+ *   * `false` — not yet. A real caveat: an Axis B source exists and the work
+ *     has not been done, so the number could still be wrong.
+ *   * `"not-applicable"` — there is nothing a second implementation could
+ *     check. A published price list is not a computation; agreement with it is
+ *     not corroboration. Reporting these as `false` implies doubt that no
+ *     amount of work could ever remove, and — worse — permanently poisons any
+ *     aggregate they feed, which is exactly what happened to the purchase
+ *     costs badge.
+ *
+ * Only `false` is a caveat. `"not-applicable"` is excluded from aggregates
+ * rather than counted as a pass, so it can neither raise nor lower a claim.
+ */
+export type Verification = boolean | "not-applicable";
 
 /** Where a number in a result came from, so the UI can list it. */
 export interface SourceRef {
@@ -1053,8 +1081,8 @@ export interface SourceRef {
   key: string;
   /** The dataset's own citation string, URL included. */
   citation: string;
-  /** Whether that dataset has passed both cross-check axes. */
-  verified: boolean;
+  /** Whether that dataset has passed every cross-check axis that applies. */
+  verified: Verification;
 }
 
 /**

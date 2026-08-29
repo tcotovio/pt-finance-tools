@@ -15,12 +15,14 @@ import {
   WAGE_MARKET,
   getInterestRateShock,
   getMacroprudentialParameters,
+  getStateGuarantee,
   MORTGAGE_MARKET,
   type ConsumerLoanResult,
   type EuriborSnapshot,
   type MaxLoanResult,
   type PurchaseCosts,
   type SelfEmployedResult,
+  type Verification,
   type WageResult,
 } from "@pt-finance-tools/engine";
 import { irsJovemRegimeFor, mealLimitsFor } from "./reference.js";
@@ -37,9 +39,24 @@ export interface SourceEntry {
   /**
    * Whether the dataset has been independently cross-checked. Absent for
    * sources where the notion does not apply — a live market statistic is not
-   * "verified", it is just quoted.
+   * "verified", it is just quoted, and neither is a published price list.
+   *
+   * The engine says the same thing with `"not-applicable"`; {@link crossCheck}
+   * folds that into `undefined` so this layer has one way to mean it.
    */
   verified?: boolean;
+}
+
+/**
+ * An engine cross-check status as this layer wants it.
+ *
+ * `"not-applicable"` and "not a checkable kind of source at all" are the same
+ * thing to a reader — in both cases there is no outstanding work and no doubt
+ * to report — so they collapse to `undefined` here rather than being carried
+ * as a third case every call site would have to remember to handle.
+ */
+export function crossCheck(status: Verification): boolean | undefined {
+  return status === "not-applicable" ? undefined : status;
 }
 
 /**
@@ -165,15 +182,18 @@ export function loanSources(
       label: "Garantia pessoal do Estado",
       usedFor:
         "O financiamento até 100 % do imóvel, acima dos 90 % recomendados pelo Banco de Portugal.",
-      verified: false,
+      // Read from the dataset rather than hardcoded, so that when its Axis A
+      // lands the badge follows without anyone remembering this line exists.
+      verified: crossCheck(getStateGuarantee(assessmentDate)?.verified ?? false),
       ...splitCitation(result.sources.guarantee),
     });
   }
 
   // The cost datasets, only once there is a transaction to cost. Each keeps
-  // its own `verified` flag: none of the three has an independent
-  // implementation to check against yet, so a costed answer is honestly
-  // reported as unverified rather than borrowing the loan side's badge.
+  // its own status rather than borrowing the loan side's badge. Note the three
+  // differ in kind: IMT and the selo await an Axis B that exists, while the
+  // Casa Pronta tariff reports "not-applicable" — a price list has no second
+  // implementation to be checked against, so it raises no caveat here.
   if (costs) {
     const labels: Record<string, { label: string; usedFor: string }> = {
       imt: {
@@ -198,7 +218,7 @@ export function loanSources(
         key: `cost-${ref.key}`,
         label: meta.label,
         usedFor: meta.usedFor,
-        verified: ref.verified,
+        verified: crossCheck(ref.verified),
         ...splitCitation(ref.citation),
       });
     }
@@ -303,7 +323,9 @@ export function selfEmployedSources(result: SelfEmployedResult): SourceEntry[] {
           either value alone.
         */
         verified:
-          ref.key === "civa-53" && result.vat.exempt ? undefined : ref.verified,
+          ref.key === "civa-53" && result.vat.exempt
+            ? undefined
+            : crossCheck(ref.verified),
         ...splitCitation(ref.citation),
       },
     ];

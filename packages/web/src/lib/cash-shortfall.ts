@@ -79,69 +79,73 @@ export function buildShortfall(
   };
 }
 
-export interface OutlookStep {
-  /** Total savings at this step, not the increment. */
-  savings: number;
-  /** The most expensive house reachable with them. */
+export interface CapacityTarget {
+  /** The loan the income supports, whatever the savings. */
+  loan: number;
+  /** The price that loan reaches at this savings level. */
   price: number;
-  /** True once income, not cash, is what caps the answer. */
-  incomeCapped: boolean;
+  /** Savings needed before the cash stops being what caps the loan. */
+  savingsNeeded: number;
+  /** Savings needed, less what the buyer already has. */
+  stillMissing: number;
 }
 
-export interface ShortfallOutlook {
-  /** What the income alone supports, whatever the savings. */
-  incomeLoanCeiling: number;
-  /** A few rungs above the floor, so the reader can see what cash buys. */
-  steps: OutlookStep[];
-}
-
-/** Savings above the floor to sample, in euros. */
-const STEPS = [500, 1000, 2500];
+/** Bounded so a pathological input cannot spin; 50 halvings is far past cents. */
+const SEARCH_ITERATIONS = 50;
 
 /**
- * Rungs are rounded up to a round figure. The floor carries cents, so the raw
- * sum reads as "com 1 251,00 EUR de parte" — a precision nobody has about
- * their own savings, and one that makes an illustrative rung look computed.
- */
-const ROUND_TO = 50;
-
-/**
- * What the missing money would actually unlock.
+ * How much cash it takes to borrow everything the income allows.
  *
- * The obvious version of this — "here is what you could buy if you had the
- * amount you are missing" — is a trap, and the numbers say so plainly: with
- * exactly the shortfall covered the reachable price is a few hundred euros,
- * because the floor pays for a NOMINAL purchase and every euro of real price
- * wants more cash on top. Answering the obvious question would mean printing
- * a number that is a rounding error beside what the income supports. So the rungs are the floor PLUS a few round amounts, and the ceiling
- * the income already supports is reported alongside, because that is usually
- * the reassuring part: the buyer is not short of borrowing power, only of the
- * few thousand euros the deed and the taxes want in cash.
+ * This is the question behind the question. A buyer told only that they are
+ * short by the cost of the deed reads it as "find 700 € and I can borrow the
+ * maximum" — which is wrong by an order of magnitude, because reaching that
+ * maximum also means covering the deposit and the taxes on a real purchase.
+ * Without the state guarantee the two numbers differ by a factor of ninety.
+ *
+ * Found by bisection rather than algebra: the cash a price demands moves in
+ * notches — IMT brackets, the young ceiling — so there is no closed form to
+ * invert, and the solver is the only thing that knows where the notches fall.
  */
-export function buildOutlook(
+export function buildCapacityTarget(
   input: MaxPriceInput,
   result: MaxPriceResult,
-): ShortfallOutlook {
-  const floor = result.cashNeeded;
-  const incomeLoanCeiling = result.loanResult.dsti.maxLoan;
+  savings: number,
+): CapacityTarget | null {
+  const loan = result.loanResult.dsti.maxLoan;
+  if (!(loan > 0)) return null;
 
-  const steps: OutlookStep[] = [];
-  for (const extra of STEPS) {
-    const savings = Math.ceil((floor + extra) / ROUND_TO) * ROUND_TO;
+  const reaches = (candidate: number) => {
     try {
-      const at = maxPropertyPriceForDate({ ...input, savings });
-      if (at.maxPrice > 0) {
-        steps.push({
-          savings,
-          price: at.maxPrice,
-          // Within a euro of the income ceiling: cash has stopped binding.
-          incomeCapped: at.loan >= incomeLoanCeiling - 1,
-        });
-      }
+      return maxPropertyPriceForDate({ ...input, savings: candidate }).loan >= loan - 1;
     } catch {
-      // A savings level the parameters cannot serve is simply not shown.
+      return false;
     }
+  };
+
+  // The deposit can never exceed the price, so the loan itself bounds the
+  // search generously; a little headroom covers the taxes on top.
+  let low = 0;
+  let high = loan * 1.5 + result.cashNeeded + 1000;
+  if (!reaches(high)) return null;
+
+  for (let i = 0; i < SEARCH_ITERATIONS; i++) {
+    const mid = (low + high) / 2;
+    if (reaches(mid)) high = mid;
+    else low = mid;
   }
 
-  return { incomeLoanCeiling, steps };
+  const savingsNeeded = Math.ceil(high);
+  let price = 0;
+  try {
+    price = maxPropertyPriceForDate({ ...input, savings: savingsNeeded }).maxPrice;
+  } catch {
+    price = 0;
+  }
+
+  return {
+    loan,
+    price,
+    savingsNeeded,
+    stillMissing: Math.max(0, savingsNeeded - savings),
+  };
 }

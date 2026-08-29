@@ -1501,3 +1501,9 @@ main:focus {
   flex-direction: column;
   gap: 4px;
 }
+
+/* A shortfall on a line, same reasoning as the headline: it is what the
+   reader lacks, not what they have. */
+.line dd.num.is-negative {
+  color: var(--negative);
+}

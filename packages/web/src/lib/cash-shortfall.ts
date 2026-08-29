@@ -88,6 +88,10 @@ export interface CapacityTarget {
   savingsNeeded: number;
   /** Savings needed, less what the buyer already has. */
   stillMissing: number;
+  /** What that cash is made of, largest first — the deposit usually dominates. */
+  lines: ShortfallLine[];
+  /** The cash as a share of the price, so any other house can be scaled to. */
+  shareOfPrice: number;
 }
 
 /** Bounded so a pathological input cannot spin; 50 halvings is far past cents. */
@@ -135,17 +139,48 @@ export function buildCapacityTarget(
   }
 
   const savingsNeeded = Math.ceil(high);
-  let price = 0;
+
+  let at: MaxPriceResult | null = null;
   try {
-    price = maxPropertyPriceForDate({ ...input, savings: savingsNeeded }).maxPrice;
+    at = maxPropertyPriceForDate({ ...input, savings: savingsNeeded });
   } catch {
-    price = 0;
+    at = null;
   }
+  if (!at) return null;
+
+  // What the cash is actually made of, AT THE PRICE IT BUYS. Evaluating the
+  // charges at a nominal price — as the floor does — would show a few hundred
+  // euros of notary and hide the deposit, which is the overwhelming part of
+  // the answer and the only one most people can act on.
+  const lines = [
+    { key: "deposit", label: "Entrada", amount: at.deposit },
+    { key: "imt", label: "IMT", amount: at.costs.imt.amount },
+    {
+      key: "stamp-transfer",
+      label: "Imposto do selo da compra",
+      amount: at.costs.stampDutyTransfer.amount,
+    },
+    {
+      key: "stamp-credit",
+      label: "Imposto do selo do crédito",
+      amount: at.costs.stampDutyCredit.amount,
+    },
+    {
+      key: "registration",
+      label: "Escritura e registo",
+      amount: at.costs.registration.amount,
+    },
+    { key: "bank", label: "Comissões do banco", amount: at.costs.bankFees },
+  ]
+    .filter((line) => line.amount >= MIN_VISIBLE)
+    .sort((a, b) => b.amount - a.amount);
 
   return {
     loan,
-    price,
+    price: at.maxPrice,
     savingsNeeded,
     stillMissing: Math.max(0, savingsNeeded - savings),
+    lines,
+    shareOfPrice: at.maxPrice > 0 ? at.cashNeeded / at.maxPrice : 0,
   };
 }

@@ -1,22 +1,22 @@
 // When the savings do not reach even the fixed costs of buying.
 //
-// What the reader wants here is not "no". It is the two numbers they came for:
-// how much they could borrow, and how much cash that takes. So the headline is
-// the loan their income supports, and the deficit sits under it — the answer
-// first, the obstacle second.
+// ONE number, broken down. Earlier versions of this panel showed two — the
+// cash needed to borrow the maximum, and the bare floor that buying anything
+// at all costs — and readers reasonably asked which one they had to find. Both
+// were right and they answer different questions, which is precisely the
+// problem: nobody arrives wanting to know the cost of a house of symbolic
+// value. So the floor is gone, and what remains is the amount that actually
+// unlocks the loan, itemised.
 //
-// AN EARLIER VERSION OF THIS PANEL MISLED, and the fix is the point of the
-// layout. It showed the borrowing ceiling beside the cost of the deed, which
-// invited the reading "find 700 € and I can borrow 190 000 €". That is wrong
-// by an order of magnitude: the 700 € buys a nominal house, while borrowing
-// the maximum also means covering the deposit and the taxes on a real one —
-// without the state guarantee, some 22 000 € rather than 700 €. The two
-// figures are now explicitly the target and the floor, each labelled with what
-// it actually gets you.
+// The itemisation matters more than it looks. Evaluated at a nominal price the
+// charges come to a few hundred euros of notary; evaluated at the price the
+// loan actually buys, the deposit dominates — 27 000 EUR of the 29 000 in the
+// worked case. Showing the first would hide the only part most people can act
+// on.
 
 import type { MaxPriceInput, MaxPriceResult } from "@pt-finance-tools/engine";
 import { buildCapacityTarget, buildShortfall } from "../lib/cash-shortfall.js";
-import { formatEuro } from "../lib/format.js";
+import { formatEuro, formatEuroCompact, formatPercent } from "../lib/format.js";
 
 interface CashShortfallProps {
   result: MaxPriceResult;
@@ -27,68 +27,86 @@ interface CashShortfallProps {
 }
 
 export function CashShortfall({ result, savings, input }: CashShortfallProps) {
-  const { needed, missing, lines, exemptYoung } = buildShortfall(result, savings);
   const target = input ? buildCapacityTarget(input, result, savings) : null;
+
+  // No target means the income supports no loan at all — usually because
+  // existing commitments already exhaust the 45 % ceiling. Then the cash is
+  // not the story, and the floor is all there is to say.
+  if (!target) return <FloorOnly result={result} savings={savings} />;
 
   return (
     <>
-      {target ? (
-        <div className="result-headline">
-          <p className="result-label">Pelo seu rendimento, poderia pedir até</p>
-          <p className="result-net num">{formatEuro(target.loan)}</p>
-          <p className="result-sub">
-            para uma casa de{" "}
-            <span className="num">{formatEuro(target.price)}</span> — mas isso
-            exige <span className="num">{formatEuro(target.savingsNeeded)}</span>{" "}
-            de parte, para a entrada, os impostos e a escritura
-          </p>
-        </div>
-      ) : (
-        <div className="result-headline">
-          <p className="result-label">Faltam-lhe</p>
-          <p className="result-net is-negative num">{formatEuro(missing)}</p>
-          <p className="result-sub">
-            para cobrir o mínimo que qualquer compra exige em dinheiro
-          </p>
-        </div>
-      )}
+      <div className="result-headline">
+        <p className="result-label">Pelo seu rendimento, poderia pedir até</p>
+        <p className="result-net num">{formatEuro(target.loan)}</p>
+        <p className="result-sub">
+          para uma casa de{" "}
+          <span className="num">{formatEuro(target.price)}</span> — mas isso
+          exige <span className="num">{formatEuro(target.savingsNeeded)}</span>{" "}
+          seus, que o crédito não cobre
+        </p>
+      </div>
 
-      {target ? (
-        <dl className="lines">
-          <div className="line is-earning">
-            <dt>O que tem de parte</dt>
-            <dd className="num">{formatEuro(savings)}</dd>
+      <h3 className="group-title">
+        De onde vêm os {formatEuro(target.savingsNeeded)}
+      </h3>
+      <dl className="lines">
+        {target.lines.map((line) => (
+          <div className="line is-deduction" key={line.key}>
+            <dt>{line.label}</dt>
+            <dd className="num">{formatEuro(line.amount)}</dd>
           </div>
-          <div className="line is-deduction">
-            <dt>
-              Necessário para pedir esse valor
-              <span className="line-note">
-                <span>
-                  A entrada mais os impostos e as despesas do ato, no preço que
-                  esse empréstimo alcança.
-                </span>
-              </span>
-            </dt>
-            <dd className="num">{formatEuro(target.savingsNeeded)}</dd>
-          </div>
-          <div className="line is-total">
-            <dt>Falta-lhe</dt>
-            <dd className="num is-negative">
-              {formatEuro(target.stillMissing)}
-            </dd>
-          </div>
-        </dl>
-      ) : null}
+        ))}
+        <div className="line is-total">
+          <dt>Precisa de ter</dt>
+          <dd className="num">{formatEuro(target.savingsNeeded)}</dd>
+        </div>
+        <div className="line is-earning">
+          <dt>O que tem de parte</dt>
+          <dd className="num">{formatEuro(savings)}</dd>
+        </div>
+        <div className="line is-total">
+          <dt>Falta-lhe</dt>
+          <dd className="num is-negative">{formatEuro(target.stillMissing)}</dd>
+        </div>
+      </dl>
 
-      <h3 className="group-title">O mínimo para comprar seja o que for</h3>
       <p className="chart-note">
-        Mesmo que o banco financiasse a totalidade do preço, há custos que se
-        pagam em dinheiro no dia da escritura e que nenhum crédito cobre. Só
-        para os cobrir, numa casa de valor simbólico, precisaria de{" "}
-        <span className="num">{formatEuro(needed)}</span> — e ainda não seria
-        uma casa a sério, porque cada euro de preço acrescenta imposto e
-        entrada por cima.
+        Isto é para a casa mais cara que o seu rendimento alcança. Para uma casa
+        mais barata precisa de menos: conte com cerca de{" "}
+        <strong>{formatPercent(target.shareOfPrice)} do preço</strong> em
+        dinheiro seu — por cada {formatEuroCompact(100_000)} de casa, à volta
+        de{" "}
+        <span className="num">
+          {formatEuroCompact(
+            Math.round((target.shareOfPrice * 100_000) / 100) * 100,
+          )}
+        </span>
+        .
       </p>
+    </>
+  );
+}
+
+/** The degenerate case: no borrowing capacity, so only the floor can be said. */
+function FloorOnly({
+  result,
+  savings,
+}: {
+  result: MaxPriceResult;
+  savings: number;
+}) {
+  const { needed, missing, lines } = buildShortfall(result, savings);
+
+  return (
+    <>
+      <div className="result-headline">
+        <p className="result-label">Faltam-lhe</p>
+        <p className="result-net is-negative num">{formatEuro(missing)}</p>
+        <p className="result-sub">
+          para cobrir o mínimo que qualquer compra exige em dinheiro
+        </p>
+      </div>
 
       <dl className="lines">
         {lines.map((line) => (
@@ -103,12 +121,10 @@ export function CashShortfall({ result, savings, input }: CashShortfallProps) {
         </div>
       </dl>
 
-      {exemptYoung ? (
-        <p className="chart-note">
-          O IMT e o imposto do selo da compra já estão isentos pela condição de
-          primeira casa até aos 35 anos.
-        </p>
-      ) : null}
+      <p className="chart-note">
+        Com os encargos que já tem, a taxa de esforço não deixa espaço para mais
+        crédito — por isso o valor acima é só o custo do ato, não uma entrada.
+      </p>
     </>
   );
 }

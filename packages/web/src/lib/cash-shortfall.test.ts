@@ -139,3 +139,44 @@ describe("buildCapacityTarget", () => {
     expect(buildCapacityTarget(broke, result0, 0)).toBeNull();
   });
 });
+
+describe("the target explains itself", () => {
+  const result = maxPropertyPriceForDate(guaranteed);
+
+  it("itemises the cash, deposit included", () => {
+    // Evaluated at a nominal price the charges are a few hundred euros of
+    // notary; at the price the loan actually buys, the deposit dominates. The
+    // deposit is also the only part most people can act on.
+    const target = buildCapacityTarget(guaranteed, result, 0)!;
+    expect(target.lines.length).toBeGreaterThan(0);
+    const total = target.lines.reduce((sum, l) => sum + l.amount, 0);
+    expect(total).toBeCloseTo(target.savingsNeeded, -1);
+  });
+
+  it("orders the itemisation largest first", () => {
+    const amounts = buildCapacityTarget(guaranteed, result, 0)!.lines.map(
+      (l) => l.amount,
+    );
+    expect([...amounts].sort((a, b) => b - a)).toEqual(amounts);
+  });
+
+  it("reports the cash as a share of the price, so any house can be scaled", () => {
+    const target = buildCapacityTarget(guaranteed, result, 0)!;
+    expect(target.shareOfPrice).toBeGreaterThan(0);
+    expect(target.shareOfPrice).toBeLessThan(1);
+    expect(target.shareOfPrice * target.price).toBeCloseTo(
+      target.savingsNeeded,
+      -1,
+    );
+  });
+
+  it("puts the deposit at the top without the state guarantee", () => {
+    // With a 90 % ceiling the deposit is an order of magnitude above every
+    // charge beside it, and the panel should say so first.
+    const withoutGuarantee = { ...guaranteed, stateGuarantee: false };
+    const plain = maxPropertyPriceForDate(withoutGuarantee);
+    const target = buildCapacityTarget(withoutGuarantee, plain, 0)!;
+    expect(target.lines[0].key).toBe("deposit");
+    expect(target.lines[0].amount).toBeGreaterThan(target.savingsNeeded * 0.7);
+  });
+});

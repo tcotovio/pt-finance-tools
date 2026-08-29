@@ -9,6 +9,7 @@ import {
   DEFAULT_SPREAD,
   DEFAULT_TENOR,
   toMaxLoanInput,
+  invalidFormMessage,
   validateLoanForm,
   type LoanForm,
 } from "./loan-form.js";
@@ -175,5 +176,71 @@ describe("the defaults are coherent with the market the app displays", () => {
       shares[a] >= shares[b] ? a : b,
     );
     expect(DEFAULT_TENOR).toBe(mostCommon);
+  });
+});
+
+describe("validation follows what the mode actually shows", () => {
+  // The two modes share one form. A value left behind in the field the other
+  // mode uses was still validated, so an invalid price entered in "posso
+  // comprar esta casa?" kept blocking the result after switching to "qual é o
+  // meu limite?" — where that field is not rendered at all, leaving a refusal
+  // pointing at a mark the reader could not see.
+  it("ignores the price once the mode stops showing it", () => {
+    const stale: LoanForm = {
+      ...DEFAULT_LOAN_FORM,
+      mode: "capacity",
+      income: "2000",
+      savings: "0",
+      propertyPrice: "0",
+    };
+    expect(validateLoanForm(stale)).toEqual({});
+  });
+
+  it("still flags the price while the mode does show it", () => {
+    const visible: LoanForm = {
+      ...DEFAULT_LOAN_FORM,
+      mode: "price",
+      income: "2000",
+      propertyPrice: "0",
+    };
+    expect(validateLoanForm(visible).propertyPrice).toBeDefined();
+  });
+
+  it("ignores the savings once the mode stops showing them", () => {
+    const stale: LoanForm = {
+      ...DEFAULT_LOAN_FORM,
+      mode: "price",
+      income: "2000",
+      propertyPrice: "250000",
+      savings: "-5",
+    };
+    expect(validateLoanForm(stale)).toEqual({});
+  });
+
+  it("accepts zero savings, which is a real case", () => {
+    const zero: LoanForm = {
+      ...DEFAULT_LOAN_FORM,
+      mode: "capacity",
+      income: "2000",
+      savings: "0",
+    };
+    expect(validateLoanForm(zero)).toEqual({});
+  });
+});
+
+describe("invalidFormMessage", () => {
+  it("names the field, so a collapsed panel is still actionable", () => {
+    expect(invalidFormMessage({ spread: "x" })).toContain("spread");
+  });
+
+  it("lists several fields readably", () => {
+    const message = invalidFormMessage({ spread: "x", age: "y" });
+    expect(message).toContain("spread");
+    expect(message).toContain("idade");
+    expect(message).toContain(" e ");
+  });
+
+  it("falls back when it has no name for the field", () => {
+    expect(invalidFormMessage({})).toMatch(/campos assinalados/);
   });
 });

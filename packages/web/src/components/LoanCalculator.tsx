@@ -24,6 +24,7 @@ import {
   toMaxLoanInput,
   toMaxPriceInput,
   toPurchaseCostsInput,
+  invalidFormMessage,
   validateLoanForm,
   type LoanForm,
   type LoanMode,
@@ -86,7 +87,7 @@ export function LoanCalculator() {
 
   const outcome = useMemo<LoanOutcome | null>(() => {
     if (form.mode !== "price" || !input) return null;
-    if (!valid) return { ok: false, message: INVALID };
+    if (!valid) return { ok: false, message: invalidFormMessage(errors) };
     return computeMaxLoanSafely(input);
   }, [form.mode, input, valid]);
 
@@ -97,7 +98,7 @@ export function LoanCalculator() {
 
   const priceOutcome = useMemo<MaxPriceOutcome | null>(() => {
     if (form.mode !== "capacity" || !priceInput) return null;
-    if (!valid) return { ok: false, message: INVALID };
+    if (!valid) return { ok: false, message: invalidFormMessage(errors) };
     return computeMaxPriceSafely(priceInput);
   }, [form.mode, priceInput, valid]);
 
@@ -230,4 +231,4 @@ export function LoanCalculator() {
   );
 }
 
-const INVALID = "Corrija os campos assinalados para ver o resultado.";
+

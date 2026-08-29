@@ -171,7 +171,12 @@ export function validateLoanForm(form: LoanForm): LoanFormErrors {
     }
   }
 
-  if (form.propertyPrice.trim() !== "") {
+  // Only the field the current mode SHOWS. The two modes share one form,
+  // so a price left behind in "posso comprar esta casa?" used to keep
+  // failing validation after the switch to "qual é o meu limite?", where
+  // that field is not rendered — blocking the result with an error the
+  // reader could not see, let alone correct.
+  if (form.mode === "price" && form.propertyPrice.trim() !== "") {
     const price = parseAmount(form.propertyPrice);
     if (price === null || price <= 0) {
       errors.propertyPrice = "Introduza o preço do imóvel.";
@@ -180,7 +185,7 @@ export function validateLoanForm(form: LoanForm): LoanFormErrors {
     }
   }
 
-  if (form.savings.trim() !== "") {
+  if (form.mode === "capacity" && form.savings.trim() !== "") {
     const savings = parseAmount(form.savings);
     if (savings === null || savings < 0) {
       errors.savings = "Introduza o que tem de parte, por exemplo 40 000.";
@@ -439,3 +444,41 @@ export type UpdateLoanForm = <K extends keyof LoanForm>(
   key: K,
   value: LoanForm[K],
 ) => void;
+
+/** What each field is called on screen, for naming it in an error summary. */
+const FIELD_LABELS: Partial<Record<keyof LoanForm, string>> = {
+  income: "rendimento",
+  propertyPrice: "preço do imóvel",
+  savings: "entrada disponível",
+  vpt: "valor patrimonial tributário",
+  bankFees: "comissões do banco",
+  appraisalValue: "valor da avaliação",
+  age: "idade",
+  termYears: "prazo",
+  annualRate: "taxa de juro",
+  fixedPeriodYears: "período de taxa fixa",
+  spread: "spread",
+  existingDebt: "prestações que já paga",
+};
+
+/**
+ * The message shown when something is wrong.
+ *
+ * "Corrija os campos assinalados" is useless when the marked field sits inside
+ * a collapsed "O meu caso" — the reader sees a refusal and no mark. Naming the
+ * fields costs a sentence and tells them where to look.
+ */
+export function invalidFormMessage(errors: LoanFormErrors): string {
+  const names = (Object.keys(errors) as (keyof LoanForm)[])
+    .map((key) => FIELD_LABELS[key])
+    .filter((name): name is string => Boolean(name));
+
+  if (names.length === 0) {
+    return "Corrija os campos assinalados para ver o resultado.";
+  }
+  if (names.length === 1) {
+    return `Verifique o campo ${names[0]} para ver o resultado.`;
+  }
+  const last = names[names.length - 1];
+  return `Verifique os campos ${names.slice(0, -1).join(", ")} e ${last} para ver o resultado.`;
+}

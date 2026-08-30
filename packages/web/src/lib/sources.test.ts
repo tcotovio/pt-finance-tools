@@ -4,6 +4,7 @@ import {
   maxLoanForDate,
   selfEmployedNet,
   EURIBOR_FALLBACK,
+  MADEIRA_2026,
   type MaxLoanInput,
   type SelfEmployedInput,
   type WageInput,
@@ -105,10 +106,16 @@ describe("wageSources", () => {
   });
 
   it("propagates a dataset's own verified flag", () => {
-    // Madeira ships unverified — Axis B has no source covering it — and the
-    // list must say so rather than inheriting the Continente's badge.
+    // Read from the dataset rather than hardcoded, because the value is not
+    // the point — the propagation is. This previously asserted `false` for
+    // Madeira and had to be edited the day Madeira was cross-checked, which
+    // is exactly the kind of edit that invites changing a test to match a
+    // regression.
     const madeira = computeNetWageForDate(wage({ region: "madeira" }));
-    expect(wageSources(madeira, REFERENCE)[0].verified).toBe(false);
+    expect(wageSources(madeira, REFERENCE)[0].verified).toBe(
+      MADEIRA_2026.verified,
+    );
+    expect(madeira.datasetVerified).toBe(MADEIRA_2026.verified);
   });
 
   it("gives every entry something to check", () => {

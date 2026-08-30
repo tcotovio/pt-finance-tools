@@ -72,16 +72,36 @@ export const MADEIRA_2026: WithholdingDataset = {
     "N.º 13, Suplemento 4, 20-01-2026) — " +
     "https://at.madeira.gov.pt/ficheiros/IISerie-013-2026-01-20Supl4.pdf",
   /**
-   * Axis A (transcription) passes: every bracket is diffed against an
-   * independent mechanical extraction of the same PDF in
-   * madeira-2026.source.test.ts.
+   * Both axes.
    *
-   * Axis B (model and mapping) has NOT been done — no public simulator found
-   * that covers Madeira, so nothing independent confirms the engine applies
-   * these tables the way regional payroll does. Per PLAN.md §6 both axes are
-   * required, so this stays false and the UI shows "Dados por verificar".
+   * Axis A: every bracket is diffed against an independent mechanical
+   * extraction of the PDF in madeira-2026.source.test.ts. That extraction was
+   * re-done from a freshly fetched copy of the JORAM PDF on 2026-08-30 and
+   * agrees, so the transcription now rests on two separate passes.
+   *
+   * Axis B: `wage/madeira-crosscheck.test.ts` replays scenarios from Doutor
+   * Finanças' simulator — the same source the Continente tables were cleared
+   * against. The earlier claim here that "no public simulator covers Madeira"
+   * was simply wrong: that source has always taken a `location` field, and it
+   * agrees to the cent across both formula brackets, the fixed-parcela
+   * brackets, all three categories, the per-dependent deduction, and the
+   * alínea h) reduction for 3+ dependents.
+   *
+   * WITH ONE LIMITATION, stated because it qualifies the claim. Above 3 203 €
+   * that simulator stops implementing this despacho — it uses 27,27 % and
+   * 27,78 % for the next two rows where the despacho prints 23,70 % and
+   * 30,28 %, a 5,02 € difference in the monthly net at 4 000 €. Page 4 of the
+   * PDF was re-read to settle it and this dataset is right, so the crosscheck
+   * covers only the range where the peer implements the same statute, and the
+   * rows above it are carried by Axis A alone. The divergence is pinned as a
+   * test rather than left as a comment, so that "fixing" the engine to match
+   * the simulator fails loudly.
+   *
+   * That upper range is also where the table does something that reads as a
+   * typo and is not: 30,28 % is followed by 28,02 %. The parcela moves with
+   * it, so the tax stays continuous — also pinned.
    */
-  verified: false,
+  verified: true,
   tables: [
     { category: "unmarried", brackets: tabelaI_II(34.29) },
     { category: "married-dual-earner", brackets: tabelaI_II(21.43) },

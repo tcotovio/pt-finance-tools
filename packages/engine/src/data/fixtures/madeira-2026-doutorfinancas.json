@@ -1,0 +1,40 @@
+{
+  "_comment": "Axis B for MADEIRA_2026: end-to-end scenarios from an INDEPENDENT public simulator, the same source and method already used for the Continente tables. madeira-2026.source.test.ts proves the tables were transcribed correctly from the despacho; these test that the engine APPLIES them the way a real payroll calculation does — table-to-category mapping, the per-dependent deduction, the formula brackets.",
+  "source": "Doutor Finanças — Simulador Salário Líquido 2026",
+  "sourceUrl": "https://www.doutorfinancas.pt/ferramentas/simulador-salario-liquido-2026/",
+  "capturedOn": "2026-08-30",
+  "method": "Simulator state is encoded in a base64 JSON `data=` query param, and the form carries an explicit 'Simular' button; each scenario was set through the form and the reading accepted only once the panel's own gross echoed the request.",
+  "region": "madeira",
+  "referenceDate": "2026-08-30",
+  "notes": [
+    "Meal allowance zeroed and duodécimos off, so the comparison is base salary only — the same scope as the Continente fixture.",
+    "`net` is the field compared, not the displayed 'Retenção IRS' line, which the simulator rounds. Same reason as continente-2026-doutorfinancas.json.",
+    "THIS SOURCE IS WRONG ABOVE 3 203 € AND THE SCENARIOS STOP THERE. The despacho's Tabela I runs 22,42 % (até 3 203) → 23,70 % (até 3 614) → 30,28 % (até 6 585) → 28,02 % (até 6 954) → 29,24 % (até 21 411) → 32,78 %. Doutor Finanças instead uses 27,27 % then 27,78 % for the two rows above 3 203 €, which appear nowhere in the despacho. At 4 000 € that is a 5,02 € difference in the monthly net (their 2 865,50 € against this engine's 2 870,52 €).",
+    "That was settled against the primary source, not by preference: the JORAM PDF was re-fetched and re-extracted with pdf2json on 2026-08-30, independently of the original extraction, and page 4 prints 'Até | 6 585,00 | 30,28% | 521,72'. The engine matches the despacho. Note the rate genuinely falls from 30,28 % to 28,02 % at the next row — that looks like a transcription error and is not; it is what the statute prints.",
+    "So this fixture deliberately covers only the range where the peer implements the same statute. The rows above it rest on Axis A, which has now been performed twice from the PDF by two separate extractions."
+  ],
+  "scenarios": [
+    { "grossMonthly": 920, "category": "unmarried", "dependents": 0, "netMonthly": 818.8, "socialSecurity": 101.2, "note": "RMMG 2026, inside the 0 % bracket" },
+    { "grossMonthly": 980, "category": "unmarried", "dependents": 0, "netMonthly": 872.2, "socialSecurity": 107.8, "note": "top of the Madeira exempt bracket — 60 € higher than the Continente's" },
+    { "grossMonthly": 1000, "category": "unmarried", "dependents": 0, "netMonthly": 883.72, "socialSecurity": 110, "note": "first taxed bracket, R-dependent formula parcela" },
+    { "grossMonthly": 1028, "category": "unmarried", "dependents": 0, "netMonthly": 899.85, "socialSecurity": 113.08, "note": "top of the second formula bracket" },
+    { "grossMonthly": 1500, "category": "unmarried", "dependents": 0, "netMonthly": 1234.86, "socialSecurity": 165, "note": "fixed-parcela bracket" },
+    { "grossMonthly": 2000, "category": "unmarried", "dependents": 0, "netMonthly": 1574.11, "socialSecurity": 220, "note": "" },
+    { "grossMonthly": 2500, "category": "unmarried", "dependents": 0, "netMonthly": 1907.41, "socialSecurity": 275, "note": "" },
+    { "grossMonthly": 1800, "category": "unmarried", "dependents": 2, "netMonthly": 1509.29, "socialSecurity": 198, "note": "per-dependent deduction 34,29" },
+    { "grossMonthly": 2000, "category": "unmarried", "dependents": 3, "netMonthly": 1696.98, "socialSecurity": 220, "note": "alínea h): 3+ dependents, the −1 p.p. reduction" },
+    { "grossMonthly": 1500, "category": "married-single-earner", "dependents": 0, "netMonthly": 1283.27, "socialSecurity": 165, "note": "casado, único titular — a different table" },
+    { "grossMonthly": 1500, "category": "married-dual-earner", "dependents": 0, "netMonthly": 1234.86, "socialSecurity": 165, "note": "casado, dois titulares" }
+  ],
+  "divergences": [
+    {
+      "grossMonthly": 4000,
+      "category": "unmarried",
+      "dependents": 0,
+      "theirNetMonthly": 2865.5,
+      "ourNetMonthly": 2870.52,
+      "resolution": "The despacho prints 30,28 % / 521,72 for the 3 614 – 6 585 row; they use 27,78 % / 416,70. This engine follows the despacho. Kept here as a record so the disagreement is not rediscovered as if it were new.",
+      "note": "Deliberately NOT asserted as a passing scenario — it is a known defect in the peer."
+    }
+  ]
+}

@@ -141,11 +141,14 @@ export const IMT_2026: ImtTables = {
    * not expose cleanly (the young table, rústicos, outros, and the Regiões
    * Autónomas) and agrees exactly on all of those.
    *
-   * There is no public AT simulator to check against, incidentally: IMT
-   * declarations sit behind Portal das Finanças authentication. So Axis B here
-   * is peer implementations rather than an authoritative one, and a
-   * disagreement has to be adjudicated rather than simply deferred to — which
-   * is what happened. CalculaPT differs by up to 0,09 € on the tables carrying
+   * The AT simulator PLAN.md had pencilled in as the candidate is gone:
+   * `imoveis.portaldasfinancas.gov.pt/simuladorimt/` now answers "Aplicação
+   * Inexistente — o pedido é inválido" (checked 2026-08-30), and no other
+   * public AT calculator surfaced; entregar a declaração de IMT requires
+   * signing in to the Portal das Finanças. So Axis B here is peer
+   * implementations rather than an authoritative one, and a disagreement has
+   * to be adjudicated rather than simply deferred to — which is what
+   * happened. CalculaPT differs by up to 0,09 € on the tables carrying
    * a parcela a abater, using 10 458,04 where this dataset uses 10 457,96.
    * Art. 17.º n.º 3's "taxa média / taxa marginal" construction forces the tax
    * to be continuous at each boundary, and only these values are: the worst

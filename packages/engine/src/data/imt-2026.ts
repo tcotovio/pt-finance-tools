@@ -127,19 +127,32 @@ export const IMT_2026: ImtTables = {
     "n.º 40129/2026, de 06-01, da Autoridade Tributária " +
     "(https://info.portaldasfinancas.gov.pt/pt/atualidades/instrucoesadmin/Paginas/Oficio-circulado-40129-2026.aspx)",
   /**
-   * Axis A only, so far.
+   * Both axes.
    *
-   * Every bracket, rate and parcela a abater in all six tables is re-diffed in
-   * CI against a mechanical `pdf2json` extraction of the official ofício
-   * circulado (`imt-2026.source.test.ts`), which is the same discipline the
+   * Axis A: every bracket, rate and parcela a abater in all six tables is
+   * re-diffed in CI against a mechanical `pdf2json` extraction of the official
+   * ofício circulado (`imt-2026.source.test.ts`), the same discipline the
    * withholding tables get.
    *
-   * Axis B — an independent implementation — is NOT yet in place, so this stays
-   * `false` and the UI says "Dados por verificar". The candidate is the AT's
-   * own IMT simulator, which is the one public source that also returns the
-   * verba 1.1 selo and would therefore exercise the art. 7.º-A deduction. Note
-   * that when it lands it is not a peer: AT is authoritative here, so a
-   * mismatch is a bug in this engine rather than a divergence to record.
+   * Axis B: `loan/imt-crosscheck.test.ts` replays scenarios captured from two
+   * independent public simulators — the Ordem dos Notários' and CalculaPT's.
+   * The notaries agree to the cent across the general Continente table,
+   * including the taxa-única jump at 660 982 €. CalculaPT covers what they do
+   * not expose cleanly (the young table, rústicos, outros, and the Regiões
+   * Autónomas) and agrees exactly on all of those.
+   *
+   * There is no public AT simulator to check against, incidentally: IMT
+   * declarations sit behind Portal das Finanças authentication. So Axis B here
+   * is peer implementations rather than an authoritative one, and a
+   * disagreement has to be adjudicated rather than simply deferred to — which
+   * is what happened. CalculaPT differs by up to 0,09 € on the tables carrying
+   * a parcela a abater, using 10 458,04 where this dataset uses 10 457,96.
+   * Art. 17.º n.º 3's "taxa média / taxa marginal" construction forces the tax
+   * to be continuous at each boundary, and only these values are: the worst
+   * discontinuity across all six tables is 7e-12 €, against a 0,08 € step from
+   * theirs. The crosscheck therefore carries a per-source tolerance, pinned
+   * alongside the continuity property so the tolerance can never quietly
+   * become licence for this dataset to drift.
    */
-  verified: false,
+  verified: true,
 };

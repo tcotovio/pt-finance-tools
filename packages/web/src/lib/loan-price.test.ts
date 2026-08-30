@@ -232,11 +232,17 @@ describe("loanSources with costs", () => {
     expect(keys).toContain("cost-stamp-duty");
     expect(keys).toContain("cost-registration");
 
-    // The two tax datasets await an Axis B that exists, so each carries a
-    // live caveat and neither may claim to be verified.
-    for (const key of ["cost-imt", "cost-stamp-duty"]) {
-      expect(entries.find((e) => e.key === key)?.verified, key).toBe(false);
-    }
+    // IMT has both axes now: transcribed from the ofício circulado and
+    // replayed against two independent simulators.
+    expect(entries.find((e) => e.key === "cost-imt")?.verified).toBe(true);
+
+    // The selo does not, and the distinction is the point. Verba 1.1 and the
+    // art. 7.º-A deduction were cross-checked alongside the IMT, but nothing
+    // has checked verba 17.1 on the credit — so the dataset still carries a
+    // live caveat rather than borrowing the IMT's.
+    expect(entries.find((e) => e.key === "cost-stamp-duty")?.verified).toBe(
+      false,
+    );
 
     // The Casa Pronta tariff is a different animal: a published price list has
     // no second implementation to be checked against, so it reports no status

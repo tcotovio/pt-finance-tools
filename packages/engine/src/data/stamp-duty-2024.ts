@@ -50,13 +50,22 @@ export const STAMP_DUTY_2024: StampDuty = {
     "al. l) e art. 7.º-A (aditado pelo Decreto-Lei n.º 48-A/2024, de 25 de julho) " +
     "(https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/codigos_tributarios/selo/Pages/ccod-selo-tabgiselo.aspx)",
   /**
-   * Neither axis, and the reason is worth stating rather than leaving to be
-   * inferred: there is nothing here to cross-check. Three flat rates and one
-   * deduction defined by reference to a bracket that lives in `IMT_2026` —
-   * Axis A has no table to diff and Axis B has no independent implementation
-   * that publishes the selo separately from the IMT. It rides on the IMT
-   * dataset's verification when the AT simulator lands, since that source
-   * returns both.
+   * PARTIAL, which is why this is still `false` rather than `true`.
+   *
+   * What is now cross-checked: verba 1.1 and the art. 7.º-A dedução. Both IMT
+   * simulators in `loan/imt-crosscheck.test.ts` return the acquisition selo
+   * beside the IMT, and they agree — including the cases that matter most,
+   * where a young buyer's selo is fully absorbed by the deduction (0,00 € at
+   * 250 000 €) and where the cap starts to bind and it is not (555,69 € at
+   * 400 000 €). That was the part most likely to be modelled wrongly, since
+   * the deduction is capped by reference to a bracket in another dataset.
+   *
+   * What is NOT: verba 17.1 on the credit and verba 17.3.1 on the interest.
+   * Neither simulator lends money, so neither returns them, and no public
+   * source was found that publishes them separately. Until one is, this
+   * dataset has an unverified half and must say so — the alternative is a
+   * `true` that a reader would reasonably take to cover the 0,6 % they pay on
+   * the loan itself, which nothing here has checked.
    */
   verified: false,
 };

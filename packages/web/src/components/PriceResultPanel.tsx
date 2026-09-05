@@ -124,6 +124,15 @@ function PriceResultBody({
         </p>
       </div>
 
+      <SourceList
+        entries={loanSources(
+          result.loanResult,
+          assessmentDate,
+          euribor,
+          result.costs,
+        )}
+      />
+
       <div className="callout">
         <p>
           <strong>O que o limita: {summary.binding.label}.</strong>{" "}
@@ -203,15 +212,6 @@ function PriceResultBody({
       ) : null}
 
       <LoanNotices summary={summary} />
-
-      <SourceList
-        entries={loanSources(
-          result.loanResult,
-          assessmentDate,
-          euribor,
-          result.costs,
-        )}
-      />
     </>
   );
 }

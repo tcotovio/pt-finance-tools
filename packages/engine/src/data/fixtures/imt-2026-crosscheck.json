@@ -1,0 +1,68 @@
+{
+  "_comment": "Axis B for IMT_2026 and for verba 1.1 / art. 7.º-A of STAMP_DUTY_2024: end-to-end scenarios captured from TWO independent public simulators. data/imt-2026.source.test.ts already proves the tables were transcribed correctly from the ofício circulado (Axis A); these catch the different failure — applying a correct table the wrong way (wrong table per purpose or territory, the young exemption ceiling, the art. 7.º-A cap, the taxa-única jump).",
+  "capturedOn": "2026-08-30",
+  "sources": {
+    "notarios": {
+      "name": "Ordem dos Notários — Simulador IMT",
+      "url": "https://www.notarios.pt/ferramentas",
+      "why": "The notaries execute these deeds for a living, and the simulator returns IMT and the verba 1.1 selo together.",
+      "tolerance": 0,
+      "method": "Form driven in the browser; each reading accepted only when the panel's own selo line equalled 0,8 % of that same reading's price."
+    },
+    "calculapt": {
+      "name": "CalculaPT — Simulador de IMT 2026",
+      "url": "https://calculapt.pt/imt",
+      "why": "Covers what the notaries' simulator does not expose cleanly: the young table, rústicos, outros, and the two Regiões Autónomas separately.",
+      "tolerance": 0.09,
+      "method": "Form driven in the browser; explicit 'Calcular IMT' button, so each reading corresponds to a committed input."
+    }
+  },
+  "notes": [
+    "TOLERANCES DIFFER BY SOURCE, and the reason is a finding rather than a fudge. The notaries agree with this engine to the cent on every point captured. CalculaPT agrees exactly on the young table, rústicos, outros, the taxas únicas and the Regiões Autónomas young/secondary tables, but is off by at most 0,09 € on the tables that carry a parcela a abater — it uses 10 458,04 where the ofício and this engine use 10 457,96, and rounds the selo where this engine ceilings it.",
+    "WHICH IS RIGHT IS NOT A MATTER OF OPINION. CIMT art. 17.º n.º 3 constructs the tax as 'a primeira parte à taxa média, o excedente à taxa marginal', which forces the tax to be CONTINUOUS at every bracket boundary. Only this engine's parcelas satisfy that: worst discontinuity across all six tables is 7e-12 €, whereas CalculaPT's value introduces a 0,08 € step at 198 347 €. So the tolerance below accommodates a known defect in that source, and is not licence for this engine to drift.",
+    "The notaries' simulator lags one update behind its own inputs — its price line and its tax lines refresh on different cycles. Readings were therefore accepted only when internally consistent (see method). One captured value at 106 346 € was rejected by that check and is absent here; CalculaPT supplies that point instead.",
+    "Açores and Madeira return identical figures from CalculaPT at every point tested, which corroborates this engine collapsing both into one 'regioes-autonomas' territory rather than carrying two identical tables.",
+    "COVERAGE THIS DOES NOT GIVE: neither simulator returns the verba 17.1 selo on the credit or the verba 17.3.1 selo on interest, so those parts of STAMP_DUTY_2024 remain without an Axis B and that dataset stays unverified."
+  ],
+  "assessmentDate": "2026-06-01",
+  "scenarios": [
+    { "source": "notarios", "purpose": "own-permanent-residence", "young": false, "region": "continente", "price": 100000, "imt": 0, "stampDutyTransfer": 800, "note": "below the exemption ceiling" },
+    { "source": "notarios", "purpose": "own-permanent-residence", "young": false, "region": "continente", "price": 106347, "imt": 0.02, "stampDutyTransfer": 850.78, "note": "first euro taxed" },
+    { "source": "notarios", "purpose": "own-permanent-residence", "young": false, "region": "continente", "price": 145470, "imt": 782.48, "stampDutyTransfer": 1163.76, "note": "top of 2%" },
+    { "source": "notarios", "purpose": "own-permanent-residence", "young": false, "region": "continente", "price": 198347, "imt": 3426.33, "stampDutyTransfer": 1586.78, "note": "top of 5%" },
+    { "source": "notarios", "purpose": "own-permanent-residence", "young": false, "region": "continente", "price": 250000, "imt": 7042.04, "stampDutyTransfer": 2000, "note": "mid 7%" },
+    { "source": "notarios", "purpose": "own-permanent-residence", "young": false, "region": "continente", "price": 330539, "imt": 12679.77, "stampDutyTransfer": 2644.32, "note": "top of 7%" },
+    { "source": "notarios", "purpose": "own-permanent-residence", "young": false, "region": "continente", "price": 660982, "imt": 39115.21, "stampDutyTransfer": 5287.86, "note": "top of 8%, last point before the taxa única" },
+    { "source": "notarios", "purpose": "own-permanent-residence", "young": false, "region": "continente", "price": 660983, "imt": 39658.98, "stampDutyTransfer": 5287.87, "note": "taxa única 6% — the tax JUMPS by 543,77 € for 1 € more house" },
+    { "source": "notarios", "purpose": "own-permanent-residence", "young": false, "region": "continente", "price": 1150853, "imt": 69051.18, "stampDutyTransfer": 9206.83, "note": "top of the 6% taxa única" },
+
+    { "source": "calculapt", "purpose": "own-permanent-residence", "young": false, "region": "continente", "price": 106346, "imt": 0, "stampDutyTransfer": 850.77, "note": "exactly at the exemption ceiling" },
+    { "source": "calculapt", "purpose": "own-permanent-residence", "young": false, "region": "continente", "price": 1200000, "imt": 90000, "stampDutyTransfer": 9600, "note": "7,5% taxa única" },
+
+    { "source": "calculapt", "purpose": "own-permanent-residence", "young": true, "region": "continente", "price": 250000, "imt": 0, "stampDutyTransfer": 0, "note": "young: IMT exempt AND selo fully absorbed by the art. 7.º-A deduction" },
+    { "source": "calculapt", "purpose": "own-permanent-residence", "young": true, "region": "continente", "price": 330539, "imt": 0, "stampDutyTransfer": 0, "note": "young: top of the exemption" },
+    { "source": "calculapt", "purpose": "own-permanent-residence", "young": true, "region": "continente", "price": 330540, "imt": 0.08, "stampDutyTransfer": 0, "note": "young: first euro above the exemption" },
+    { "source": "calculapt", "purpose": "own-permanent-residence", "young": true, "region": "continente", "price": 400000, "imt": 5556.88, "stampDutyTransfer": 555.69, "note": "young: 8% on the excess, and the 7.º-A cap now binding" },
+    { "source": "calculapt", "purpose": "own-permanent-residence", "young": true, "region": "continente", "price": 660982, "imt": 26435.44, "stampDutyTransfer": 2643.54, "note": "young: last point before the tables converge" },
+    { "source": "calculapt", "purpose": "own-permanent-residence", "young": true, "region": "continente", "price": 700000, "imt": 42000, "stampDutyTransfer": 2955.69, "note": "young: converged with the general table — the benefit ends rather than tapering" },
+
+    { "source": "calculapt", "purpose": "other", "young": false, "region": "continente", "price": 250000, "imt": 8105.49, "stampDutyTransfer": 2000, "note": "habitação secundária, al. c)" },
+    { "source": "calculapt", "purpose": "other", "young": false, "region": "continente", "price": 1000000, "imt": 60000, "stampDutyTransfer": 8000, "note": "habitação secundária, taxa única" },
+
+    { "source": "calculapt", "purpose": "own-permanent-residence", "young": false, "region": "acores", "price": 250000, "imt": 4427.43, "stampDutyTransfer": 2000, "note": "regiões autónomas, general HPP table" },
+    { "source": "calculapt", "purpose": "own-permanent-residence", "young": false, "region": "acores", "price": 500000, "imt": 22795.85, "stampDutyTransfer": 4000, "note": "regiões autónomas, higher bracket" },
+    { "source": "calculapt", "purpose": "own-permanent-residence", "young": true, "region": "acores", "price": 250000, "imt": 0, "stampDutyTransfer": 0, "note": "regiões autónomas, young exempt" },
+    { "source": "calculapt", "purpose": "own-permanent-residence", "young": true, "region": "acores", "price": 500000, "imt": 6946.08, "stampDutyTransfer": 694.61, "note": "regiões autónomas, young above the exemption" },
+    { "source": "calculapt", "purpose": "other", "young": false, "region": "acores", "price": 250000, "imt": 5756.85, "stampDutyTransfer": 2000, "note": "regiões autónomas, secondary" },
+
+    { "source": "calculapt", "purpose": "own-permanent-residence", "young": false, "region": "madeira", "price": 250000, "imt": 4427.43, "stampDutyTransfer": 2000, "note": "madeira matches açores exactly" },
+    { "source": "calculapt", "purpose": "own-permanent-residence", "young": false, "region": "madeira", "price": 500000, "imt": 22795.85, "stampDutyTransfer": 4000, "note": "madeira matches açores exactly" },
+    { "source": "calculapt", "purpose": "own-permanent-residence", "young": true, "region": "madeira", "price": 250000, "imt": 0, "stampDutyTransfer": 0, "note": "madeira matches açores exactly" },
+    { "source": "calculapt", "purpose": "own-permanent-residence", "young": true, "region": "madeira", "price": 500000, "imt": 6946.08, "stampDutyTransfer": 694.61, "note": "madeira matches açores exactly" },
+    { "source": "calculapt", "purpose": "other", "young": false, "region": "madeira", "price": 250000, "imt": 5756.85, "stampDutyTransfer": 2000, "note": "madeira matches açores exactly" }
+  ],
+  "flatRateScenarios": [
+    { "source": "calculapt", "kind": "rustic", "price": 250000, "imt": 12500, "note": "al. d) — 5 % flat, no brackets" },
+    { "source": "calculapt", "kind": "otherUrban", "price": 250000, "imt": 16250, "note": "al. e) — 6,5 % flat, no brackets" }
+  ]
+}

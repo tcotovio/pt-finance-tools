@@ -27,6 +27,7 @@ import type {
 import { monthlyPayment, principalForPayment } from "./amortization.js";
 import { adjustedIncome, maturityCeiling, shockForTerm } from "./stress.js";
 import { mixedPrincipalForBudget, mixedStressedPayment } from "./mixed.js";
+import { allCrossChecked } from "../verification.js";
 
 /**
  * The stressed DSTI a given instalment would produce — the forward check,
@@ -210,12 +211,16 @@ export function maxLoan(
       shock: shockTable.source,
       ...(guaranteed ? { guarantee: guarantee.source } : {}),
     },
-    // Falls to false the moment the guarantee is in play: that dataset has no
-    // Axis B and structurally cannot have one, so the answer is not verified.
-    parametersVerified:
-      params.verified &&
-      shockTable.verified &&
-      (!guaranteed || guarantee.verified),
+    // Currently falls to false the moment the guarantee is in play, because
+    // that dataset's transcription has not been diffed against the instrument.
+    // Once it is, its status becomes "not-applicable" — it has no Axis B and
+    // cannot have one — and `allCrossChecked` will drop it out rather than
+    // hold the answer down, which a plain `&&` here could never do.
+    parametersVerified: allCrossChecked([
+      params.verified,
+      shockTable.verified,
+      ...(guaranteed ? [guarantee.verified] : []),
+    ]),
   };
   }
 }

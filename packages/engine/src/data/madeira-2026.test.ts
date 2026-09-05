@@ -118,12 +118,12 @@ describe("Madeira 2026 golden tests (vs despacho 19/2026)", () => {
     ).toThrow(/does not match input region/);
   });
 
-  it("is honest that only the transcription has been cross-checked", () => {
-    // Axis A passes (madeira-2026.source.test.ts); Axis B has no independent
-    // simulator covering Madeira, so the dataset must not claim verified.
-    expect(MADEIRA_2026.verified).toBe(false);
+  it("claims verified on both axes, and carries the source to say so", () => {
+    // Axis A: madeira-2026.source.test.ts, now backed by two separate
+    // extractions of the PDF. Axis B: wage/madeira-crosscheck.test.ts.
+    expect(MADEIRA_2026.verified).toBe(true);
     const r = computeNetWage(wage("unmarried", 1500, 0), MADEIRA_2026);
-    expect(r.datasetVerified).toBe(false);
+    expect(r.datasetVerified).toBe(true);
     expect(r.datasetSource).toMatch(/19\/2026/);
   });
 });

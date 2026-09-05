@@ -147,6 +147,27 @@ demonstrated and regression-protected, not asserted.
 A test whose expected values are computed from the dataset it is testing proves
 neither. Both axes must pass before a dataset is marked `verified: true`.
 
+**A third state, because `false` was doing two jobs.** For some datasets Axis B
+cannot exist at all — a published price list is not a computation, and agreement
+with it is not corroboration of it. Reporting those as `false` said "we have not
+got round to this" about something nobody could ever get round to, and, worse,
+poisoned every aggregate they fed: `purchaseCosts` ANDed the Casa Pronta tariff
+into its flag, so no amount of work on IMT or the selo could ever have lifted a
+costed answer above "Dados por verificar". `Verification` is therefore
+`boolean | "not-applicable"`, combined by one function (`allCrossChecked`)
+rather than an `&&` chain rewritten at each call site. Non-applicable sources
+drop out rather than voting — they can neither hold an answer down nor rescue
+one — and only a literal `false` renders as a caveat. This does not hide
+anything: it is what lets the badge name a real gap instead of a permanent one.
+
+**When a peer disagrees, adjudicate.** Axis B sources are peers, not
+authorities, and two of them have now been caught departing from the statute
+(CalculaPT's IMT parcela, Doutor Finanças' Madeira upper brackets). A
+divergence is resolved against the primary source or against a property the
+statute forces — not by moving the engine to match. Where a tolerance is
+granted to accommodate a peer's defect, it is pinned beside the reason and a
+counter-example, so it cannot quietly become licence for this engine to drift.
+
 **What `verified` claims, and what it cannot.** On the wage side the answer is
 legally determined end to end, so the flag covers the whole output. On the loan
 side it does not: a bank's answer is part statute and part commercial policy
@@ -343,10 +364,15 @@ candidate rather than duplicating any of it.
 - [x] **Garantia pessoal do Estado (DL 44/2024 + Portaria 236-A/2024/1), modelled as a deviation rather than a carve-out.** Recomendação art. 5.º caps LTV at 90 % flat, with no proviso for a guaranteed loan — the extracted fixture text says so. Lending at 100 % is a departure that the institution justifies contract by contract. So `ltvLimit: 1.0` is **never** written into `BDP_2026`; it lives in its own dataset, `MaxLoanResult.ltv.source` says which of the two produced the ceiling, and the UI tells the user this exceeds what the Banco de Portugal recommends and is the bank's call
   - **Eligibility is asserted, never derived**, and one condition makes that unavoidable: the income test is *rendimento coletável anual* against the 8.º escalão do IRS, and there is no honest mapping from the monthly income this form holds. The two conditions the engine *can* check — age ≤ 35 and the 450 000 € transaction ceiling — it enforces, overriding the assertion rather than trusting it
   - **The first dataset with an end date.** The regime lapses in December 2026, which the newest-`effectiveFrom` lookup used everywhere else cannot express — it would go on returning an expired regime forever. That forced `effectiveOn` in `data/index.ts`, replacing five copied filter/sort/throw blocks with one that understands `effectiveTo`
-  - `verified: false`, and structurally so: Axis B cannot exist for a quantity that is a *departure* from the rule, since there is no independent implementation of it to reproduce. Any answer leaning on it is reported as unverified
+  - `verified: false`, on Axis A alone — the transcription has not been diffed against the instrument. Axis B cannot exist for a quantity that is a *departure* from the rule, since there is no independent implementation of it to reproduce, so when the Axis A fixture lands this becomes `"not-applicable"` rather than `true`. Until then any answer leaning on it is reported as unverified
+  - Checked while establishing that: **DL n.º 24/2025** amends DL 44/2024 to extend the guarantee to sociedades financeiras. It widens who may lend and touches none of the parameters modelled here
 - [x] **Axis A for the IMT tables** — all 36 rows of all six tables re-diffed in CI against a mechanical `pdf2json` extraction of the official ofício circulado, with each row's numbers also pulled back out of the verbatim Portuguese line they were read from
   - A parsing trap worth recording: the thousands separator is a space, so a loose `\d[\d ]*` reads "792 414 8%" as the single number 7 924 148 and the row silently stops being checked. The pattern has to know that a group following a space is exactly three digits
-- [ ] **Axis B for the IMT tables — not done, so `IMT_2026.verified` is `false` and the UI shows "Dados por verificar".** The candidate is the AT's own IMT simulator (`imoveis.portaldasfinancas.gov.pt/simuladorimt/`), the one public source returning both the IMT *and* the verba 1.1 selo and therefore the only one that would exercise the art. 7.º-A deduction. Note it is not a peer when it lands: AT is authoritative here, so a mismatch is a bug in this engine rather than a divergence to record
+- [x] **Axis B for the IMT tables — done, `IMT_2026.verified` is now `true`.** 29 scenarios in `loan/imt-crosscheck.test.ts`, replayed from two independent simulators. The AT candidate pencilled in here is gone: `imoveis.portaldasfinancas.gov.pt/simuladorimt/` answers "Aplicação Inexistente" (checked 2026-08-30), so Axis B is peers rather than an authority
+  - The **Ordem dos Notários'** simulator agrees to the cent across the general Continente table, the taxa-única jump at 660 982 € included. **CalculaPT** covers what that one does not expose cleanly — the young table, rústicos, outros, and the Regiões Autónomas separately — and agrees exactly on those. It also confirms Açores and Madeira return identical figures, which is the assumption behind collapsing them into one territory
+  - **A disagreement, adjudicated rather than deferred to.** CalculaPT is off by up to 0,09 € wherever a parcela a abater applies, using 10 458,04 where the ofício and this engine use 10 457,96. Art. 17.º n.º 3's "taxa média / taxa marginal" construction forces the tax to be *continuous* at each boundary, and only this engine's parcelas are: worst discontinuity across all six tables is 7e-12 €, against a 0,08 € step from theirs. The per-source tolerance is pinned next to that property and an explicit counter-example, so it cannot quietly become licence to drift
+  - Capture note: the notaries' simulator lags one update behind its own inputs, so readings were accepted only where the panel's selo line matched 0,8 % of that same reading's price. That check rejected one value
+- [ ] **Axis B for verba 17.1 and 17.3.1 of the selo — still open, and now the only thing holding the loan badge red.** Verba 1.1 and the art. 7.º-A dedução were cross-checked alongside the IMT (a young buyer's selo fully absorbed at 250 000 €, the cap binding at 400 000 €), but neither simulator lends money, so nothing has checked the 0,6 % on the credit or the 4 % on interest. `STAMP_DUTY_2024` therefore stays `false`
 - [x] **Result panel restructured — answer first, working behind disclosures.** The column had grown to headline → two ceiling bars → a full line chart → the market comparison → a table of lines → three caveats → sources, and the taxes made it longer still. Now the answer, the one sentence that explains it, the cash the buyer has to produce and every caveat stay open; the market comparison, the ceilings and the costs go behind three `<details>` built on the existing "O meu caso" pattern
   - The market comparison was the specific complaint, and the diagnosis was concrete: fifth in the column, under a chart, headed by `h3.group-title` — the weakest heading token in the system, shared with form sub-group labels — and with **no `.market-comparison` rule in `App.css` at all**, so it had no card, border or spacing of its own. It now owns a disclosure whose summary *is* its heading
   - `.notices` never collapses. §9's "a caveat behind a disclosure is not a caveat" is a rule rather than a judgement call, and the same goes for the conditional callouts about the particular answer on screen
@@ -397,7 +423,10 @@ candidate rather than duplicating any of it.
 
 ### Phase 4 — Long tail (opt-in scope)
 - [ ] Disability tables
-- [x] **Madeira** — Despacho n.º 19/2026 (JORAM II Série n.º 13, Supl. 4) transcribed and selectable. Its despacho carries the same alínea h) (−1pp for 3+ dependents) and the same IRS Jovem ÷14 rule as the Continente's, so no logic changed; only the rates differ (exemption to 980 €, lower rates throughout). Axis A passes; **Axis B has no source** — no public simulator found covering Madeira — so the dataset ships `verified: false` and the UI shows "Dados por verificar"
+- [x] **Madeira** — Despacho n.º 19/2026 (JORAM II Série n.º 13, Supl. 4) transcribed and selectable. Its despacho carries the same alínea h) (−1pp for 3+ dependents) and the same IRS Jovem ÷14 rule as the Continente's, so no logic changed; only the rates differ (exemption to 980 €, lower rates throughout). Both axes pass and the dataset ships `verified: true`
+  - **"Axis B has no source" was wrong, and had simply never been rechecked.** Doutor Finanças — the source the Continente tables were already cleared against — has always taken a `location` field with `madeira` as a value. It agrees to the cent across both formula brackets, the fixed-parcela brackets, all three categories, the per-dependent deduction and the alínea h) reduction
+  - **With a stated limit.** Above 3 203 € that simulator stops implementing this despacho: it uses 27,27 % and 27,78 % where the despacho prints 23,70 % and 30,28 %, a 5,02 € gap in the monthly net at 4 000 €. Both tables are internally continuous, so continuity could not break the tie — they are two different, self-consistent tables. Settled by re-fetching the JORAM PDF and re-extracting it with `pdf2json` independently of the original extraction: page 4 prints `Até | 6 585,00 | 30,28% | 521,72`. The engine follows the despacho; the crosscheck covers only the range where the peer implements the same statute, and the rows above it rest on Axis A, now done twice
+  - The despacho genuinely drops the rate from 30,28 % to 28,02 % at the next row. That reads as a typo and is not — the parcela moves with it so the tax stays continuous. Both the drop and the disputed row are pinned as tests, so "correcting" the engine toward the simulator fails loudly
 - [ ] **Açores — blocked on the source format.** Despacho n.º 1179/2026 (DR II Série n.º 23) publishes its tables as **images**, not text: the table pages carry only the captions as text runs, and the PDF holds 11 image objects. The `pdf2json` route used for the Continente and Madeira cannot extract a single bracket. Options, none free: OCR the images (needs an independent second source anyway, since OCR of numeric tables is exactly where transcription errors hide), transcribe visually from a rendered page and cross-check against another publisher's transcription, or wait for a machine-readable republication
 - [ ] (Maybe) separate "annual IRS estimate" mode
 - [ ] EN localization

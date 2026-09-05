@@ -3,6 +3,8 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  allCrossChecked,
+  getRegistrationFees,
   maxPropertyPriceForDate,
   purchaseCostsForDate,
   STATE_GUARANTEE_2024,
@@ -229,10 +231,42 @@ describe("loanSources with costs", () => {
     expect(keys).toContain("cost-imt");
     expect(keys).toContain("cost-stamp-duty");
     expect(keys).toContain("cost-registration");
-    // None has an Axis B yet, so none may claim to be verified.
-    for (const key of ["cost-imt", "cost-stamp-duty", "cost-registration"]) {
-      expect(entries.find((e) => e.key === key)?.verified, key).toBe(false);
-    }
+
+    // IMT has both axes now: transcribed from the ofício circulado and
+    // replayed against two independent simulators.
+    expect(entries.find((e) => e.key === "cost-imt")?.verified).toBe(true);
+
+    // The selo does not, and the distinction is the point. Verba 1.1 and the
+    // art. 7.º-A deduction were cross-checked alongside the IMT, but nothing
+    // has checked verba 17.1 on the credit — so the dataset still carries a
+    // live caveat rather than borrowing the IMT's.
+    expect(entries.find((e) => e.key === "cost-stamp-duty")?.verified).toBe(
+      false,
+    );
+
+    // The Casa Pronta tariff is a different animal: a published price list has
+    // no second implementation to be checked against, so it reports no status
+    // at all rather than a `false` that could never be worked off.
+    expect(entries.find((e) => e.key === "cost-registration")?.verified).toBe(
+      undefined,
+    );
+  });
+
+  it("does not let the uncheckable tariff hold the costed answer down", () => {
+    // The regression this whole distinction exists for. `purchaseCosts` used
+    // to AND the registration tariff into its flag, so no amount of work on
+    // IMT or the selo could ever have lifted a costed answer to verified.
+    const result = solve();
+    const registration = getRegistrationFees(DATE);
+    expect(registration.verified).toBe("not-applicable");
+
+    // With both tax datasets verified the answer must clear, tariff and all.
+    expect(
+      allCrossChecked([true, true, registration.verified]),
+    ).toBe(true);
+    // And it must still fail while either of them is genuinely outstanding.
+    expect(allCrossChecked([false, true, registration.verified])).toBe(false);
+    expect(result.costs?.verified).toBe(false);
   });
 
   it("omits the guarantee unless it actually moved the ceiling", () => {

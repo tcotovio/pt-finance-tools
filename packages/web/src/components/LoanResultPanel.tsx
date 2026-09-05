@@ -224,7 +224,7 @@ function SavingsCheck({
             <span className="num">{formatEuro(savings)}</span> de parte, e esta
             compra precisa de{" "}
             <span className="num">{formatEuro(summary.cashNeeded)}</span> entre
-            entrada e impostos. Mude para «Qual é o meu limite?» para ver que
+            entrada e impostos. Mude para «Ainda não tenho casa» para ver que
             preço é que esse valor alcança.
           </>
         ) : (

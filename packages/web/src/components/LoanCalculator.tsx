@@ -172,16 +172,37 @@ export function LoanCalculator() {
           />
 
           {form.mode === "price" ? (
-            <TextField
-              id="loan-price"
-              large
-              label="Preço do imóvel"
-              suffix="€"
-              placeholder="250 000,00"
-              value={form.propertyPrice}
-              error={errors.propertyPrice}
-              onChange={(value) => update("propertyPrice", value)}
-            />
+            <>
+              <TextField
+                id="loan-price"
+                large
+                label="Preço do imóvel"
+                suffix="€"
+                placeholder="250 000,00"
+                value={form.propertyPrice}
+                error={errors.propertyPrice}
+                onChange={(value) => update("propertyPrice", value)}
+              />
+              {/*
+                Both modes hold one `savings`, and this direction reads it to
+                answer "does what you have cover the entrada and the taxes".
+                It has to be askable here too: without the field, a value typed
+                in the other mode came back as "Indicou 40 000,00 € de parte"
+                on a screen that had never asked, which reads as the calculator
+                inventing figures. Optional — leave it empty and the check
+                stays away.
+              */}
+              <TextField
+                id="loan-savings-check"
+                label="O que tem de parte"
+                suffix="€"
+                placeholder="40 000,00"
+                value={form.savings}
+                error={errors.savings}
+                hint="Opcional. Preencha para ver se chega para a entrada e os impostos desta compra."
+                onChange={(value) => update("savings", value)}
+              />
+            </>
           ) : (
             <TextField
               id="loan-savings"

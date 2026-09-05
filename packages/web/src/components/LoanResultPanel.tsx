@@ -43,8 +43,12 @@ interface LoanResultPanelProps {
   propertyPrice: number;
   monthlyIncome: number;
   existingMonthlyDebt: number;
-  /** What the buyer says they have, for the cross-check callout. Optional. */
-  savings: number;
+  /**
+   * What the buyer says they have. `undefined` means they have not said —
+   * which is not the same as saying zero, and the panel must not answer a
+   * question it was never asked.
+   */
+  savings?: number;
   costs: PurchaseCosts | null;
 }
 
@@ -102,7 +106,7 @@ function LoanResultBody({
   propertyPrice: number;
   monthlyIncome: number;
   existingMonthlyDebt: number;
-  savings: number;
+  savings?: number;
   costs: PurchaseCosts | null;
 }) {
   const summary = buildLoanSummary(
@@ -135,7 +139,7 @@ function LoanResultBody({
 
       <CashSummary
         summary={summary}
-        savings={savings > 0 ? savings : undefined}
+        savings={savings}
       />
 
       {/*
@@ -143,7 +147,7 @@ function LoanResultBody({
         already given the gap; this says what to do about it, which is the one
         thing it cannot show as a number.
       */}
-      {savings > 0 && summary.cashNeeded - savings > 0 ? (
+      {savings !== undefined && summary.cashNeeded - savings > 0 ? (
         <p className="chart-note">
           Para ver que preço é que esse valor alcança, mude para{" "}
           <strong>«Ainda não tenho casa»</strong>.

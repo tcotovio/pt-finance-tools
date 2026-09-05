@@ -253,6 +253,14 @@ export function LoanCalculator() {
           />
         </form>
 
+        {/*
+          savings reaches the forward panel as undefined when the field is
+          empty and as a number when it is not — 0 included. An empty field
+          means the buyer has not said what they have; 0 means they said none.
+          Collapsing the two with `?? 0` made "tenho zero de parte" read as
+          silence, and the panel withheld the verdict from someone who had
+          answered it.
+        */}
         {form.mode === "price" ? (
           <LoanResultPanel
             outcome={outcome}
@@ -261,7 +269,7 @@ export function LoanCalculator() {
             propertyPrice={parseAmount(form.propertyPrice) ?? 0}
             monthlyIncome={parseAmount(form.income) ?? 0}
             existingMonthlyDebt={parseAmount(form.existingDebt) ?? 0}
-            savings={parseAmount(form.savings) ?? 0}
+            savings={parseAmount(form.savings) ?? undefined}
             costs={costs}
           />
         ) : (

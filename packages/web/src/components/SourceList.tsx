@@ -20,9 +20,17 @@
 // it went amber over the half of the imposto do selo that no public simulator
 // computes separately.
 //
+// The per-source "por verificar" tag went the same way, and for the same
+// reason rather than a different one: it was the same internal claim, made
+// quieter. A reader who cannot act on "no second implementation was found to
+// check this transcription against" cannot act on it in six-point type inside
+// a disclosure either.
+//
 // What is left is what a reader can use: the list of instruments the answer
-// rests on. Where an individual source has not been cross-checked it still
-// says so, in the list, next to the source it applies to.
+// rests on, each with what it was used for and a link to the source itself.
+// `verified` is untouched in the engine and in lib/sources.ts — the project
+// still knows which datasets are cross-checked, and PLAN.md still tracks it.
+// It is no longer reported to people who did not ask.
 
 import type { SourceEntry } from "../lib/sources.js";
 
@@ -45,12 +53,7 @@ export function SourceList({ entries }: SourceListProps) {
       <ul className="sources-list">
         {entries.map((entry) => (
           <li key={entry.key}>
-            <p className="sources-label">
-              {entry.label}
-              {entry.verified === false ? (
-                <span className="sources-flag">por verificar</span>
-              ) : null}
-            </p>
+            <p className="sources-label">{entry.label}</p>
             <p className="sources-used-for">{entry.usedFor}</p>
             <p className="sources-citation">
               {entry.url ? (
@@ -64,12 +67,6 @@ export function SourceList({ entries }: SourceListProps) {
           </li>
         ))}
       </ul>
-
-      <p className="sources-note">
-        &quot;Verificado&quot; significa que os números foram transcritos da
-        fonte oficial <em>e</em> confrontados com uma fonte independente. Onde
-        isso não foi possível, fica dito.
-      </p>
     </details>
   );
 }

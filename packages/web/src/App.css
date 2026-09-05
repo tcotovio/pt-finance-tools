@@ -1276,22 +1276,6 @@ main:focus {
   margin: 0;
   font-size: 0.8125rem;
   font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.sources-flag {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 1px 6px;
-  border-radius: 999px;
-  border: 1px solid var(--note-border);
-  background: var(--note-bg);
-  color: var(--text-muted);
 }
 
 .sources-used-for {
@@ -1305,12 +1289,6 @@ main:focus {
   font-size: 0.75rem;
   color: var(--text-muted);
   overflow-wrap: anywhere;
-}
-
-.sources-note {
-  margin: 14px 0 0;
-  font-size: 0.75rem;
-  color: var(--text-muted);
 }
 
 /* --- wage comparison ----------------------------------------------------

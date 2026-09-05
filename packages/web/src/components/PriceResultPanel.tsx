@@ -8,6 +8,7 @@
 // often the one that actually binds and which the forward direction had no
 // way to express.
 
+import { nextImtStepForDate } from "@pt-finance-tools/engine";
 import type {
   EuriborSnapshot,
   MaxPriceInput,
@@ -99,6 +100,19 @@ function PriceResultBody({
 }) {
   const summary = buildPriceSummary(result, monthlyIncome, existingMonthlyDebt);
 
+  // The IMT boundary immediately above the answer, when there is one. Read
+  // here rather than inside LeftoverNote so the panel keeps one place where
+  // engine values are gathered.
+  const imtStep = priceInput
+    ? nextImtStepForDate({
+        price: summary.maxPrice,
+        purpose: priceInput.purpose,
+        region: priceInput.region,
+        youngFirstHome: priceInput.youngFirstHome,
+        assessmentDate,
+      })
+    : null;
+
   if (summary.maxPrice <= 0) {
     // "Not possible" on its own tells the reader nothing they can act on. The
     // engine already knows the cash the purchase needs and what they have, so
@@ -124,9 +138,17 @@ function PriceResultBody({
         </p>
       </div>
 
+      {/*
+        Not "O que o limita: …" as the forward direction says it. There the
+        answer varies; here it cannot. This solver raises the price until the
+        cash runs out, so the cash is always what stops it — naming that as
+        though it were a finding tells the reader nothing and hides the part
+        that does vary, which is the ceiling on the loan underneath. The
+        remedy already names that, so the heading gets out of its way.
+      */}
       <div className="callout">
         <p>
-          <strong>O que o limita: {summary.binding.label}.</strong>{" "}
+          <strong>É o que tem de parte que fixa o preço.</strong>{" "}
           {summary.binding.remedy}
         </p>
       </div>
@@ -139,13 +161,11 @@ function PriceResultBody({
         roundings — which is what happened here first — reads as two different
         numbers rather than one.
       */}
-      {summary.unusedFunds >= 1 ? (
-        <p className="chart-note">
-          Sobram-lhe{" "}
-          <span className="num">{formatEuro(summary.unusedFunds)}</span> do que
-          tem de parte: aqui o que trava não é o dinheiro.
-        </p>
-      ) : null}
+      <LeftoverNote
+        unusedFunds={summary.unusedFunds}
+        maxPrice={summary.maxPrice}
+        step={imtStep}
+      />
 
       <LoanCaveats summary={summary} />
 
@@ -161,10 +181,10 @@ function PriceResultBody({
       </ResultSection>
 
       <ResultSection
-        title="Os limites, e qual deles manda"
+        title="Até onde chega cada limite"
         summary="Rendimento, valor do imóvel e poupança, lado a lado"
       >
-        <ConstraintBars summary={summary} />
+        <ConstraintBars summary={summary} showBinding={false} />
         <p className="chart-note">
           As barras mostram o <strong>empréstimo</strong> que cada limite
           permitiria, excepto a da poupança, que mostra o{" "}
@@ -213,5 +233,59 @@ function PriceResultBody({
         )}
       />
     </>
+  );
+}
+
+/**
+ * What is left of the savings, and why it could not be spent.
+ *
+ * The old note fired from one euro up and explained itself with "aqui o que
+ * trava não é o dinheiro". Both halves were wrong.
+ *
+ * A euro or two is the solver converging, not a finding: across a 32 256-case
+ * sweep the leftovers cluster under 10 € or above 1 000 € with nothing in
+ * between, so the threshold sits in that gap and reports only the second kind.
+ *
+ * And when the leftover IS large, money is exactly what stops the buyer. IMT's
+ * taxa única applies to the whole price, so at the boundary the tax steps —
+ * 17 263 € for one euro of price in continente. The search halts one euro
+ * below with money it cannot use, and the panel's own callout says "o que o
+ * limita: poupança disponível" two blocks above. Saying the opposite here was
+ * a contradiction on one screen.
+ */
+const LEFTOVER_FLOOR = 100;
+
+function LeftoverNote({
+  unusedFunds,
+  maxPrice,
+  step,
+}: {
+  unusedFunds: number;
+  maxPrice: number;
+  step: { threshold: number; increase: number } | null;
+}) {
+  if (unusedFunds < LEFTOVER_FLOOR) return null;
+
+  // Only the boundary that actually stopped the search explains anything. A
+  // step half a million euros further up is true and irrelevant.
+  const atBoundary = step !== null && step.threshold - maxPrice <= 2;
+
+  return (
+    <p className="chart-note">
+      Sobram-lhe{" "}
+      <span className="num">{formatEuro(unusedFunds)}</span> do que tem de
+      parte
+      {atBoundary && step ? (
+        <>
+          , e não chegam para subir de escalão: a partir de{" "}
+          <span className="num">{formatEuro(step.threshold)}</span> o IMT passa
+          a ser cobrado sobre o valor todo a uma taxa mais alta, o que custa{" "}
+          <span className="num">{formatEuro(step.increase)}</span> de uma só
+          vez.
+        </>
+      ) : (
+        <>: aqui o que trava não é o dinheiro.</>
+      )}
+    </p>
   );
 }

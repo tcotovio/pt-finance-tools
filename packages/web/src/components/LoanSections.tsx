@@ -68,8 +68,22 @@ export function ResultSection({
  * Not a part-to-whole — these are independent limits and the answer is the
  * shortest bar. Identity never rests on the fill alone: the binding row is
  * labelled "limite aplicado" in text.
+ *
+ * `showBinding` exists for the capacity direction, where the verdict is
+ * decided before any input is read. That solver raises the price until the
+ * cash runs out, so cash is what stops it by construction — a 32 256-case
+ * sweep over income, savings, age, term, rate type, region, purpose, existing
+ * debt and the state guarantee returned `cash` every single time. Marking a
+ * winner that cannot vary dresses an identity up as a finding; there the bars
+ * show where each ceiling sits and leave it at that.
  */
-export function ConstraintBars({ summary }: { summary: LoanSummary }) {
+export function ConstraintBars({
+  summary,
+  showBinding = true,
+}: {
+  summary: LoanSummary;
+  showBinding?: boolean;
+}) {
   const scale = Math.max(...summary.constraints.map((c) => c.amount), 1);
 
   return (
@@ -81,12 +95,14 @@ export function ConstraintBars({ summary }: { summary: LoanSummary }) {
         {summary.constraints.map((constraint) => (
           <li
             key={constraint.key}
-            className={`constraint${constraint.binding ? " is-binding" : ""}`}
+            className={`constraint${
+              showBinding && constraint.binding ? " is-binding" : ""
+            }`}
           >
             <div className="constraint-head">
               <span className="constraint-label">
                 {constraint.label}
-                {constraint.binding ? (
+                {showBinding && constraint.binding ? (
                   <span className="constraint-flag">limite aplicado</span>
                 ) : null}
               </span>

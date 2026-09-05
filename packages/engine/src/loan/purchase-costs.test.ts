@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { purchaseCostsForDate, imtFor } from "./purchase-costs.js";
-import { IMT_2026, REGISTRATION_FEES_2024, STAMP_DUTY_2024 } from "../data/index.js";
+import { purchaseCostsForDate, imtFor, nextImtStepForDate } from "./purchase-costs.js";
+import { IMT_2026, REGISTRATION_FEES_2024, STAMP_DUTY_2024, getImtTables } from "../data/index.js";
 import type { PurchaseCostsInput } from "../types.js";
 
 const base: PurchaseCostsInput = {
@@ -224,5 +224,56 @@ describe("the Regiões Autónomas", () => {
     // 250 000 lands in the 5 % band on the islands and the 7 % band on the
     // mainland, so the islands are cheaper.
     expect(madeira.imt.amount).toBeLessThan(continente.imt.amount);
+  });
+});
+
+describe("nextImtStep", () => {
+  const at = (price: number, region: "continente" | "madeira") =>
+    nextImtStepForDate({
+      price,
+      purpose: "own-permanent-residence",
+      region,
+      assessmentDate: "2026-09-05",
+    });
+
+  it("finds the taxa-única boundary in continente", () => {
+    // 6 % gives way to 7,5 %, both applied to the whole value, so one euro of
+    // price carries five figures of tax.
+    expect(at(1_000_000, "continente")).toEqual({
+      threshold: 1_150_854,
+      increase: 17_262.87,
+      fromRate: 0.06,
+      toRate: 0.075,
+    });
+  });
+
+  it("puts the Regiões Autónomas boundary higher, on their own table", () => {
+    expect(at(1_000_000, "madeira")?.threshold).toBe(1_438_567);
+    expect(at(1_000_000, "madeira")?.increase).toBeCloseTo(21_578.57, 2);
+  });
+
+  it("reports nothing above the last boundary", () => {
+    expect(at(2_000_000, "continente")).toBeNull();
+  });
+
+  it("reports a step where the amount jumps even though the rate falls", () => {
+    // The marginal 8 % row gives way to the taxa única of 6 %: a lower rate,
+    // but applied to the whole value with no parcela to abater, so the bill
+    // still steps up. Keyed on the amount rather than the rate for exactly
+    // this reason.
+    const step = at(250_000, "continente");
+    expect(step?.fromRate).toBeGreaterThan(step?.toRate ?? 0);
+    expect(step?.increase).toBeGreaterThan(0);
+  });
+
+  it("crossing the boundary costs what the step says", () => {
+    const step = at(1_000_000, "continente");
+    if (!step) throw new Error("expected a step");
+    const table = getImtTables("2026-09-05").tables.continente[
+      "own-permanent-residence"
+    ];
+    const below = imtFor(step.threshold - 1, table).amount;
+    const above = imtFor(step.threshold, table).amount;
+    expect(above - below).toBeCloseTo(step.increase, 2);
   });
 });

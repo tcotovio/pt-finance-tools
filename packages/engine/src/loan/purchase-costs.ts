@@ -290,3 +290,58 @@ export function purchaseCostsForDate(
     getRegistrationFees(input.assessmentDate),
   );
 }
+
+/**
+ * The next price at which IMT steps upward, and what crossing it costs.
+ *
+ * The taxa-única rows apply their rate to the whole value with no parcela to
+ * abater, so where one begins the tax does not rise smoothly — it jumps. In
+ * continente the 6 % row gives way to 7,5 % at 1 150 854 €, and that single
+ * euro of price carries 17 263 € of extra IMT.
+ *
+ * A buyer solving for the most expensive house their savings reach stops just
+ * under such a boundary with money left over that cannot be spent, which
+ * looks like an error unless the boundary is named. Returns `null` when no
+ * step lies above `price` — the ordinary case, where the tax rises smoothly
+ * and there is nothing to explain.
+ */
+export function nextImtStep(
+  price: number,
+  table: readonly ImtBracket[],
+): { threshold: number; increase: number; fromRate: number; toRate: number } | null {
+  for (const bracket of table) {
+    const bound = bracket.upTo;
+    if (bound === null || bound < price) continue;
+
+    const below = imtFor(bound, table);
+    const above = imtFor(bound + 1, table);
+    // A smooth boundary moves the tax by a cent or two — the marginal rate on
+    // one euro. Anything more is a taxa única taking over.
+    if (above.amount - below.amount <= 1) continue;
+
+    return {
+      threshold: bound + 1,
+      increase: ceilCents(above.amount - below.amount),
+      fromRate: below.rate,
+      toRate: above.rate,
+    };
+  }
+  return null;
+}
+
+/** {@link nextImtStep} against the tables in force on `assessmentDate`. */
+export function nextImtStepForDate(input: {
+  price: number;
+  purpose: PurchaseCostsInput["purpose"];
+  region: PurchaseCostsInput["region"];
+  youngFirstHome?: boolean;
+  assessmentDate: string;
+}): { threshold: number; increase: number; fromRate: number; toRate: number } | null {
+  const tables = getImtTables(input.assessmentDate);
+  const territory = imtTerritory(input.region);
+  const id = tableFor({
+    purpose: input.purpose,
+    youngFirstHome: input.youngFirstHome,
+  } as PurchaseCostsInput);
+  return nextImtStep(input.price, tables.tables[territory][id]);
+}

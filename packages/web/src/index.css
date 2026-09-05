@@ -14,6 +14,10 @@
   --border-strong: #c2ccd5;
   --accent: #00674a;
   --accent-text: #ffffff;
+  /* Secondary text on an accent fill — a card's description under its title.
+     5.17:1 on --accent, so it is quieter than --accent-text without dropping
+     below the floor the primary label holds. */
+  --accent-text-soft: #c9e5da;
   --accent-soft: #e2f0ea;
   --accent-border: #b6d8ca;
   --negative: #a12a20;
@@ -54,6 +58,7 @@
     --border-strong: #3a4954;
     --accent: #4fc9a1;
     --accent-text: #06231a;
+    --accent-text-soft: #14432f;
     --accent-soft: #14302a;
     --accent-border: #2b5a4b;
     --negative: #f08a80;

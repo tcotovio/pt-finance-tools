@@ -168,11 +168,20 @@ export function buildLoanSummary(
       // Names the shock explicitly, because this is the row that produces the
       // "but my taxa de esforço is only 36 %" question: the ceiling is on the
       // stressed instalment, and without saying so the limit looks arbitrary.
+      //
+      // "Uma entrada maior não muda nada" is what this used to say, and it
+      // contradicted the cash block directly underneath it. The deposit does
+      // not move THIS ceiling — the bank will not lend more against a bigger
+      // deposit when the income is what binds — but the reader in this
+      // direction asked whether they can buy a specific house, and there the
+      // deposit is exactly what closes the gap the same panel is quoting them.
+      // The LTV row a few lines down already made that distinction; this one
+      // did not. Say which quantity does not move, not "nothing".
       remedy: shocked
         ? `O teste não usa a prestação que vai pagar, mas uma agravada em ${formatPoints(
             result.dsti.shock,
-          )} — e é essa que está nos 45 %. Uma entrada maior não muda nada. O que muda: mais rendimento, menos encargos mensais, um prazo mais longo (se a idade permitir), ou taxa fixa, que não leva agravamento.`
-        : "Uma entrada maior não altera este limite. O que o move: mais rendimento, menos encargos mensais, ou um prazo mais longo (se a idade ainda o permitir).",
+          )} — e é essa que está nos 45 %. Uma entrada maior não aumenta o empréstimo, mas é ela que cobre a diferença até ao preço. Para subir o empréstimo: mais rendimento, menos encargos mensais, um prazo mais longo (se a idade permitir), ou taxa fixa, que não leva agravamento.`
+        : "Uma entrada maior não altera este limite, mas é ela que cobre a diferença até ao preço. Para subir o empréstimo: mais rendimento, menos encargos mensais, ou um prazo mais longo (se a idade ainda o permitir).",
       reference: "bdp-1-2026",
     },
     {

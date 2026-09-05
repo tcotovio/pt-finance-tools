@@ -81,8 +81,18 @@ describe("buildLoanSummary — the binding constraint", () => {
     // A deposit is still the thing that does NOT move this limit, whichever
     // wording says so — the variable-rate copy names the shock as well,
     // because that is what makes the ceiling look arbitrary otherwise.
-    expect(summary.binding.remedy).toMatch(/entrada maior não (altera|muda)/i);
+    expect(summary.binding.remedy).toMatch(/entrada maior não (aumenta|altera)/i);
     expect(summary.binding.remedy).toMatch(/mais rendimento/i);
+  });
+
+  it("says what the deposit does not move, not that it moves nothing", () => {
+    // It used to read "uma entrada maior não muda nada", which contradicted
+    // the cash block directly beneath it: that block quotes a shortfall the
+    // deposit is precisely what closes. The deposit does not raise the LOAN;
+    // it does decide whether this house is reachable.
+    const remedy = summarize(input()).binding.remedy;
+    expect(remedy).not.toMatch(/não muda nada/i);
+    expect(remedy).toMatch(/cobre a diferença até ao preço/i);
   });
 
   it("explains the shock in the remedy, since that is what the 45 % sits on", () => {

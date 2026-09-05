@@ -70,8 +70,12 @@ export function AdvancedPanel({
     <details className="advanced">
       <summary>
         <span className="advanced-title">O meu caso</span>
+        {/* The list is what someone scans to decide whether to open this, so
+            everything behind it has to appear — the região field lives in
+            here and was missing, which left no way to find it. */}
         <span className="advanced-sub">
-          Isenção de horário, trabalho suplementar, subsídios, IRS Jovem
+          Isenção de horário, trabalho suplementar, subsídios, IRS Jovem,
+          região
         </span>
       </summary>
 

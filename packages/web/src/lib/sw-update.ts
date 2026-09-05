@@ -5,8 +5,8 @@
 // downloads in the background. For most apps that lag is unremarkable. Here it
 // is the sharpest edge in production: when the January tables land, or a
 // mid-year despacho changes a parameter, a returning user would compute with
-// last year's numbers while the result panel shows a "Dados verificados"
-// badge attesting to data they are not actually running.
+// last year's numbers while the source list cites the despacho they are not
+// actually running.
 //
 // WHICH SIGNAL, AND WHY NOT THE OBVIOUS ONE.
 //

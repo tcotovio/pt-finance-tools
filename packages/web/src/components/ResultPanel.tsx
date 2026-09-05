@@ -74,8 +74,6 @@ function ResultBody({
         </p>
       </div>
 
-      <SourceList entries={input ? wageSources(result, input.referenceDate) : []} />
-
       <GrossSplitChart split={breakdown.split} gross={breakdown.gross} />
 
       <dl className="lines">
@@ -129,6 +127,8 @@ function ResultBody({
           Tributária.
         </p>
       </div>
+
+      <SourceList entries={input ? wageSources(result, input.referenceDate) : []} />
     </>
   );
 }

@@ -186,7 +186,12 @@ export function CashSummary({
           <>
             <li className="is-own">
               <span>Tem de parte</span>
-              <span className="num">−{formatEuro(savings)}</span>
+              {/* No minus on nothing: "−0,00 €" reads as a defect rather than
+                  as a subtraction of zero. */}
+              <span className="num">
+                {savings > 0 ? "−" : ""}
+                {formatEuro(savings)}
+              </span>
             </li>
             <li className={`is-gap${short ? " is-short" : ""}`}>
               <span>{short ? "Faltam-lhe" : "Sobra-lhe"}</span>

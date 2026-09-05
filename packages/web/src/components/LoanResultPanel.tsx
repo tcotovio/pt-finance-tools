@@ -16,7 +16,7 @@ import type {
   PurchaseCosts,
 } from "@pt-finance-tools/engine";
 import type { LoanOutcome } from "../lib/compute.js";
-import { buildLoanSummary, type LoanSummary } from "../lib/loan-result.js";
+import { buildLoanSummary } from "../lib/loan-result.js";
 import { formatEuro } from "../lib/format.js";
 import { AmortizationSplit } from "./AmortizationSplit.js";
 import { LoanLimitCurve } from "./LoanLimitCurve.js";
@@ -133,9 +133,22 @@ function LoanResultBody({
         </p>
       </div>
 
-      <CashSummary summary={summary} />
+      <CashSummary
+        summary={summary}
+        savings={savings > 0 ? savings : undefined}
+      />
 
-      {savings > 0 ? <SavingsCheck summary={summary} savings={savings} /> : null}
+      {/*
+        One line, and only when the money does not reach. The block above has
+        already given the gap; this says what to do about it, which is the one
+        thing it cannot show as a number.
+      */}
+      {savings > 0 && summary.cashNeeded - savings > 0 ? (
+        <p className="chart-note">
+          Para ver que preço é que esse valor alcança, mude para{" "}
+          <strong>«Ainda não tenho casa»</strong>.
+        </p>
+      ) : null}
 
       <LoanCaveats summary={summary} />
 
@@ -200,46 +213,3 @@ function LoanResultBody({
   );
 }
 
-/**
- * Whether what the buyer has actually covers what the answer demands.
- *
- * The forward direction never used to ask, so a user could be shown a loan
- * they qualified for and a deposit they could not raise, with nothing on
- * screen connecting the two.
- */
-function SavingsCheck({
-  summary,
-  savings,
-}: {
-  summary: LoanSummary;
-  savings: number;
-}) {
-  const shortfall = summary.cashNeeded - savings;
-  const short = shortfall > 0;
-  return (
-    <div className={`callout${short ? " is-warning" : ""}`}>
-      <p>
-        {short ? (
-          <>
-            <strong className="shortfall">
-              Faltam-lhe {formatEuro(shortfall)}.
-            </strong>{" "}
-            Indicou{" "}
-            <span className="num">{formatEuro(savings)}</span> de parte, e esta
-            compra precisa de{" "}
-            <span className="num">{formatEuro(summary.cashNeeded)}</span> entre
-            entrada e impostos. Mude para «Ainda não tenho casa» para ver que
-            preço é que esse valor alcança.
-          </>
-        ) : (
-          <>
-            <strong>Chega, e sobram {formatEuro(-shortfall)}.</strong> Indicou{" "}
-            <span className="num">{formatEuro(savings)}</span> de parte, contra{" "}
-            <span className="num">{formatEuro(summary.cashNeeded)}</span> de
-            entrada e impostos.
-          </>
-        )}
-      </p>
-    </div>
-  );
-}

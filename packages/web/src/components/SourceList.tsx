@@ -4,6 +4,17 @@
 // bibliography; open, it is a complete list with links, so anyone who wants to
 // check can. The verified badge stays visible on the summary either way — it
 // is a caveat, and a caveat behind a disclosure is not a caveat.
+//
+// The same argument decides where this sits: directly under the headline
+// number rather than at the foot of the panel. Whether the dataset behind a
+// figure has been independently cross-checked qualifies the figure, so it has
+// to be readable in the same glance — six sections further down, past the
+// charts, it was a footnote about the number instead of a caveat on it.
+//
+// The summary names the headline dataset and counts the rest. Every builder in
+// lib/sources.ts puts the dataset the answer mostly rests on first, so the one
+// source most readers would ask about is the one they get without opening
+// anything.
 
 import type { SourceEntry } from "../lib/sources.js";
 
@@ -22,11 +33,14 @@ export function SourceList({ entries }: SourceListProps) {
   return (
     <details className="sources">
       <summary>
-        <span className="sources-title">Fontes</span>
         <span
           className={`badge${allVerified ? " is-verified" : " is-unverified"}`}
         >
           {allVerified ? "Dados verificados" : "Dados por verificar"}
+        </span>
+        <span className="sources-primary">{entries[0].label}</span>
+        <span className="sources-count">
+          {entries.length === 1 ? "1 fonte" : `${entries.length} fontes`}
         </span>
       </summary>
 

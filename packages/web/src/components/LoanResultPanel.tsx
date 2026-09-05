@@ -125,6 +125,12 @@ function LoanResultBody({
         </p>
       </div>
 
+      {input ? (
+        <SourceList
+          entries={loanSources(result, input.assessmentDate, euribor, costs)}
+        />
+      ) : null}
+
       <div className="callout">
         <p>
           {/* Not lower-cased: it would turn "LTV" into "ltv". */}
@@ -190,12 +196,6 @@ function LoanResultBody({
       ) : null}
 
       <LoanNotices summary={summary} />
-
-      {input ? (
-        <SourceList
-          entries={loanSources(result, input.assessmentDate, euribor, costs)}
-        />
-      ) : null}
     </>
   );
 }

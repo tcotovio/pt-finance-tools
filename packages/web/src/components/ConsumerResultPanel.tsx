@@ -69,10 +69,6 @@ function ConsumerResultBody({
         </p>
       </div>
 
-      {input ? (
-        <SourceList entries={consumerSources(result, input.assessmentDate)} />
-      ) : null}
-
       <div className="callout">
         <p>
           <strong>Aqui só o rendimento o limita.</strong> Não há imóvel dado em
@@ -173,6 +169,10 @@ function ConsumerResultBody({
           <strong>Simulação, não é aconselhamento.</strong>
         </p>
       </div>
+
+      {input ? (
+        <SourceList entries={consumerSources(result, input.assessmentDate)} />
+      ) : null}
     </>
   );
 }

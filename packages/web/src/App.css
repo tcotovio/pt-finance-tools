@@ -781,29 +781,6 @@
   overflow-wrap: anywhere;
 }
 
-.badge {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  padding: 3px 9px;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-
-.badge.is-verified {
-  background: var(--accent-soft);
-  color: var(--accent);
-  border: 1px solid var(--accent-border);
-}
-
-.badge.is-unverified {
-  background: var(--note-bg);
-  color: var(--text);
-  border: 1px solid var(--note-border);
-}
-
 /* --- footer ------------------------------------------------------------ */
 
 .site-footer {
@@ -1258,41 +1235,29 @@ main:focus {
 }
 
 /* --- sources -------------------------------------------------------------
-   Collapsed by default: most readers want the answer, not its bibliography.
-   The verified badge stays on the summary, open or shut — a caveat hidden
-   behind a disclosure is not a caveat.
-
-   It sits under the headline rather than at the foot of the panel, so the rule
-   above holds within one glance of the number it qualifies. A rule underneath
-   rather than a border on top: it closes the headline block instead of opening
-   a footer. */
+   Collapsed by default, at the foot of the panel: most readers want the
+   answer, not its bibliography. A rule on top, because it closes the panel. */
 
 .sources {
-  /* Pulled back against the panel's 20px flex gap. The line belongs to the
-     headline above it, not to the chart below, and equal space on both sides
-     would leave it floating between the two. */
-  margin-top: -10px;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 14px;
+  margin-top: 18px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
 }
 
 .sources summary {
   display: flex;
   align-items: baseline;
-  flex-wrap: wrap;
-  gap: 4px 10px;
+  gap: 10px;
   cursor: pointer;
   font-size: 0.8125rem;
 }
 
-/* The headline dataset, in the user's terms. It takes the free space so the
-   count stays put as the label's length changes between tools. */
-.sources-primary {
-  flex: 1;
-  min-width: 0;
+.sources-title {
   color: var(--text-muted);
+  font-weight: 600;
 }
 
+/* How much is behind the disclosure, before opening it. */
 .sources-count {
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;

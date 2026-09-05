@@ -95,8 +95,6 @@ function SelfEmployedResultBody({ result }: { result: SelfEmployedResult }) {
         </p>
       </div>
 
-      <SourceList entries={selfEmployedSources(result)} />
-
       <dl className="lines">
         {!vat.exempt ? (
           <>
@@ -255,6 +253,8 @@ function SelfEmployedResultBody({ result }: { result: SelfEmployedResult }) {
           Confirme com o seu contabilista ou na Segurança Social Direta.
         </p>
       </div>
+
+      <SourceList entries={selfEmployedSources(result)} />
     </>
   );
 }

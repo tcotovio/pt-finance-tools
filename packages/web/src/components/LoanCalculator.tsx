@@ -36,11 +36,32 @@ import { purchaseCostsForDate } from "@pt-finance-tools/engine";
 import { LoanAdvancedPanel } from "./LoanAdvancedPanel.js";
 import { LoanResultPanel } from "./LoanResultPanel.js";
 import { PriceResultPanel } from "./PriceResultPanel.js";
-import { SegmentedField, TextField, type SelectOption } from "./fields.js";
+import { ChoiceCards, TextField, type ChoiceCard } from "./fields.js";
 
-const MODE_OPTIONS: readonly SelectOption[] = [
-  { value: "price", label: "Posso comprar esta casa?" },
-  { value: "capacity", label: "Qual é o meu limite?" },
+/*
+  The question is chosen before there is a form to fill in, not with a control
+  inside one.
+
+  As a segmented field among the other fields it read as a setting on a single
+  form, which is what made the form look like it was asking two things at once.
+  It is not a setting: it decides which fields exist, which number is the
+  headline, and what the caption under it means. Putting it above the panel
+  puts it where that authority is legible.
+
+  The descriptions carry the actual choice. Nobody arrives knowing whether they
+  want "o meu limite"; they arrive knowing whether they have a house in mind.
+*/
+const MODE_CARDS: readonly ChoiceCard[] = [
+  {
+    value: "price",
+    label: "Tenho uma casa em vista",
+    description: "Sei o preço, quero saber se consigo comprá-la",
+  },
+  {
+    value: "capacity",
+    label: "Ainda não tenho casa",
+    description: "Sei o que tenho de parte, quero saber até quanto posso ir",
+  },
 ];
 
 export function LoanCalculator() {
@@ -125,109 +146,116 @@ export function LoanCalculator() {
   }, [assessmentDate, form, input, outcome]);
 
   return (
-    <div className="calculator">
-      <form className="panel form" onSubmit={(event) => event.preventDefault()}>
-        <h2 className="visually-hidden">Os seus dados</h2>
+    <>
+      <ChoiceCards
+        name="loan-mode"
+        legend="O que quer saber"
+        value={form.mode}
+        options={MODE_CARDS}
+        onChange={(value) => update("mode", value as LoanMode)}
+      />
 
-        <SegmentedField
-          name="loan-mode"
-          legend="O que quer saber"
-          value={form.mode}
-          options={MODE_OPTIONS}
-          onChange={(value) => update("mode", value as LoanMode)}
-        />
+      <div className="calculator">
+        <form className="panel form" onSubmit={(event) => event.preventDefault()}>
+          <h2 className="visually-hidden">Os seus dados</h2>
 
-        <TextField
-          id="loan-income"
-          large
-          label="Rendimento mensal do agregado"
-          suffix="€"
-          placeholder="2 000,00"
-          value={form.income}
-          error={errors.income}
-          hint="Líquido, somando quem vai ao crédito. Use sempre o rendimento anual a dividir por 12 — é o que o Banco de Portugal manda usar, tenha 14 meses ou passe recibos verdes."
-          onChange={(value) => update("income", value)}
-        />
+          <TextField
+            id="loan-income"
+            large
+            label="Rendimento mensal do agregado"
+            suffix="€"
+            placeholder="2 000,00"
+            value={form.income}
+            error={errors.income}
+            hint="Líquido, somando quem vai ao crédito. Use sempre o rendimento anual a dividir por 12 — é o que o Banco de Portugal manda usar, tenha 14 meses ou passe recibos verdes."
+            onChange={(value) => update("income", value)}
+          />
+
+          {form.mode === "price" ? (
+            <TextField
+              id="loan-price"
+              large
+              label="Preço do imóvel"
+              suffix="€"
+              placeholder="250 000,00"
+              value={form.propertyPrice}
+              error={errors.propertyPrice}
+              onChange={(value) => update("propertyPrice", value)}
+            />
+          ) : (
+            <TextField
+              id="loan-savings"
+              large
+              /*
+                Not "Entrada disponível": the field is not the entrada, and a
+                label that says it is forces the hint to spend its first
+                sentence taking it back.
+              */
+              label="O que tem de parte"
+              suffix="€"
+              placeholder="40 000,00"
+              value={form.savings}
+              error={errors.savings}
+              hint="Tudo o que pode pôr nesta compra: a entrada, o IMT, o imposto do selo e a escritura saem todos daqui."
+              onChange={(value) => update("savings", value)}
+            />
+          )}
+
+          <div className="field-row">
+            <TextField
+              id="loan-age"
+              label="Idade"
+              inputMode="numeric"
+              suffix="anos"
+              value={form.age}
+              error={errors.age}
+              hint="Do mutuário mais velho."
+              onChange={(value) => update("age", value)}
+            />
+            <TextField
+              id="loan-term"
+              label="Prazo"
+              inputMode="numeric"
+              suffix="anos"
+              value={form.termYears}
+              error={errors.termYears}
+              onChange={(value) => update("termYears", value)}
+            />
+          </div>
+
+          <LoanAdvancedPanel
+            form={form}
+            errors={errors}
+            update={update}
+            euribor={euribor}
+            indexRate={indexRate}
+          />
+        </form>
 
         {form.mode === "price" ? (
-          <TextField
-            id="loan-price"
-            large
-            label="Preço do imóvel"
-            suffix="€"
-            placeholder="250 000,00"
-            value={form.propertyPrice}
-            error={errors.propertyPrice}
-            onChange={(value) => update("propertyPrice", value)}
+          <LoanResultPanel
+            outcome={outcome}
+            input={input}
+            euribor={euribor.snapshot}
+            propertyPrice={parseAmount(form.propertyPrice) ?? 0}
+            monthlyIncome={parseAmount(form.income) ?? 0}
+            existingMonthlyDebt={parseAmount(form.existingDebt) ?? 0}
+            savings={parseAmount(form.savings) ?? 0}
+            costs={costs}
           />
         ) : (
-          <TextField
-            id="loan-savings"
-            large
-            label="Entrada disponível"
-            suffix="€"
-            placeholder="40 000,00"
-            value={form.savings}
-            error={errors.savings}
-            hint="Tudo o que tem de parte para esta compra. Não é só a entrada: o IMT, o imposto do selo e a escritura saem daqui também."
-            onChange={(value) => update("savings", value)}
+          <PriceResultPanel
+            outcome={priceOutcome}
+            assessmentDate={assessmentDate}
+            euribor={euribor.snapshot}
+            monthlyIncome={parseAmount(form.income) ?? 0}
+            existingMonthlyDebt={parseAmount(form.existingDebt) ?? 0}
+            savings={parseAmount(form.savings) ?? 0}
+            priceInput={priceInput}
           />
         )}
-
-        <div className="field-row">
-          <TextField
-            id="loan-age"
-            label="Idade"
-            inputMode="numeric"
-            suffix="anos"
-            value={form.age}
-            error={errors.age}
-            hint="Do mutuário mais velho."
-            onChange={(value) => update("age", value)}
-          />
-          <TextField
-            id="loan-term"
-            label="Prazo"
-            inputMode="numeric"
-            suffix="anos"
-            value={form.termYears}
-            error={errors.termYears}
-            onChange={(value) => update("termYears", value)}
-          />
-        </div>
-
-        <LoanAdvancedPanel
-          form={form}
-          errors={errors}
-          update={update}
-          euribor={euribor}
-          indexRate={indexRate}
-        />
-      </form>
-
-      {form.mode === "price" ? (
-        <LoanResultPanel
-          outcome={outcome}
-          input={input}
-          euribor={euribor.snapshot}
-          propertyPrice={parseAmount(form.propertyPrice) ?? 0}
-          monthlyIncome={parseAmount(form.income) ?? 0}
-          existingMonthlyDebt={parseAmount(form.existingDebt) ?? 0}
-          savings={parseAmount(form.savings) ?? 0}
-          costs={costs}
-        />
-      ) : (
-        <PriceResultPanel
-          outcome={priceOutcome}
-          assessmentDate={assessmentDate}
-          euribor={euribor.snapshot}
-          monthlyIncome={parseAmount(form.income) ?? 0}
-          existingMonthlyDebt={parseAmount(form.existingDebt) ?? 0}
-          savings={parseAmount(form.savings) ?? 0}
-          priceInput={priceInput}
-        />
-      )}
-    </div>
+      </div>
+    </>
   );
 }
 

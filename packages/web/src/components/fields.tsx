@@ -261,6 +261,67 @@ export function SegmentedField({
   );
 }
 
+export interface ChoiceCard {
+  value: string;
+  label: string;
+  /** What choosing this actually means, in the reader's terms. */
+  description: string;
+}
+
+interface ChoiceCardsProps {
+  name: string;
+  legend: ReactNode;
+  value: string;
+  options: readonly ChoiceCard[];
+  onChange: (value: string) => void;
+}
+
+/**
+ * A radio group rendered as cards, each carrying a description.
+ *
+ * A {@link SegmentedField} for choices whose labels do not explain themselves.
+ * "Posso comprar esta casa?" and "Qual é o meu limite?" fit in a segmented
+ * control but only tell you which question is being asked, not which one is
+ * yours — that depends on whether you have a price in mind or a pile of
+ * savings, which is the thing the description says and the label cannot.
+ *
+ * Radios rather than buttons, so the group is one tab stop, arrow keys move
+ * within it, and the choice is announced as a choice.
+ */
+export function ChoiceCards({
+  name,
+  legend,
+  value,
+  options,
+  onChange,
+}: ChoiceCardsProps) {
+  return (
+    <fieldset className="field-fieldset choice-cards">
+      <legend className="visually-hidden">{legend}</legend>
+      <div className="choice-card-row">
+        {options.map((option) => (
+          <label
+            key={option.value}
+            className={`choice-card${option.value === value ? " is-selected" : ""}`}
+          >
+            <input
+              type="radio"
+              name={name}
+              value={option.value}
+              checked={option.value === value}
+              onChange={() => onChange(option.value)}
+            />
+            <span className="choice-card-label">{option.label}</span>
+            <span className="choice-card-description">
+              {option.description}
+            </span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
 interface ToggleFieldProps {
   id: string;
   label: ReactNode;

@@ -10,6 +10,11 @@
   --surface-sunken: #f1f4f6;
   --text: #0f1720;
   --text-muted: #5a6673;
+  /* Placeholders are example values ("1 500,00"), not decoration: they carry
+     the expected format, so they are text and hold 4.5:1 like any other.
+     Measured against --surface-sunken, which is what inputs sit on, not the
+     white surface behind them. */
+  --text-placeholder: #636e7b;
   --border: #dde3e8;
   --border-strong: #c2ccd5;
   --accent: #00674a;
@@ -50,6 +55,7 @@
     --surface-sunken: #111a1f;
     --text: #e8edf1;
     --text-muted: #9aa8b4;
+    --text-placeholder: #778692;
     --border: #26323b;
     --border-strong: #3a4954;
     --accent: #4fc9a1;

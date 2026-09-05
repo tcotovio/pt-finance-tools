@@ -140,6 +140,13 @@
   outline: none;
 }
 
+.input-shell input::placeholder {
+  color: var(--text-placeholder);
+  /* Browsers dim the placeholder by default on top of its colour, which would
+     undo the contrast the token was chosen for. */
+  opacity: 1;
+}
+
 .input-shell.is-large input {
   font-size: 1.75rem;
   font-weight: 600;

@@ -758,24 +758,6 @@
   font-size: 0.875rem;
 }
 
-/*
-  A callout that reports a gap rather than states a fact.
-
-  Same rule the headline already follows: "em accent green a bad month reads
-  as a good one". A shortfall drawn on the accent surface is the app telling
-  the reader they are short in the colour it uses for everything going right.
-  The warm surface is the one already carrying caution elsewhere, and the
-  amount takes --negative, which is what "the money you do not have" is
-  coloured everywhere else in this panel.
-*/
-.callout.is-warning {
-  background: var(--note-bg);
-  border-color: var(--note-border);
-}
-
-.callout .shortfall {
-  color: var(--negative);
-}
 
 .notices {
   display: flex;
@@ -1495,6 +1477,38 @@ main:focus {
 
 .cash-note {
   opacity: 0.8;
+}
+
+/*
+  The savings and the gap continue the subtraction rather than restating it,
+  so they are ruled off from the outgoings above instead of listed among them.
+*/
+.cash-parts li.is-own {
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--accent-border);
+}
+
+.cash-parts li.is-gap {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cash-parts li.is-gap.is-short {
+  color: var(--negative);
+}
+
+/*
+  A requirement the buyer cannot meet is not good news, and the accent surface
+  is where this app puts good news. Same rule as .result-net.is-negative.
+*/
+.cash-summary.is-short {
+  background: var(--note-bg);
+  border-color: var(--note-border);
+}
+
+.cash-summary.is-short .is-own {
+  border-top-color: var(--note-border);
 }
 
 /* --- market comparison -------------------------------------------------- */

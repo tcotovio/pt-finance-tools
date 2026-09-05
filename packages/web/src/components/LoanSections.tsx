@@ -131,18 +131,38 @@ export function ConstraintBars({
 }
 
 /**
- * The cash summary: what has to be in the account on the day of the deed.
+ * The cash summary: what has to be in the account on the day of the deed, and
+ * — where the buyer has said what they have — whether it reaches.
  *
  * This replaces a line that showed only the deposit and added, in prose, that
  * "o IMT, o imposto do selo e a escritura acrescem". On a 250 000 € purchase
  * those come to roughly 8 000 €, so the old line understated the requirement
  * by about a third of a year's savings.
+ *
+ * The verdict used to sit underneath in a callout of its own, which re-told
+ * the block instead of continuing it: "esta compra precisa de 71 987,37 €
+ * entre entrada e impostos" repeated both the total and the itemisation the
+ * reader had just read, and "Indicou 20 000,00 €" repeated a field on the same
+ * screen. Four numbers to say two.
+ *
+ * It is a subtraction, so it is shown as one. The savings come off the total
+ * the same way the parts went on, and the gap is the last row.
  */
-export function CashSummary({ summary }: { summary: LoanSummary }) {
+export function CashSummary({
+  summary,
+  savings,
+}: {
+  summary: LoanSummary;
+  /** What the buyer has, when they have said. Omitted leaves the block a
+      statement of the requirement, with no verdict on it. */
+  savings?: number;
+}) {
   const costs = summary.costs;
+  const gap = savings === undefined ? null : summary.cashNeeded - savings;
+  const short = gap !== null && gap > 0;
 
   return (
-    <div className="cash-summary">
+    <div className={`cash-summary${short ? " is-short" : ""}`}>
       <div className="cash-head">
         <span className="cash-label">Precisa de ter</span>
         <span className="cash-total num">{formatEuro(summary.cashNeeded)}</span>
@@ -161,6 +181,18 @@ export function CashSummary({ summary }: { summary: LoanSummary }) {
             <span>Impostos, escritura e registos</span>
             <span className="num">{formatEuro(costs.upfrontTotal)}</span>
           </li>
+        ) : null}
+        {gap !== null && savings !== undefined ? (
+          <>
+            <li className="is-own">
+              <span>Tem de parte</span>
+              <span className="num">−{formatEuro(savings)}</span>
+            </li>
+            <li className={`is-gap${short ? " is-short" : ""}`}>
+              <span>{short ? "Faltam-lhe" : "Sobra-lhe"}</span>
+              <span className="num">{formatEuro(Math.abs(gap))}</span>
+            </li>
+          </>
         ) : null}
       </ul>
     </div>

@@ -215,16 +215,20 @@ function SavingsCheck({
   savings: number;
 }) {
   const shortfall = summary.cashNeeded - savings;
+  const short = shortfall > 0;
   return (
-    <div className="callout">
+    <div className={`callout${short ? " is-warning" : ""}`}>
       <p>
-        {shortfall > 0 ? (
+        {short ? (
           <>
-            <strong>Faltam-lhe {formatEuro(shortfall)}.</strong> Indicou{" "}
+            <strong className="shortfall">
+              Faltam-lhe {formatEuro(shortfall)}.
+            </strong>{" "}
+            Indicou{" "}
             <span className="num">{formatEuro(savings)}</span> de parte, e esta
             compra precisa de{" "}
             <span className="num">{formatEuro(summary.cashNeeded)}</span> entre
-            entrada e impostos. Mude para «Qual é o meu limite?» para ver que
+            entrada e impostos. Mude para «Ainda não tenho casa» para ver que
             preço é que esse valor alcança.
           </>
         ) : (

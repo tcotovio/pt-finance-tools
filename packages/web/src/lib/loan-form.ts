@@ -449,7 +449,7 @@ export type UpdateLoanForm = <K extends keyof LoanForm>(
 const FIELD_LABELS: Partial<Record<keyof LoanForm, string>> = {
   income: "rendimento",
   propertyPrice: "preço do imóvel",
-  savings: "entrada disponível",
+  savings: "o que tem de parte",
   vpt: "valor patrimonial tributário",
   bankFees: "comissões do banco",
   appraisalValue: "valor da avaliação",

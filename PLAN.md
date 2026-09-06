@@ -125,6 +125,8 @@ historical and current rules coexist and correctness is date-aware.
 
 The engine selects the right dataset by date. **Adding a year = a data PR with no logic change.**
 
+Knowing *when* that PR is needed is `packages/sources`' job, not a human's memory: every dataset above is registered there with the rhythm its publisher works on, and a daily workflow says which ones have been superseded (§9). Adding a dataset without registering it fails `manifest.test.ts`.
+
 ---
 
 ## 6. Accuracy strategy — how "accurate" is proven
@@ -439,7 +441,11 @@ candidate rather than duplicating any of it.
 - **Every result lists its own sources.** A "Fontes" panel names each dataset the answer actually leaned on — withholding tables, meal-allowance ceilings, IRS Jovem parameters, the BdP limits, the shock, the Euribor month, the market statistics — with what each was used for, whether it is cross-checked, and a link. The verified badge sits on the summary, visible whether the panel is open or shut: a caveat behind a disclosure is not a caveat.
   - **Links are verified by rendering, never by status code.** `diariodarepublica.pt` answers **200** for consolidated-code URLs that then route client-side to "A página não se encontra disponível" — so `curl` reports success on a dead link. Every URL in the app was opened in a browser and read. The consolidated CIRS and Código do Trabalho check out; the Código dos Regimes Contributivos could not be located at a URL that renders, so `cc-53` deliberately carries no link.
   - Links point at the consolidated **code**, not the article: DRE's per-article anchors are generated client-side and could not be verified the same way. The citation names the article; the link gets the reader to the right instrument.
-- **Maintenance cadence**: January (new IRS tables + IAS), ad-hoc mid-year despachos, BdP recommendation updates. Track these as recurring calendar items.
+- **Maintenance cadence — automated, not a calendar reminder.** `packages/sources` holds an inventory of every dataset the engine ships, and `.github/workflows/sources.yml` runs it daily. Two halves: a **publication calendar** that needs no network (the ECB posts a month's average in the first days of the next month; INE releases a quarter about six weeks after it ends; the OE tax tables appear in the second half of December), and **probes** that ask the publishers with a machine-readable feed. The calendar alone catches the failure that actually happens — nobody looked, for months, and nobody noticed.
+  - **Daily, not annual.** January is the cadence of the tax tables and of nothing else: the Euribor snapshot and the market statistics move monthly, so a January sweep would ship an eight-month-old index through the summer. The tax side is still caught early, because the annual window opens on **15 December** rather than on 1 January — the despacho appears while there is still time to transcribe it before it takes effect.
+  - **The ECB-backed datasets refresh themselves.** The Euribor fallback and the consumer-credit rate are fetched, validated and written by the workflow, which then runs the whole suite before opening a PR. Everything else is a PDF a person reads, so the output there is a tracking issue naming what to look at and when it was last looked at.
+  - **What fails the run is deliberately narrow**: a source superseded outright, or a probe that could not run. A "this law has not been re-read in six months" prompt lives in the issue — a job that is red every morning is a job nobody reads.
+  - **Refusals beat improvisation**: a rate outside a plausible band, a Euribor month missing one of its three tenors, an unreadable payload — each stops the refresh with a message rather than writing a dataset nobody checked.
 - **i18n**: PT primary; EN a nice-to-have (also useful for expats).
 - **Charts and comparisons**, in two kinds, and the distinction is the point:
   - **Derived** — computed from datasets already shipped, so they cost nothing to keep true: the wage rate curve and the loan limit curve.

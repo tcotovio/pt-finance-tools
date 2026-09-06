@@ -152,6 +152,9 @@ export type {
 
 export { allCrossChecked, isOutstanding } from "./verification.js";
 
+export { parseEcbSeries } from "./ecb-sdmx.js";
+export type { EcbObservation } from "./ecb-sdmx.js";
+
 export {
   selfEmployedNet,
   contributionAmount,

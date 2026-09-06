@@ -8,9 +8,25 @@ import {
   isCurrentFor,
   referenceMonth,
 } from "./euribor.js";
-import { EURIBOR_2026_07 } from "../data/euribor-2026-07.js";
-import { MORTGAGE_MARKET_2026_06 } from "../data/mortgage-market-2026-06.js";
+import { EURIBOR_FALLBACK, MORTGAGE_MARKET } from "../data/index.js";
 import type { EuriborSnapshot } from "../types.js";
+
+/**
+ * A snapshot to test the *rules* against, fixed here rather than imported.
+ *
+ * These were July 2026's actual averages, and they used to be read off the
+ * bundled fallback — but that dataset is refreshed automatically now
+ * (`packages/sources`), so asserting on its values here would have meant every
+ * refresh breaking tests about `isCurrentFor`, which has nothing to do with
+ * what July's rates were. The dataset's own properties are still checked, at
+ * the foot of this file, in the terms that survive a new month.
+ */
+const JULY_2026: EuriborSnapshot = {
+  month: "2026-07",
+  rates: { "3m": 0.024253913, "6m": 0.026467391, "12m": 0.02855087 },
+  source: "European Central Bank Data Portal, series FM.M.U2.EUR.RT.MM.EURIBOR*.HSTA",
+  retrievedAt: "2026-08-19",
+};
 
 describe("referenceMonth", () => {
   it("takes the month before the assessment", () => {
@@ -40,44 +56,44 @@ describe("referenceMonth", () => {
 
 describe("isCurrentFor", () => {
   it("accepts the snapshot for exactly the reference month", () => {
-    expect(isCurrentFor(EURIBOR_2026_07, "2026-08-19")).toBe(true);
+    expect(isCurrentFor(JULY_2026, "2026-08-19")).toBe(true);
   });
 
   it("rejects one that is merely recent", () => {
     // Strict by design: a September assessment needs August's average, and
     // July's is wrong however fresh it feels.
-    expect(isCurrentFor(EURIBOR_2026_07, "2026-09-01")).toBe(false);
+    expect(isCurrentFor(JULY_2026, "2026-09-01")).toBe(false);
   });
 
   it("rejects the current month's own snapshot", () => {
     // The month must be *before* the assessment; a July assessment cannot use
     // July, which is still incomplete.
-    expect(isCurrentFor(EURIBOR_2026_07, "2026-07-20")).toBe(false);
+    expect(isCurrentFor(JULY_2026, "2026-07-20")).toBe(false);
   });
 });
 
 describe("euriborRate", () => {
   it("returns the rate for each tenor as a fraction", () => {
-    expect(euriborRate(EURIBOR_2026_07, "3m")).toBeCloseTo(0.024253913, 12);
-    expect(euriborRate(EURIBOR_2026_07, "6m")).toBeCloseTo(0.026467391, 12);
-    expect(euriborRate(EURIBOR_2026_07, "12m")).toBeCloseTo(0.02855087, 12);
+    expect(euriborRate(JULY_2026, "3m")).toBeCloseTo(0.024253913, 12);
+    expect(euriborRate(JULY_2026, "6m")).toBeCloseTo(0.026467391, 12);
+    expect(euriborRate(JULY_2026, "12m")).toBeCloseTo(0.02855087, 12);
   });
 
   it("keeps the tenors in ascending order, as the curve was", () => {
-    // Not a law, but a sanity check on the transcription: an inverted curve
-    // is possible in principle, so this pins what the July 2026 data says.
-    expect(euriborRate(EURIBOR_2026_07, "3m")).toBeLessThan(
-      euriborRate(EURIBOR_2026_07, "6m"),
+    // Not a law, but what July 2026's curve did: an inverted curve is possible
+    // in principle, so this pins the fixture rather than any month's data.
+    expect(euriborRate(JULY_2026, "3m")).toBeLessThan(
+      euriborRate(JULY_2026, "6m"),
     );
-    expect(euriborRate(EURIBOR_2026_07, "6m")).toBeLessThan(
-      euriborRate(EURIBOR_2026_07, "12m"),
+    expect(euriborRate(JULY_2026, "6m")).toBeLessThan(
+      euriborRate(JULY_2026, "12m"),
     );
   });
 
   it("throws rather than returning NaN for a missing tenor", () => {
     const broken = {
-      ...EURIBOR_2026_07,
-      rates: { ...EURIBOR_2026_07.rates, "6m": undefined },
+      ...JULY_2026,
+      rates: { ...JULY_2026.rates, "6m": undefined },
     } as unknown as EuriborSnapshot;
     expect(() => euriborRate(broken, "6m")).toThrow(/no 6m rate/);
   });
@@ -98,9 +114,9 @@ describe("contractRate", () => {
   });
 });
 
-describe("MORTGAGE_MARKET_2026_06 — context, never a derived spread", () => {
+describe("MORTGAGE_MARKET — context, never a derived spread", () => {
   it("carries variable-rate percentiles in order", () => {
-    const v = MORTGAGE_MARKET_2026_06.newBusinessRate.variable;
+    const v = MORTGAGE_MARKET.newBusinessRate.variable;
     expect(v.p10).toBeLessThan(v.median);
     expect(v.median).toBeLessThan(v.p75!);
     expect(v.p75!).toBeLessThan(v.p90);
@@ -109,7 +125,7 @@ describe("MORTGAGE_MARKET_2026_06 — context, never a derived spread", () => {
   });
 
   it("carries instalment percentiles in order, in euros", () => {
-    const i = MORTGAGE_MARKET_2026_06.instalmentStock;
+    const i = MORTGAGE_MARKET.instalmentStock;
     expect(i.p10).toBeLessThan(i.p25!);
     expect(i.p25!).toBeLessThan(i.median);
     expect(i.median).toBeLessThan(i.p75!);
@@ -120,23 +136,23 @@ describe("MORTGAGE_MARKET_2026_06 — context, never a derived spread", () => {
     // BdP publishes mista's share but not its price distribution — the
     // awkward gap in this data, since mista is the dominant product. Absent
     // beats substituting a neighbouring series.
-    expect(MORTGAGE_MARKET_2026_06.newBusinessRate.mixed).toBeUndefined();
+    expect(MORTGAGE_MARKET.newBusinessRate.mixed).toBeUndefined();
   });
 
   it("cites Banco de Portugal's own statistics", () => {
-    expect(MORTGAGE_MARKET_2026_06.source).toContain("BPstat");
-    expect(MORTGAGE_MARKET_2026_06.source).toContain("Banco de Portugal");
+    expect(MORTGAGE_MARKET.source).toContain("BPstat");
+    expect(MORTGAGE_MARKET.source).toContain("Banco de Portugal");
   });
 
   it("records a market where taxa mista dominates", () => {
-    const share = MORTGAGE_MARKET_2026_06.shareOfNewLending;
+    const share = MORTGAGE_MARKET.shareOfNewLending;
     expect(share.mixed).toBeGreaterThan(0.5);
     expect(share.mixed).toBeGreaterThan(share.variable + share.fixed);
     expect(share.mixed + share.variable + share.fixed).toBeCloseTo(1, 2);
   });
 
   it("records index shares that account for the whole market", () => {
-    const s = MORTGAGE_MARKET_2026_06.indexShareOfNewBusiness;
+    const s = MORTGAGE_MARKET.indexShareOfNewBusiness;
     expect(s["3m"] + s["6m"] + s["12m"] + s.other).toBeCloseTo(1, 2);
     // 6M is the market's usual choice, which is not the intuitive guess.
     expect(s["6m"]).toBeGreaterThan(s["12m"]);
@@ -149,9 +165,38 @@ describe("MORTGAGE_MARKET_2026_06 — context, never a derived spread", () => {
     // was agreed, below June's in a rising market. Pinned so nobody later
     // "fixes" this by wiring the subtraction into a default.
     const implied =
-      MORTGAGE_MARKET_2026_06.newBusinessRate.variable.median -
-      euriborRate(EURIBOR_2026_07, "12m");
+      MORTGAGE_MARKET.newBusinessRate.variable.median -
+      euriborRate(JULY_2026, "12m");
     const plausibleRetailSpread = 0.008;
     expect(implied).toBeLessThan(plausibleRetailSpread);
+  });
+});
+
+describe("EURIBOR_FALLBACK — the snapshot in the bundle", () => {
+  // Deliberately about shape and provenance, never about a particular month's
+  // rates: `packages/sources` refreshes this dataset from the ECB when a newer
+  // monthly average is published, and these have to stay true across that.
+  it("is a monthly average, labelled by its month", () => {
+    expect(EURIBOR_FALLBACK.month).toMatch(/^\d{4}-\d{2}$/);
+  });
+
+  it("carries all three tenors Portuguese mortgages index to", () => {
+    for (const tenor of ["3m", "6m", "12m"] as const) {
+      const rate = euriborRate(EURIBOR_FALLBACK, tenor);
+      // A fraction, not a percentage — the 100× error this whole codebase
+      // guards against would show up here first.
+      expect(rate).toBeGreaterThan(-0.02);
+      expect(rate).toBeLessThan(0.15);
+    }
+  });
+
+  it("cites the ECB series it was taken from", () => {
+    expect(EURIBOR_FALLBACK.source).toContain("European Central Bank");
+    expect(EURIBOR_FALLBACK.source).toContain("EURIBOR");
+  });
+
+  it("was retrieved after the month it reports had ended", () => {
+    // A July average retrieved in July would be an incomplete month.
+    expect(EURIBOR_FALLBACK.retrievedAt > EURIBOR_FALLBACK.month).toBe(true);
   });
 });

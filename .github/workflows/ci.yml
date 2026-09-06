@@ -30,3 +30,7 @@ jobs:
 
       # Covers typechecking too — both workspace build scripts run `tsc -b`.
       - run: npm run build
+
+      # The source-freshness tooling is dev-only, so it is not part of the app
+      # build; typecheck it here rather than leaving it unchecked.
+      - run: npm run build -w @pt-finance-tools/sources

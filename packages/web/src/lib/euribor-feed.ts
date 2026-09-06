@@ -21,7 +21,9 @@
 import {
   EURIBOR_FALLBACK,
   isCurrentFor,
+  parseEcbSeries,
   referenceMonth,
+  type EcbObservation,
   type EuriborSnapshot,
   type EuriborTenor,
 } from "@pt-finance-tools/engine";
@@ -46,65 +48,6 @@ const SERIES: Record<EuriborTenor, string> = {
 const BASE = "https://data-api.ecb.europa.eu/service/data/FM";
 const CACHE_KEY = "euribor-snapshot-v1";
 const FETCH_TIMEOUT_MS = 6000;
-
-/** One observation pulled out of an SDMX-JSON response. */
-export interface EcbObservation {
-  month: string;
-  rate: number;
-}
-
-/**
- * Parse the ECB's SDMX-JSON into the last observation.
- *
- * The shape is awkward on purpose — observations are keyed by *position*, and
- * the period labels live in a parallel `structure.dimensions.observation`
- * array — so this is kept pure and tested against a checked-in fixture rather
- * than being written inline in the fetch.
- *
- * Returns `null` for anything malformed. A feed that changed shape should
- * degrade to the cache or the bundled snapshot, not throw into the UI.
- */
-export function parseEcbSeries(payload: unknown): EcbObservation | null {
-  if (typeof payload !== "object" || payload === null) return null;
-  const body = payload as Record<string, unknown>;
-
-  const dataSets = body.dataSets;
-  const structure = body.structure;
-  if (!Array.isArray(dataSets) || dataSets.length === 0) return null;
-  if (typeof structure !== "object" || structure === null) return null;
-
-  const series = (dataSets[0] as Record<string, unknown>)?.series;
-  if (typeof series !== "object" || series === null) return null;
-  const firstSeries = Object.values(series as Record<string, unknown>)[0];
-  const observations = (firstSeries as Record<string, unknown>)?.observations;
-  if (typeof observations !== "object" || observations === null) return null;
-
-  const periods = (
-    structure as {
-      dimensions?: { observation?: { values?: { id?: string }[] }[] };
-    }
-  ).dimensions?.observation?.[0]?.values;
-  if (!Array.isArray(periods) || periods.length === 0) return null;
-
-  // Observation keys are string indices into the period list; take the last
-  // one that actually carries a value.
-  const entries = Object.entries(observations as Record<string, unknown>)
-    .map(([index, value]) => ({
-      index: Number(index),
-      value: Array.isArray(value) ? value[0] : null,
-    }))
-    .filter((entry) => Number.isInteger(entry.index) && typeof entry.value === "number")
-    .sort((a, b) => a.index - b.index);
-
-  const last = entries[entries.length - 1];
-  if (!last) return null;
-
-  const month = periods[last.index]?.id;
-  if (typeof month !== "string" || !/^\d{4}-\d{2}$/.test(month)) return null;
-
-  // The ECB quotes percentages; the engine works in fractions throughout.
-  return { month, rate: (last.value as number) / 100 };
-}
 
 async function fetchSeries(
   tenor: EuriborTenor,

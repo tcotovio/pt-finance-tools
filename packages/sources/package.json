@@ -1,0 +1,21 @@
+{
+  "name": "@pt-finance-tools/sources",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Source-freshness tooling: has anything we ship been superseded upstream, and can we fetch what replaced it?",
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --noEmit",
+    "test": "vitest run",
+    "check": "npm run build && node dist/cli.js check",
+    "refresh": "npm run build && node dist/cli.js refresh"
+  },
+  "dependencies": {
+    "@pt-finance-tools/engine": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "vitest": "^3.0.5"
+  }
+}
